@@ -35,6 +35,7 @@
     "SIGN_UP_METHOD": "Metodo di entrata",
     "WHEN": "Quando",
     "CUSTOM_SIGNUP_INSTRUCTIONS": "Istruzioni d'entrata customizzate",
+    "SIGNUP_INSTRUCTIONS_DESC": "Le istruzioni saranno trasmesse agli utenti che si iscrivono tramite il metodo automatizzato.",
     "FREQUENCY": "Frequenza",
     "WEEKDAYS": "Giorni Feriali",
     "DATE": "Data",

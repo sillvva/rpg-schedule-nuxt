@@ -3,7 +3,8 @@ export default async function({ store, req, route, app }) {
     await store.dispatch("initAuth", {
       req: req,
       route: route,
-      app: app
+      app: app,
+      allow: true
     });
   } catch (err) {}
 }

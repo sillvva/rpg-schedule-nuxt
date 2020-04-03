@@ -37,6 +37,7 @@
     "SIGN_UP_METHOD": "Méthode d'inscription",
     "WHEN": "Quand",
     "CUSTOM_SIGNUP_INSTRUCTIONS": "Instruction d'inscription personnalisées",
+    "SIGNUP_INSTRUCTIONS_DESC": "Les instructions seront transmises aux utilisateurs qui s'inscrivent via la méthode automatisée.",
     "FREQUENCY": "Fréquence",
     "WEEKDAYS": "Semaine",
     "DATE": "Date",

@@ -37,6 +37,7 @@
       "SIGN_UP_METHOD": "Methode zum Eintragen",
       "WHEN": "Wann",
       "CUSTOM_SIGNUP_INSTRUCTIONS": "Benutzerdefinierter Befehl zum Eintragen",
+      "SIGNUP_INSTRUCTIONS_DESC": "Anweisungen werden DM an Benutzer gesendet, die sich über die automatisierte Methode anmelden.",
       "FREQUENCY": "Regelmäßigkeit",
       "WEEKDAYS": "Werktags",
       "DATE": "Datum",

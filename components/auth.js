@@ -9,9 +9,10 @@ const setToken = async (app, token) => {
   console.log(7, token);
   const d = new Date();
   d.setDate(d.getDate() + 14);
+  await app.$cookies.remove('redirect');
   await app.$cookies.remove('token');
   await app.$cookies.set('token', token, { expires: d });
-  app.$store.commit('setToken', token);
+  if (app.$store || app.store) (app.$store || app.store).commit('setToken', token);
 };
 
 module.exports = {

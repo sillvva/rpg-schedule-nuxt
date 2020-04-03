@@ -1,6 +1,11 @@
 <template>
   <v-app dark>
-    <v-app-bar fixed app clipped-left v-if="account">
+    <v-app-bar
+      fixed
+      app
+      clipped-left
+      v-if="account || routePath.startsWith(config.urls.game.create.path)"
+    >
       <v-app-bar-nav-icon class="hidden-lg-and-up" @click.stop="drawer = !drawer"></v-app-bar-nav-icon>
       <v-img src="/images/logo2.png" max-width="40" max-height="40" contain />
       <v-spacer />
@@ -14,11 +19,12 @@
       >
         <v-icon dark>mdi-twitter</v-icon>
       </v-btn>
-      <span class="hidden-sm-and-down">&nbsp;&nbsp;</span>
+      <span class="hidden-sm-and-down" v-if="account">&nbsp;&nbsp;</span>
       <v-btn
         outlined
         fab
         x-small
+        v-if="account"
         :href="`${env && env.apiUrl}/rss/${account.user.id}`"
         target="_blank"
         class="hidden-sm-and-down discord--text"
@@ -75,9 +81,15 @@
       </v-btn>
     </v-app-bar>
 
-    <v-navigation-drawer v-model="drawer" v-if="account" fixed clipped app>
-      <template v-slot:prepend>
-        <v-list-item two-line>
+    <v-navigation-drawer
+      v-model="drawer"
+      v-if="account || routePath.startsWith(config.urls.game.create.path)"
+      fixed
+      clipped
+      app
+    >
+      <template v-slot:prepend v-if="account">
+        <v-list-item two-line style="position: relative;">
           <v-list-item-avatar>
             <img :src="account.user.avatarURL" />
           </v-list-item-avatar>
@@ -88,8 +100,30 @@
               <a @click="signOut" class="discord--text">{{lang.nav.LOGOUT}}</a>
             </v-list-item-subtitle>
           </v-list-item-content>
+
+          <v-btn
+            fab
+            small
+            :to="config.urls.game.create.path"
+            absolute
+            right
+            color="green"
+            :title="lang.buttons.NEW_GAME"
+          >
+            <v-icon>mdi-plus</v-icon>
+          </v-btn>
         </v-list-item>
       </template>
+
+      <v-list nav dense v-if="!account && routePath.startsWith(config.urls.game.create.path)">
+        <v-list-item-group>
+          <v-list-item
+            :href="`${config.urls.login.path}?redirect=${encodeURIComponent($route.fullPath)}`"
+          >
+            <v-list-item-title>{{lang.nav.LOGIN}}</v-list-item-title>
+          </v-list-item>
+        </v-list-item-group>
+      </v-list>
 
       <v-divider></v-divider>
 
@@ -117,9 +151,7 @@
     </v-navigation-drawer>
 
     <v-content>
-      <v-container>
-        <nuxt />
-      </v-container>
+      <nuxt />
     </v-content>
   </v-app>
 </template>
@@ -144,7 +176,8 @@ export default {
       langOptions: [],
       onResize: () => {
         this.windowWidth = window.innerWidth;
-      }
+      },
+      socket: null
     };
   },
   computed: {
@@ -159,6 +192,9 @@ export default {
     },
     storeSelectedLang() {
       return this.$store.getters.selectedLang;
+    },
+    routePath() {
+      return this.$route.path;
     }
   },
   watch: {
@@ -194,7 +230,6 @@ export default {
   },
   methods: {
     signOut() {
-      console.log(2);
       this.$store.dispatch("signOut");
     },
     saveSettings() {
@@ -208,11 +243,12 @@ export default {
 
     this.$store.dispatch("fetchLangs");
 
-    const socket = io(this.$store.getters.env.apiUrl);
-
-    socket.on("game", data => {
+    this.socket = io(this.$store.getters.env.apiUrl);
+    this.socket.on("game", data => {
       let guildRefresh = new Date().getTime();
-      let guilds = cloneDeep(this.$store.getters.account.guilds);
+      const account = this.$store.getters.account;
+      if (!account) return;
+      let guilds = cloneDeep(account.guilds);
       const path = this.$route.path;
       const gamesPage = /^\/games\//.test(path);
       const gamesEditPage = /^\/games\/edit/.test(path);
@@ -229,7 +265,8 @@ export default {
         lastGuildRefresh = guildRefresh;
         this.$store.dispatch("fetchGuilds", {
           page: path.replace("/games/", ""),
-          games: true
+          games: true,
+          app: this
         });
       } else if (
         data.action == "updated" &&
@@ -243,7 +280,8 @@ export default {
             lastGuildRefresh = guildRefresh;
             this.$store.dispatch("fetchGuilds", {
               page: path.replace("/games/", ""),
-              games: true
+              games: true,
+              app: this
             });
           } else {
             for (const prop in data.game) {
@@ -266,12 +304,14 @@ export default {
         ) {
           alert("This game has been deleted");
           this.$router.replace(this.$store.getters.config.urls.game.games.path);
-        } else if (gameListingsPage && guilds.find(g => g.id == data.guildId)) {
+        } else if (gameListingsPage) {
           guilds = guilds.map(guild => {
-            guild.games = guild.games.splice(
-              guild.games.findIndex(game => game._id == data.gameId),
-              1
-            );
+            if (guild.games.find(game => game._id == data.gameId)) {
+              guild.games.splice(
+                guild.games.findIndex(game => game._id == data.gameId),
+                1
+              );
+            }
             return guild;
           });
           this.$store.commit("setGuilds", guilds);
@@ -281,6 +321,7 @@ export default {
   },
   beforeDestroy() {
     window.removeEventListener("resize", this.onResize);
+    if (this.socket) this.socket.close();
   }
 };
 </script>

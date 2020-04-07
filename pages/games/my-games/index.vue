@@ -2,13 +2,33 @@
   <v-container fluid>
     <v-card v-for="(guild, g) in guilds" v-bind:key="g" max-width="100%">
       <v-toolbar color="discord">
+        <v-img :src="guild.icon" max-width="40" class="mr-3"></v-img>
         <v-toolbar-title>{{guild.name}}</v-toolbar-title>
         <v-spacer></v-spacer>
+        <v-btn
+          :to="`${config.urls.game.create.path}?s=${guild.id}`"
+          :title="lang.buttons.NEW_GAME"
+          color="green"
+          fab
+          small
+          class="hidden-xs-only"
+          v-if="guild.permission || guild.isAdmin"
+        >
+          <v-icon>mdi-plus</v-icon>
+        </v-btn>
       </v-toolbar>
 
       <v-container fluid>
         <v-row dense>
-          <v-col v-for="(game, i) in guild.games" v-bind:key="i" cols="12" sm="6" md="4" lg="3" xl="2">
+          <v-col
+            v-for="(game, i) in guild.games"
+            v-bind:key="i"
+            cols="12"
+            sm="6"
+            md="4"
+            lg="3"
+            xl="2"
+          >
             <v-card color="grey darken-3" max-width="100%">
               <v-card-title class="subtitle-1" style="position: relative;">
                 {{game.adventure}}
@@ -63,6 +83,21 @@
         </v-row>
       </v-container>
     </v-card>
+
+    <v-btn
+      fab
+      :to="config.urls.game.create.path"
+      fixed
+      right
+      bottom
+      color="green"
+      :title="lang.buttons && lang.buttons.NEW_GAME"
+      style="bottom: 15px;"
+      class="hidden-lg-and-up"
+      v-if="guilds.find(guild => guild.permission || guild.isAdmin)"
+    >
+      <v-icon>mdi-plus</v-icon>
+    </v-btn>
   </v-container>
 </template>
 
@@ -99,13 +134,13 @@ export default {
       handler: function(newVal) {
         this.guilds = cloneDeep(newVal);
         this.parseDates();
-        if (newVal[0]) console.log(newVal[0].games[0]);
       },
       immediate: true
     },
     storeLang: {
       handler: function(newVal) {
         if (newVal && newVal.nav) this.lang = newVal;
+        this.parseDates();
       },
       immediate: true
     }

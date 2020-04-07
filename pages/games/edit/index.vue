@@ -111,11 +111,7 @@
                         :items="methodItems"
                       ></v-select>
                     </v-col>
-                    <v-col
-                      cols="12"
-                      sm="12"
-                      class="py-0"
-                    >
+                    <v-col cols="12" sm="12" class="py-0">
                       <v-text-field
                         id="customSignup"
                         :label="lang.game.CUSTOM_SIGNUP_INSTRUCTIONS"
@@ -320,6 +316,7 @@ export default {
   },
   data() {
     return {
+      componentKey: this.$route.query.g || this.$route.query.s,
       config: this.$store.getters.config,
       enums: this.$store.getters.enums,
       gameId: this.$route.query.g,
@@ -375,199 +372,182 @@ export default {
       immediate: true
     }
   },
-  // watchQuery(newQuery, oldQuery) {
-  //   this.mountStart();
-  // },
   mounted() {
-    this.mountStart();
+    if (!this.gameId && !this.guildId && !this.$store.getters.account) {
+      return this.$router.replace(this.config.urls.game.dashboard.path);
+    }
+    if (this.gameId) this.fetchGame("g", this.gameId);
+    else if (this.guildId) this.fetchGame("s", this.guildId);
+    else if (this.$store.getters.account) {
+      const fetchGuilds = async () => {
+        await this.$store.dispatch("fetchGuilds", {
+          page: "my-games",
+          games: true,
+          app: this
+        });
+        const account = cloneDeep(this.$store.getters.account);
+        this.guilds = account.guilds
+          .filter(guild => guild.permission || guild.isAdmin)
+          .map(g => ({ text: g.name, value: g.id }));
+        if (this.guilds.length > 0) {
+          this.game.s = this.guilds[0].value;
+          await this.selectGuild();
+        }
+        this.game.dm = account.user.tag;
+      };
+
+      fetchGuilds();
+    }
+
+    this.reminderItems = [
+      {
+        text: this.lang.game.options.NO_REMINDER,
+        value: "0"
+      },
+      {
+        text: this.lang.game.options.MINUTES_15,
+        value: "15"
+      },
+      {
+        text: this.lang.game.options.MINUTES_30,
+        value: "30"
+      },
+      {
+        text: this.lang.game.options.MINUTES_60,
+        value: "60"
+      },
+      {
+        text: this.lang.game.options.HOURS_6,
+        value: "360"
+      },
+      {
+        text: this.lang.game.options.HOURS_12,
+        value: "720"
+      },
+      {
+        text: this.lang.game.options.HOURS_24,
+        value: "1440"
+      }
+    ];
+    this.weekdayItems = [
+      {
+        text: moment()
+          .day(0)
+          .format("ddd"),
+        value: 0
+      },
+      {
+        text: moment()
+          .day(1)
+          .format("ddd"),
+        value: 1
+      },
+      {
+        text: moment()
+          .day(2)
+          .format("ddd"),
+        value: 2
+      },
+      {
+        text: moment()
+          .day(3)
+          .format("ddd"),
+        value: 3
+      },
+      {
+        text: moment()
+          .day(4)
+          .format("ddd"),
+        value: 4
+      },
+      {
+        text: moment()
+          .day(5)
+          .format("ddd"),
+        value: 5
+      },
+      {
+        text: moment()
+          .day(6)
+          .format("ddd"),
+        value: 6
+      }
+    ];
+    this.frequencyItems = [
+      {
+        text: this.lang.game.options.NO_REPEAT,
+        value: this.enums.FrequencyType.NO_REPEAT
+      },
+      {
+        text: this.lang.game.options.DAILY,
+        value: this.enums.FrequencyType.DAILY
+      },
+      {
+        text: this.lang.game.options.WEEKLY,
+        value: this.enums.FrequencyType.WEEKLY
+      },
+      {
+        text: this.lang.game.options.BIWEEKLY,
+        value: this.enums.FrequencyType.BIWEEKLY
+      },
+      {
+        text: this.lang.game.options.MONTHLY,
+        value: this.enums.FrequencyType.MONTHLY
+      }
+    ];
+    this.repeatOptionItems = [
+      {
+        text: this.lang.game.CLEAR_RESERVED,
+        value: "clearReservedOnRepeat"
+      }
+    ];
+    this.monthlyTypeItems = [
+      {
+        text: this.lang.game.options.WEEKDAY,
+        value: this.enums.MonthlyType.WEEKDAY
+      },
+      {
+        text: this.lang.game.options.DATE,
+        value: this.enums.MonthlyType.DATE
+      }
+    ];
+
+    setTimeout(() => {
+      localStorage.removeItem("rescheduled");
+    }, 5000);
+
+    this.socket = io(this.$store.getters.env.apiUrl);
+    this.socket.on("game", data => {
+      if (data.gameId != this.gameId) return;
+      if (data.action === "rescheduled") {
+        localStorage.setItem("rescheduled", 1);
+        this.$router.replace(
+          `${this.$store.getters.config.urls.game.create.path}?g=${response.newGameId}`
+        );
+      } else if (
+        data.action === "deleted" &&
+        !localStorage.getItem("rescheduled")
+      ) {
+        alert("This game has been deleted");
+        this.$router.replace(
+          this.$store.getters.config.urls.game.dashboard.path
+        );
+      } else if (data.action === "updated") {
+        for (const prop in data.game) {
+          this.game[prop] = data.game[prop];
+        }
+      }
+    });
   },
   beforeDestroy() {
     if (this.socket) this.socket.close();
   },
   methods: {
-    mountStart() {
-      this.guildId = this.$route.query.s;
-      this.gameId = this.$route.query.g;
-      this.game = {};
-      this.guilds = [];
-      this.copy = false;
-      this.convertLink = "";
-      this.monthlyWeekdayDesc = "";
-      this.nextDate = "";
-      this.weekdays = [];
-      this.repeatOptions = [];
-
-      if (!this.gameId && !this.guildId && !this.$store.getters.account) {
-        return this.$router.replace(this.config.urls.game.dashboard.path);
-      }
-      if (this.gameId) this.fetchGame("g", this.gameId);
-      else if (this.guildId) this.fetchGame("s", this.guildId);
-      else if (this.$store.getters.account) {
-        const fetchGuilds = async () => {
-          await this.$store.dispatch("fetchGuilds", {
-            page: 'my-games',
-            games: true,
-            app: this
-          });
-          const account = cloneDeep(this.$store.getters.account);
-          this.guilds = account.guilds.map(g => ({ text: g.name, value: g.id }));
-          if (this.guilds.length > 0) {
-            this.game.s = this.guilds[0].value;
-            await this.selectGuild();
-          }
-          this.game.dm = account.user.tag;
-        };
-
-        fetchGuilds();
-      }
-
-      this.reminderItems = [
-        {
-          text: this.lang.game.options.NO_REMINDER,
-          value: "0"
-        },
-        {
-          text: this.lang.game.options.MINUTES_15,
-          value: "15"
-        },
-        {
-          text: this.lang.game.options.MINUTES_30,
-          value: "30"
-        },
-        {
-          text: this.lang.game.options.MINUTES_60,
-          value: "60"
-        },
-        {
-          text: this.lang.game.options.HOURS_6,
-          value: "360"
-        },
-        {
-          text: this.lang.game.options.HOURS_12,
-          value: "720"
-        },
-        {
-          text: this.lang.game.options.HOURS_24,
-          value: "1440"
-        }
-      ];
-      this.weekdayItems = [
-        {
-          text: moment()
-            .day(0)
-            .format("ddd"),
-          value: 0
-        },
-        {
-          text: moment()
-            .day(1)
-            .format("ddd"),
-          value: 1
-        },
-        {
-          text: moment()
-            .day(2)
-            .format("ddd"),
-          value: 2
-        },
-        {
-          text: moment()
-            .day(3)
-            .format("ddd"),
-          value: 3
-        },
-        {
-          text: moment()
-            .day(4)
-            .format("ddd"),
-          value: 4
-        },
-        {
-          text: moment()
-            .day(5)
-            .format("ddd"),
-          value: 5
-        },
-        {
-          text: moment()
-            .day(6)
-            .format("ddd"),
-          value: 6
-        }
-      ];
-      this.frequencyItems = [
-        {
-          text: this.lang.game.options.NO_REPEAT,
-          value: this.enums.FrequencyType.NO_REPEAT
-        },
-        {
-          text: this.lang.game.options.DAILY,
-          value: this.enums.FrequencyType.DAILY
-        },
-        {
-          text: this.lang.game.options.WEEKLY,
-          value: this.enums.FrequencyType.WEEKLY
-        },
-        {
-          text: this.lang.game.options.BIWEEKLY,
-          value: this.enums.FrequencyType.BIWEEKLY
-        },
-        {
-          text: this.lang.game.options.MONTHLY,
-          value: this.enums.FrequencyType.MONTHLY
-        }
-      ];
-      this.repeatOptionItems = [
-        {
-          text: this.lang.game.CLEAR_RESERVED,
-          value: "clearReservedOnRepeat"
-        }
-      ];
-      this.monthlyTypeItems = [
-        {
-          text: this.lang.game.options.WEEKDAY,
-          value: this.enums.MonthlyType.WEEKDAY
-        },
-        {
-          text: this.lang.game.options.DATE,
-          value: this.enums.MonthlyType.DATE
-        }
-      ];
-
-      setTimeout(() => {
-        localStorage.removeItem("rescheduled");
-      }, 5000);
-
-      if (this.socket) this.socket.close();
-      this.socket = io(this.$store.getters.env.apiUrl);
-      this.socket.on("game", data => {
-        if (data.gameId != this.gameId) return;
-        if (data.action === "rescheduled") {
-          localStorage.setItem("rescheduled", 1);
-          this.$router.replace(
-            `${this.$store.getters.config.urls.game.create.path}?g=${response.newGameId}`
-          );
-        } else if (
-          data.action === "deleted" &&
-          !localStorage.get("rescheduled")
-        ) {
-          alert("This game has been deleted");
-          this.$router.replace(
-            this.$store.getters.config.urls.game.dashboard.path
-          );
-        } else if (data.action === "updated") {
-          for (const prop in data.game) {
-            this.game[prop] = data.game[prop];
-          }
-        }
-      });
-    },
     async selectGuild() {
       if (this.guilds.length > 0) {
         if (this.game.c) {
           await this.fetchGameChannels("s", this.game.s);
-        }
-        else {
+        } else {
           await this.fetchGame("s", this.game.s);
         }
       }
@@ -603,9 +583,9 @@ export default {
         });
     },
     setDefaultDates() {
-      this.game.date = moment().format('YYYY-MM-DD');
-      this.game.time = moment().format('HH:mm');
-      this.game.timezone = parseInt(moment().format('ZZ')) / 100;
+      this.game.date = moment().format("YYYY-MM-DD");
+      this.game.time = moment().format("HH:mm");
+      this.game.timezone = parseInt(moment().format("ZZ")) / 100;
     },
     deleteGame() {
       if (
@@ -662,12 +642,18 @@ export default {
       delete updatedGame.pm;
       this.$store
         .dispatch("saveGame", updatedGame)
-        .then(game => {
-          this.game = cloneDeep(game);
+        .then(result => {
+          if (!this.gameId) {
+            return this.$router.replace(
+              `${this.config.urls.game.create.path}?g=${result._id}`
+            );
+          }
+          this.game = cloneDeep(result.game);
           this.dateTimeLinks();
         })
         .catch(err => {
           console.log(err.message || err);
+          alert(err.message || err);
         });
     },
     getTZUrls() {

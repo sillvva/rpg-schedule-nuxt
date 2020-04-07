@@ -1,10 +1,17 @@
 <template>
   <v-app dark>
+    <v-system-bar :color="maintenanceBarColor" v-if="maintenanceBar">
+      <v-spacer></v-spacer>
+      <span>The site will be under maintenance {{maintenanceTime.toLowerCase()}} for approximately {{settings.maintenanceDuration}} hour{{settings.maintenanceDuration != 1 ? 's' : ''}}.</span>
+      <v-spacer></v-spacer>
+    </v-system-bar>
+
     <v-app-bar
       fixed
       app
       clipped-left
-      v-if="account || routePath.startsWith(config.urls.game.create.path)"
+      :class="maintenanceBar && `mt-6`"
+      v-if="!['/','/maintenace'].includes(this.$route.path)"
     >
       <v-app-bar-nav-icon class="hidden-lg-and-up" @click.stop="drawer = !drawer"></v-app-bar-nav-icon>
       <v-img src="/images/logo2.png" max-width="40" max-height="40" contain />
@@ -13,7 +20,7 @@
         outlined
         fab
         x-small
-        href="/r/twitter"
+        :href="config.urls.twitter.path"
         target="_blank"
         class="hidden-sm-and-down discord--text"
       >
@@ -36,7 +43,7 @@
         outlined
         fab
         small
-        href="/r/donate"
+        :href="config.urls.donate.path"
         target="_blank"
         class="hidden-md-and-up discord--text"
       >
@@ -47,7 +54,7 @@
         <v-icon left dark>mdi-gift-outline</v-icon>
         <span>{{lang.nav.DONATE}}</span>
       </v-btn>
-      <v-dialog v-model="settingsDialog" scrollable max-width="300px">
+      <v-dialog v-model="settingsDialog" scrollable max-width="400px">
         <template v-slot:activator="{ on }">
           <v-btn outlined fab small v-on="on" class="discord">
             <v-icon dark>mdi-cog</v-icon>
@@ -56,10 +63,24 @@
         <v-card>
           <v-card-title>Settings</v-card-title>
           <v-divider></v-divider>
-          <v-card-text style="height: 300px;">
-            <v-row>
-              <v-col class="d-flex" cols="12">
+          <v-card-text style="height: 90vh; max-height: 400px;">
+            <v-row dense>
+              <v-col class="pb-0" cols="12">
                 <v-select v-model="selectedLang" :items="langOptions" label="Language"></v-select>
+              </v-col>
+              <v-col class="py-0" cols="6" v-if="account && account.user.tag === config.author">
+                <v-text-field label="Maintenance Date" type="date" v-model="settingMaintenanceDate"></v-text-field>
+              </v-col>
+              <v-col class="py-0" cols="3" v-if="account && account.user.tag === config.author">
+                <v-text-field label="Time" type="time" v-model="settingMaintenanceTime"></v-text-field>
+              </v-col>
+              <v-col class="py-0" cols="3" v-if="account && account.user.tag === config.author">
+                <v-text-field
+                  label="Duration"
+                  type="number"
+                  v-model="settingMaintenanceDuration"
+                  min="0"
+                ></v-text-field>
               </v-col>
             </v-row>
           </v-card-text>
@@ -83,7 +104,8 @@
 
     <v-navigation-drawer
       v-model="drawer"
-      v-if="account || routePath.startsWith(config.urls.game.create.path)"
+      v-if="!['/','/maintenace'].includes(this.$route.path)"
+      :class="maintenanceBar && `mt-6`"
       fixed
       clipped
       app
@@ -102,13 +124,15 @@
           </v-list-item-content>
 
           <v-btn
+            :to="config.urls.game.create.path"
+            :title="lang.buttons.NEW_GAME"
+            class="hidden-md-and-down"
+            color="green"
             fab
             small
-            :to="config.urls.game.create.path"
             absolute
             right
-            color="green"
-            :title="lang.buttons.NEW_GAME"
+            v-if="account.guilds.find(guild => guild.permission || guild.isAdmin)"
           >
             <v-icon>mdi-plus</v-icon>
           </v-btn>
@@ -148,10 +172,18 @@
       </v-list>
 
       <v-divider></v-divider>
+
+      <v-list nav dense>
+        <v-list-item-group v-model="selection">
+          <v-list-item :href="config.urls.invite.path" target="_blank">
+            <v-list-item-title>{{lang.nav.INVITE}}</v-list-item-title>
+          </v-list-item>
+        </v-list-item-group>
+      </v-list>
     </v-navigation-drawer>
 
     <v-content>
-      <nuxt />
+      <nuxt :key="$route.fullPath" />
     </v-content>
   </v-app>
 </template>
@@ -159,13 +191,22 @@
 <script>
 import lang from "../components/lang/en.json";
 import { cloneDeep } from "lodash";
+import moment from "moment";
 
 let lastGuildRefresh = new Date().getTime();
 
 export default {
+  middleware: ["check-auth"],
   data() {
     return {
       account: {},
+      settings: this.$store.getters.siteSettings,
+      maintenanceBar: false,
+      maintenanceBarColor: "discord",
+      maintenanceTime: "",
+      settingMaintenanceDate: "",
+      settingMaintenanceTime: "",
+      settingMaintenanceDuration: 0,
       windowWidth: 0,
       drawer: false,
       config: this.$store.getters.config,
@@ -174,6 +215,7 @@ export default {
       lang: lang,
       selectedLang: this.$store.getters.selectedLang,
       langOptions: [],
+      selection: null,
       onResize: () => {
         this.windowWidth = window.innerWidth;
       },
@@ -194,7 +236,11 @@ export default {
       return this.$store.getters.selectedLang;
     },
     routePath() {
+      this.maintenance();
       return this.$route.path;
+    },
+    storeSiteSettings() {
+      return this.$store.getters.siteSettings;
     }
   },
   watch: {
@@ -204,9 +250,19 @@ export default {
       },
       immediate: true
     },
+    storeSiteSettings: {
+      handler: function(newVal) {
+        this.settings = newVal;
+        this.maintenance();
+      },
+      immediate: true
+    },
     storeLang: {
       handler: function(newVal) {
-        if (newVal && newVal.nav) this.lang = newVal;
+        if (newVal && newVal.nav) {
+          this.lang = newVal;
+          this.setSelectedLang();
+        }
       },
       immediate: true
     },
@@ -226,6 +282,14 @@ export default {
     },
     windowWidth(newWidth, oldWidth) {
       this.drawer = newWidth >= 1264;
+    },
+    selection: {
+      handler: function(sel) {
+        setTimeout(() => {
+          if (sel !== null) this.selection = null;
+        }, 500);
+      },
+      immediate: true
     }
   },
   methods: {
@@ -233,17 +297,86 @@ export default {
       this.$store.dispatch("signOut");
     },
     saveSettings() {
-      this.$store.dispatch("setSelectedLang", this.selectedLang);
+      if (this.account && this.account.user.tag === this.config.author) {
+        let time = moment(
+          `${this.settingMaintenanceDate} ${this.settingMaintenanceTime}`
+        ).unix();
+        if (this.settingMaintenanceDuration == 0) {
+          this.settingMaintenanceDate = "";
+          this.settingMaintenanceTime = "";
+          time = 0;
+        }
+        this.$store.dispatch("saveSiteSettings", {
+          settings: {
+            maintenanceTime: time * 1000,
+            maintenanceDuration: parseFloat(this.settingMaintenanceDuration)
+          },
+          app: this,
+          route: this.$route
+        });
+      }
+      this.setSelectedLang();
       this.settingsDialog = false;
+    },
+    setSelectedLang() {
+      if (!window || !this.lang.code) return;
+      if (document.getElementById("moment-lang"))
+        document.getElementById("moment-lang").remove();
+      if (document.getElementById("moment-lang-load"))
+        document.getElementById("moment-lang-load").remove();
+      const el = document.createElement("script");
+      el.id = "moment-lang";
+      el.type = "text/javascript";
+      el.src = `/locale/${this.selectedLang}.js`;
+      el.onload = () => {
+        this.$store.dispatch("setSelectedLang", this.selectedLang);
+      };
+      document.body.appendChild(el);
+    },
+    maintenance() {
+      this.maintenanceBar = false;
+      this.maintenanceTime = "";
+      this.settingMaintenanceDate = "";
+      this.settingMaintenanceTime = "";
+      this.settingMaintenanceDuration = 0;
+      this.maintenanceBarColor = "discord";
+      if (this.settings && this.settings.maintenanceTime > 0) {
+        if (
+          this.settings.maintenanceTime / 1000 <= moment().unix() &&
+          !(
+            this.account &&
+            this.account.user &&
+            this.account.user.tag == this.config.author
+          )
+        ) {
+          this.$router.push(this.config.urls.maintenance.path);
+        } else {
+          if (this.settings.maintenanceTime / 1000 <= moment().unix())
+            this.maintenanceBarColor = "red";
+          this.maintenanceBar = true;
+          this.maintenanceTime = moment(
+            this.settings.maintenanceTime
+          ).calendar();
+          this.settingMaintenanceDate = moment(
+            this.settings.maintenanceTime
+          ).format("YYYY-MM-DD");
+          this.settingMaintenanceTime = moment(
+            this.settings.maintenanceTime
+          ).format("HH:mm");
+          this.settingMaintenanceDuration = this.settings.maintenanceDuration;
+        }
+      }
     }
   },
-  mounted() {
+  async mounted() {
     window.addEventListener("resize", this.onResize);
     this.onResize();
 
-    this.$store.dispatch("fetchLangs");
+    await this.$store.dispatch("fetchLangs");
+    this.setSelectedLang();
 
     this.socket = io(this.$store.getters.env.apiUrl);
+
     this.socket.on("game", data => {
       let guildRefresh = new Date().getTime();
       const account = this.$store.getters.account;
@@ -316,6 +449,12 @@ export default {
           });
           this.$store.commit("setGuilds", guilds);
         }
+      }
+    });
+
+    this.socket.on("site", data => {
+      if (data.action == "settings") {
+        this.$store.commit("setSiteSettings", data);
       }
     });
   },

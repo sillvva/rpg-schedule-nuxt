@@ -8,7 +8,15 @@
 
       <v-container fluid>
         <v-row dense>
-          <v-col v-for="(game, i) in guild.games" v-bind:key="i" cols="12" sm="6" md="4" lg="3" xl="2">
+          <v-col
+            v-for="(game, i) in guild.games"
+            v-bind:key="i"
+            cols="12"
+            sm="6"
+            md="4"
+            lg="3"
+            xl="2"
+          >
             <v-card color="grey darken-3" max-width="100%">
               <v-card-title class="subtitle-1" style="position: relative;">
                 {{game.adventure}}
@@ -82,6 +90,21 @@
         </v-row>
       </v-container>
     </v-card>
+
+    <v-btn
+      fab
+      :to="config.urls.game.create.path"
+      fixed
+      right
+      bottom
+      color="green"
+      :title="lang.buttons && lang.buttons.NEW_GAME"
+      style="bottom: 15px;"
+      class="hidden-lg-and-up"
+      v-if="guilds.find(guild => guild.permission || guild.isAdmin)"
+    >
+      <v-icon>mdi-plus</v-icon>
+    </v-btn>
   </v-container>
 </template>
 
@@ -100,7 +123,8 @@ export default {
     return {
       guilds: [],
       lang: {},
-      rsvpGameId: 0
+      rsvpGameId: 0,
+      config: this.$store.getters.config
     };
   },
   computed: {
@@ -118,13 +142,13 @@ export default {
       handler: function(newVal) {
         this.guilds = cloneDeep(newVal);
         this.parseDates();
-        if (newVal[0]) console.log(newVal[0].games[0]);
       },
       immediate: true
     },
     storeLang: {
       handler: function(newVal) {
         if (newVal && newVal.nav) this.lang = newVal;
+          this.parseDates();
       },
       immediate: true
     }

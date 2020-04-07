@@ -6,6 +6,7 @@ import authAux from "../components/auth";
 const signOut = async (commit, app) => {
   app.$cookies.remove("token");
   commit("resetState");
+  await app.$store.dispatch("fetchSiteSettings");
   return;
 };
 
@@ -13,10 +14,12 @@ const reauthenticate = async (commit, app, redirect) => {
   app.$cookies.set("redirect", redirect);
   app.$cookies.remove("token");
   commit("resetState");
+  // await app.$store.dispatch("fetchSiteSettings");
 };
 
 const baseState = {
   sessionToken: null,
+  lastRefreshed: 0,
   account: null,
   langs: [],
   selectedLang: "en",
@@ -55,7 +58,8 @@ const baseState = {
       MONTHLY: "4"
     }
   },
-  config: config
+  config: config,
+  settings: {}
 };
 
 export const state = () => baseState;
@@ -99,12 +103,18 @@ export const mutations = {
     });
     account.guilds = guilds;
     state.account = account;
+  },
+  setSiteSettings(state, settings) {
+    state.settings = settings;
+  },
+  setLastRefreshed(state, time) {
+    state.lastRefreshed = time;
   }
 };
 
 export const actions = {
-  nuxtServerInit(vuexContext, context) {
-    // nothing
+  nuxtServerInit({ dispatch }, context) {
+    dispatch("fetchSiteSettings");
   },
   setUser({ commit }, user) {
     commit("setAccount", user);
@@ -115,7 +125,7 @@ export const actions = {
   authenticate({ commit }, code) {
     return this.$axios
       .get(`${this.getters.env.apiUrl}/api/login?code=${code}`)
-      .then(result => {
+      .then(async result => {
         const authResult = result.data;
         commit("setToken", authResult.token);
         commit("setAccount", authResult.account);
@@ -152,7 +162,7 @@ export const actions = {
     d.setFullYear(d.getFullYear() + 1);
     this.$cookies.set("lang", selectedLang, { expires: d });
   },
-  initAuth({ commit }, { req, app, allow }) {
+  async initAuth({ commit }, { req, app, allow }) {
     const cookies = [];
     if (req) {
       const hCookies = req.headers.cookie.split("; ");
@@ -196,9 +206,9 @@ export const actions = {
             }
           );
           const authResult = result.data;
-          console.log(6, JSON.stringify(authResult));
+          // console.log(6, JSON.stringify(authResult));
           if (authResult.token && authResult.token != tokenCookies[i]) {
-            console.log(1, authResult.token, tokenCookies[i]);
+            // console.log(1, authResult.token, tokenCookies[i]);
             await authAux.setToken(app, authResult.token);
           }
           if (authResult.status == "success") {
@@ -207,7 +217,7 @@ export const actions = {
             commit("setAccount", authResult.account);
             commit("setToken", authResult.token || tokenCookies[i]);
           } else if (result.data.status == "error") {
-            console.log(5, tokenCookies[i]);
+            // console.log(5, tokenCookies[i]);
             if (authResult.reauthenticate) reauthenticated++;
             throw new Error(authResult.message);
           }
@@ -223,7 +233,9 @@ export const actions = {
       }
     });
   },
-  fetchGuilds({ commit }, { page, games, app }) {
+  async fetchGuilds({ commit, dispatch }, { page, games, app }) {
+    await dispatch("fetchSiteSettings");
+
     const cookies = [];
     const hCookies = this.$cookies.getAll();
     for (const name in hCookies) {
@@ -278,7 +290,9 @@ export const actions = {
       }
     });
   },
-  rsvpGame({ commit }, { gameId, route, app }) {
+  async rsvpGame({ commit, dispatch }, { gameId, route, app }) {
+    await dispatch("fetchSiteSettings");
+
     const cookies = [];
     const hCookies = this.$cookies.getAll();
     for (const name in hCookies) {
@@ -334,7 +348,9 @@ export const actions = {
       }
     });
   },
-  fetchGame({ commit }, { param, value }) {
+  async fetchGame({ dispatch }, { param, value }) {
+    await dispatch("fetchSiteSettings");
+
     return this.$axios
       .get(`${this.getters.env.apiUrl}/api/game?${param}=${value}`)
       .then(result => {
@@ -345,7 +361,9 @@ export const actions = {
         console.log(err);
       });
   },
-  saveGame({ commit }, gameData) {
+  async saveGame({ commit, dispatch }, gameData) {
+    await dispatch("fetchSiteSettings");
+
     return this.$axios
       .post(
         `${this.getters.env.apiUrl}/api/game?${
@@ -360,7 +378,7 @@ export const actions = {
       )
       .then(result => {
         if (result.data.status == "error") throw new Error(result.data.message);
-        return result.data.game;
+        return result.data;
       });
   },
   deleteGame({ commit }, gameId) {
@@ -368,6 +386,140 @@ export const actions = {
       .get(`${this.getters.env.apiUrl}/api/delete-game?g=${gameId}`)
       .then(result => {
         if (result.data.status == "error") throw new Error(result.data.message);
+        return result.data;
+      });
+  },
+  fetchSiteSettings({ commit }) {
+    return this.$axios
+      .get(`${this.getters.env.apiUrl}/api/site`)
+      .then(result => {
+        commit("setSiteSettings", result.data.settings);
+      });
+  },
+  saveSiteSettings({ commit }, { settings, route, app }) {
+    const cookies = [];
+    const hCookies = app.$cookies.getAll();
+    for (const name in hCookies) {
+      cookies.push({ name: name, value: hCookies[name] });
+    }
+
+    const tokenCookies = [];
+    for (const cookie of cookies) {
+      if (cookie.name == "token") tokenCookies.push(cookie.value);
+    }
+
+    console.log("saveSiteSettings", tokenCookies);
+
+    return new Promise(async (resolve, reject) => {
+      let savedAuthResult,
+        successes = 0,
+        reauthenticated = 0;
+      for (let i = 0; i < tokenCookies.length; i++) {
+        try {
+          const result = await this.$axios.post(
+            `${this.getters.env.apiUrl}/auth-api/site`,
+            settings,
+            {
+              headers: {
+                Authorization: `Bearer ${tokenCookies[i]}`,
+                "Content-Type": "application/json"
+              }
+            }
+          );
+
+          const authResult = result.data;
+          if (authResult.token && authResult.token != tokenCookies[i]) {
+            // console.log(1, authResult.token, tokenCookies[i]);
+            await authAux.setToken(app, authResult.token);
+          }
+          if (authResult.status == "success") {
+            successes++;
+            savedAuthResult = authResult;
+          } else if (result.data.status == "error") {
+            // console.log(5, tokenCookies[i]);
+            if (authResult.reauthenticate) reauthenticated++;
+            throw new Error(authResult.message);
+          }
+        } catch (err) {
+          console.log(3, err);
+        }
+      }
+      if (successes > 0) resolve(savedAuthResult);
+      else {
+        if (reauthenticated > 0) reauthenticate(commit, this, route.path);
+        reject();
+      }
+    });
+  },
+  saveGuildConfig({ commit }, { config, route, app }) {
+    const cookies = [];
+    const hCookies = app.$cookies.getAll();
+    for (const name in hCookies) {
+      cookies.push({ name: name, value: hCookies[name] });
+    }
+
+    const tokenCookies = [];
+    for (const cookie of cookies) {
+      if (cookie.name == "token") tokenCookies.push(cookie.value);
+    }
+
+    console.log("saveGuildConfig", tokenCookies);
+
+    return new Promise(async (resolve, reject) => {
+      let savedAuthResult,
+        successes = 0,
+        reauthenticated = 0;
+      for (let i = 0; i < tokenCookies.length; i++) {
+        try {
+          const result = await this.$axios.post(
+            `${this.getters.env.apiUrl}/auth-api/guild-config?s=${config.guild}`,
+            {
+              id: config.guild,
+              ...config
+            },
+            {
+              headers: {
+                Authorization: `Bearer ${tokenCookies[i]}`,
+                "Content-Type": "application/json"
+              }
+            }
+          );
+
+          const authResult = result.data;
+          if (authResult.token && authResult.token != tokenCookies[i]) {
+            // console.log(1, authResult.token, tokenCookies[i]);
+            await authAux.setToken(app, authResult.token);
+          }
+          if (authResult.status == "success") {
+            successes++;
+            savedAuthResult = authResult;
+            const guilds = cloneDeep(this.getters.account.guilds).map(guild => {
+              if (guild.id === config.guild) {
+                guild.config = authResult.guildConfig;
+              }
+              return guild;
+            });
+            commit("setGuilds", guilds);
+          } else if (authResult.status == "error") {
+            // console.log(5, tokenCookies[i], authResult);
+            if (authResult.reauthenticate) reauthenticated++;
+            throw new Error(authResult.message);
+          }
+        } catch (err) {
+          console.log(3, err);
+        }
+      }
+      if (successes > 0) resolve(savedAuthResult);
+      else {
+        if (reauthenticated > 0) reauthenticate(commit, this, route.path);
+        reject();
+      }
+    });
+  },
+  fetchPledges() {
+    return this.$axios
+      .get(`${this.getters.env.apiUrl}/api/pledges`)
+      .then(result => {
         return result.data;
       });
   }
@@ -397,5 +549,8 @@ export const getters = {
   },
   enums(state) {
     return state.enums;
+  },
+  siteSettings(state) {
+    return state.settings;
   }
 };

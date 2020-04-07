@@ -6,7 +6,7 @@ const updateToken = (app) => {
 };
 
 const setToken = async (app, token) => {
-  console.log(7, token);
+  // console.log(7, token);
   const d = new Date();
   d.setDate(d.getDate() + 14);
   await app.$cookies.remove('redirect');

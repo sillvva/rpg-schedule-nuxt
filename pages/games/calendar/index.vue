@@ -1,7 +1,7 @@
 <template>
   <v-container fluid>
     <v-card>
-      <v-toolbar color="discord" v-if="lang.game && baseDate">
+      <v-toolbar color="discord" v-if="lang.game && baseDate && moment">
         <v-toolbar-title class="d-none d-md-flex mb-0 align-center">
           <span>{{moment(`${selYear}-${selMonth+1 < 10 ? '0' : ''}${selMonth+1}-${selDate < 10 ? '0' : ''}${selDate}T00:00:00`).format('LL')}}</span>
         </v-toolbar-title>
@@ -73,92 +73,9 @@
             </div>
           </v-col>
           <v-col cols="12" class="col-sm py-0">
-            <v-card
-              color="grey darken-3 mb-2"
-              max-width="100%"
-              v-for="(game, i) in (dates.find(d => d.md === selDate) || []).games"
-              v-bind:key="i"
-            >
-              <v-card-title class="subtitle-1" style="position: relative;">
-                {{game.adventure}}
-                <v-btn
-                  @click.stop="rsvpGameId = game._id; rsvp();"
-                  v-if="game.method === 'automated' && game.slot === 0"
-                  :title="lang.buttons.SIGN_UP"
-                  color="green"
-                  fab
-                  small
-                  absolute
-                  bottom
-                  right
-                >
-                  <v-icon>mdi-thumb-up</v-icon>
-                </v-btn>
-                <v-btn
-                  @click.stop="rsvpGameId = game._id; rsvp();"
-                  v-if="game.method === 'automated' && game.slot > 0"
-                  :title="lang.buttons.DROP_OUT"
-                  color="red"
-                  fab
-                  small
-                  absolute
-                  bottom
-                  right
-                >
-                  <v-icon>mdi-thumb-down</v-icon>
-                </v-btn>
-              </v-card-title>
-              <v-divider></v-divider>
-              <v-card-text>
-                <v-row dense>
-                  <v-col cols="12" md="6">
-                    <p class="my-0">
-                      <strong>{{lang.game.WHEN}}:</strong>
-                      <span
-                        :class="game.moment.state"
-                      >{{game.moment.calendar}} ({{game.moment.from}})</span>
-                    </p>
-                    <p class="my-0">
-                      <a
-                        :href="`http://www.google.com/calendar/render?action=TEMPLATE&text=${encodeURI(game.adventure)}&dates=${game.moment.isoutc}/${game.moment.isoutc}&location=${encodeURI(`${game.guild.name} - ${game.where}`)}&trp=false&sprop=&details=${encodeURI(game.description)}`"
-                        class="discord--text"
-                        target="_blank"
-                        rel="nofollow"
-                        onclick="event.stopPropagation();`"
-                      >Add to Google Calendar</a>
-                    </p>
-                    <p class="my-0">
-                      <strong>{{lang.game.WHERE}}:</strong>
-                      <span v-html="parseURL(game.where)"></span>
-                    </p>
-                    <p class="my-0">
-                      <strong>{{lang.game.SERVER}}:</strong>
-                      <span v-html="parseURL(game.guild.name)"></span>
-                    </p>
-                  </v-col>
-                  <v-col cols="12" md="6">
-                    <p class="my-0">
-                      <strong>{{lang.game.GM}}:</strong>
-                      {{game.dm.split("#")[0]}}
-                    </p>
-                    <p class="my-0">
-                      <strong>{{lang.game.RESERVED}}:</strong>
-                      {{game.reserved.split("\n")[0].length == 0 ? 0 : Math.min(game.reserved.split("\n").length, parseInt(game.players))}}/{{game.players}}
-                      <span
-                        v-if="game.signedUp"
-                      >(Slot #{{game.slot}})</span>
-                    </p>
-                    <p class="my-0">
-                      <strong>{{lang.game.WAITLISTED}}:</strong>
-                      {{game.reserved.split("\n").length - Math.min(game.reserved.split("\n").length, parseInt(game.players))}}
-                      <span
-                        v-if="game.waitlisted"
-                      >(Slot #{{game.slot}})</span>
-                    </p>
-                  </v-col>
-                </v-row>
-              </v-card-text>
-            </v-card>
+            <div v-for="(game, i) in (dates.find(d => d.md === selDate) || { games: [] }).games" :key="i" class="mb-2">
+              <GameCard v-if="game" :gameData="game" :numColumns="2"></GameCard>
+            </div>
           </v-col>
         </v-row>
       </v-container>
@@ -168,6 +85,7 @@
 
 <script>
 import { updateToken } from "../../../components/auth";
+import GameCard from "../../../components/game-card";
 import { cloneDeep } from "lodash";
 import moment from "moment";
 
@@ -175,6 +93,9 @@ export default {
   middleware: ["check-auth", "authenticated"],
   head: {
     title: "Calendar"
+  },
+  components: {
+    GameCard: GameCard
   },
   data() {
     return {
@@ -218,14 +139,12 @@ export default {
         this.account = newVal;
         this.allGames();
         this.renderCalendarMonth();
-        // this.parseDates();
       },
       immediate: true
     },
     storeLang: {
       handler: function(newVal) {
         if (newVal && newVal.nav) this.lang = newVal;
-        // this.parseDates();
       },
       immediate: true
     }
@@ -237,11 +156,6 @@ export default {
         page: "my-games",
         games: true,
         app: this
-      })
-      .then(result => {
-        // parseDateInterval = setInterval(() => {
-        //   this.parseDates();
-        // }, 30 * 1000);
       });
   },
   methods: {
@@ -307,14 +221,6 @@ export default {
     moment(val) {
       return moment(val);
     },
-    parseURL(string) {
-      const exp = /((https?:\/\/)((www\.)?[-a-zA-Z0-9@:%._\+~#=]{1,256}\.[a-zA-Z0-9()]{1,6}\b)([-a-zA-Z0-9()@:%_\+.~#?&//=]*))/gi;
-      const regex = new RegExp(exp);
-      return string.replace(
-        regex,
-        `<a href="$1" target="_blank" class="discord--text">$3</a>`
-      );
-    },
     selectDate(date) {
       if (!date.curMonth) return;
       this.selDate = moment(`${date.dx}T00:00:00`).date();
@@ -341,13 +247,6 @@ export default {
         this.selYear -= 1;
       }
       this.renderCalendarMonth();
-    },
-    rsvp() {
-      this.$store.dispatch("rsvpGame", {
-        gameId: this.rsvpGameId,
-        route: this.$route,
-        app: this
-      });
     }
   }
 };

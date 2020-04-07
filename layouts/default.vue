@@ -1,8 +1,11 @@
 <template>
   <v-app dark>
-    <v-system-bar :color="maintenanceBarColor" v-if="maintenanceBar">
+    <v-system-bar
+      :color="maintenanceBarColor"
+      v-if="maintenanceBar && lang && lang.other && lang.other.MAINTENANCE && maintenanceTime && settings"
+    >
       <v-spacer></v-spacer>
-      <span>The site will be under maintenance {{maintenanceTime.toLowerCase()}} for approximately {{settings.maintenanceDuration}} hour{{settings.maintenanceDuration != 1 ? 's' : ''}}.</span>
+      <span>{{lang.other.MAINTENANCE.replace(":TIME", maintenanceTime.toLowerCase()).replace(":DURATION", `${settings.maintenanceDuration}`)}}</span>
       <v-spacer></v-spacer>
     </v-system-bar>
 
@@ -61,7 +64,13 @@
           </v-btn>
         </template>
         <v-card>
-          <v-card-title>Settings</v-card-title>
+          <v-card-title>
+            Settings
+            <v-spacer></v-spacer>
+            <v-btn fab small text @click="settingsDialog = false">
+              <v-icon>mdi-close</v-icon>
+            </v-btn>
+          </v-card-title>
           <v-divider></v-divider>
           <v-card-text style="height: 90vh; max-height: 400px;">
             <v-row dense>
@@ -87,8 +96,7 @@
           <v-divider></v-divider>
           <v-card-actions>
             <v-spacer />
-            <v-btn color="white" text @click="settingsDialog = false">Close</v-btn>
-            <v-btn color="discord" text @click="saveSettings">Save</v-btn>
+            <v-btn color="discord" text @click="saveSettings">{{lang.buttons.SAVE}}</v-btn>
           </v-card-actions>
         </v-card>
       </v-dialog>
@@ -191,12 +199,33 @@
 <script>
 import lang from "../components/lang/en.json";
 import { cloneDeep } from "lodash";
-import moment from "moment";
+// import moment from "moment";
 
 let lastGuildRefresh = new Date().getTime();
 
 export default {
   middleware: ["check-auth"],
+  head() {
+    return {
+      link: [
+        {
+          rel: "alternate",
+          type: "application/rss+xml",
+          title:
+            this.account &&
+            `RPG Schedule Feed for ${this.account.user.username}`,
+          href:
+            this.account &&
+            `${
+              this.$store.getters.env.apiUrl
+            }${this.$store.getters.config.urls.rss.path.replace(
+              ":uid",
+              this.account.user.id
+            )}`
+        }
+      ]
+    };
+  },
   data() {
     return {
       account: {},
@@ -334,37 +363,41 @@ export default {
       document.body.appendChild(el);
     },
     maintenance() {
-      this.maintenanceBar = false;
-      this.maintenanceTime = "";
-      this.settingMaintenanceDate = "";
-      this.settingMaintenanceTime = "";
-      this.settingMaintenanceDuration = 0;
-      this.maintenanceBarColor = "discord";
-      if (this.settings && this.settings.maintenanceTime > 0) {
-        if (
-          this.settings.maintenanceTime / 1000 <= moment().unix() &&
-          !(
-            this.account &&
-            this.account.user &&
-            this.account.user.tag == this.config.author
-          )
-        ) {
-          this.$router.push(this.config.urls.maintenance.path);
-        } else {
-          if (this.settings.maintenanceTime / 1000 <= moment().unix())
-            this.maintenanceBarColor = "red";
-          this.maintenanceBar = true;
-          this.maintenanceTime = moment(
-            this.settings.maintenanceTime
-          ).calendar();
-          this.settingMaintenanceDate = moment(
-            this.settings.maintenanceTime
-          ).format("YYYY-MM-DD");
-          this.settingMaintenanceTime = moment(
-            this.settings.maintenanceTime
-          ).format("HH:mm");
-          this.settingMaintenanceDuration = this.settings.maintenanceDuration;
+      try {
+        this.maintenanceBar = false;
+        this.maintenanceTime = "";
+        this.settingMaintenanceDate = "";
+        this.settingMaintenanceTime = "";
+        this.settingMaintenanceDuration = 0;
+        this.maintenanceBarColor = "discord";
+        if (this.settings && this.settings.maintenanceTime > 0) {
+          if (
+            this.settings.maintenanceTime / 1000 <= moment().unix() &&
+            !(
+              this.account &&
+              this.account.user &&
+              this.account.user.tag == this.config.author
+            )
+          ) {
+            this.$router.push(this.config.urls.maintenance.path);
+          } else {
+            if (this.settings.maintenanceTime / 1000 <= moment().unix())
+              this.maintenanceBarColor = "red";
+            this.maintenanceBar = true;
+            this.maintenanceTime = moment(
+              this.settings.maintenanceTime
+            ).calendar();
+            this.settingMaintenanceDate = moment(
+              this.settings.maintenanceTime
+            ).format("YYYY-MM-DD");
+            this.settingMaintenanceTime = moment(
+              this.settings.maintenanceTime
+            ).format("HH:mm");
+            this.settingMaintenanceDuration = this.settings.maintenanceDuration;
+          }
         }
+      } catch (err) {
+        console.log(err.message || err);
       }
     }
   },

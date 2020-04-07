@@ -8,7 +8,8 @@
     "EDIT_GAME": "Modifica gioco",
     "DELETE_GAME": "Elimina gioco",
     "SIGN_UP": "Registrati",
-    "DROP_OUT": "Esci"
+    "DROP_OUT": "Esci",
+    "ADD_TO_GOOGLE_CALENDAR": "Aggiungi a Google Calendar"
   },
   "nav": {
     "GAMES": "Giochi",
@@ -65,6 +66,7 @@
     "COUNTDOWN": "Conto alla rovescia",
     "MONTHLY_TYPE": "Tipo mensile",
     "HIDE_DATE": "Nascondi data",
+    "SLOT": "Fessura",
     "options": {
       "AUTOMATED_SIGNUP": "Entrata automatica",
       "CUSTOM_SIGNUP_INSTRUCTIONS": "Istruzioni di iscrizione personalizzate",
@@ -173,5 +175,10 @@
       "LANG": "Imposta la lingua del bot. Supportate:",
       "RESCHEDULE_MODE": ""
     }
+  },
+  "other": {
+    "MAINTENANCE": "Il sito sarà in manutenzione :TIME per circa :DURATION ora / e.",
+    "UNDER MAINTENANCE": "è in manutenzione",
+    "BACK_SOON": "Tornerà presto!"
   }
 }

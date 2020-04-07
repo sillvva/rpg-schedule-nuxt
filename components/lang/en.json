@@ -9,7 +9,8 @@
     "DELETE_GAME": "Delete Game",
     "SAVE_COPY": "Save As Copy",
     "SIGN_UP": "Sign Up",
-    "DROP_OUT": "Drop Out"
+    "DROP_OUT": "Drop Out",
+    "ADD_TO_GOOGLE_CALENDAR": "Add to Google Calendar"
   },
   "nav": {
     "GAMES": "Games",
@@ -67,6 +68,7 @@
     "COUNTDOWN": "Countdown",
     "MONTHLY_TYPE": "Monthly Type",
     "HIDE_DATE": "Hide Date",
+    "SLOT": "Slot",
     "options": {
       "AUTOMATED_SIGNUP": "Automated Signup",
       "CUSTOM_SIGNUP_INSTRUCTIONS": "Custom Signup Instructions",
@@ -175,5 +177,10 @@
       "LANG": "Set the bot's language. Supported:",
       "RESCHEDULE_MODE": "Options: `repost` (default, creates new announcement post), `update` (updates original announcement post)"
     }
+  },
+  "other": {
+    "MAINTENANCE": "The site will be under maintenance :TIME for approximately :DURATION hour(s).",
+    "UNDER MAINTENANCE": "is under maintenance",
+    "BACK_SOON": "It will be back soon!"
   }
 }

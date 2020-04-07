@@ -17,10 +17,10 @@
        longDateFormat : {
            LT : 'h:mm A',
            LTS : 'h:mm:ss A',
-           L : 'DD/MM/YYYY',
-           LL : 'D MMMM YYYY',
-           LLL : 'D MMMM YYYY h:mm A',
-           LLLL : 'dddd, D MMMM YYYY h:mm A'
+           L : 'MM/DD/YYYY',
+           LL : 'MMMM Do, YYYY',
+           LLL : 'MMMM Do, YYYY h:mm A',
+           LLLL : 'dddd, MMMM Do, YYYY h:mm A'
        },
        calendar : {
            sameDay : '[Today at] LT',

@@ -1,8 +1,8 @@
 <template>
   <v-container d-flex flex-column justify-center align-center style="height: 100vh">
     <v-img src="/images/logo.png" max-height="264px" max-width="300px" contain />
-    <h1 style="font-size: 3em; margin: 0;">is under maintenance</h1>
-    <h2>It will be back soon!</h2>
+    <h1 style="font-size: 3em; margin: 0;">{{lang.other.UNDER_MAINTENANCE}}</h1>
+    <h2>{{lang.other.BACK_SOON}}</h2>
   </v-container>
 </template>
 

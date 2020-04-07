@@ -9,7 +9,8 @@
     "DELETE_GAME": "Удалить игру",
     "SAVE_COPY": "Сохранить как копию",
     "SIGN_UP": "Записаться",
-    "DROP_OUT": "Покинуть"
+    "DROP_OUT": "Покинуть",
+    "ADD_TO_GOOGLE_CALENDAR": "Добавить в Google Calendar"
   },
   "nav": {
     "GAMES": "Игры",
@@ -67,6 +68,7 @@
     "COUNTDOWN": "Обратный отчет",
     "MONTHLY_TYPE": "Ежемесячный тип",
     "HIDE_DATE": "Скрыть дату",
+    "SLOT": "слот",
     "options": {
       "AUTOMATED_SIGNUP": "Автоматическая запись",
       "CUSTOM_SIGNUP_INSTRUCTIONS": "Свои условия записи",
@@ -175,5 +177,10 @@
       "LANG": "Установить язык бота. Поддерживается:",
       "RESCHEDULE_MODE": "Параметры: repost (по умолчанию, создает новую запись объявления), update (обновляет исходное сообщение)"
     }
+  },
+  "other": {
+    "MAINTENANCE": "Сайт будет в обслуживании :TIME приблизительно :DURATION часов.",
+    "UNDER MAINTENANCE": "находится на обслуживании",
+    "BACK_SOON": "Скоро вернусь!"
   }
 }

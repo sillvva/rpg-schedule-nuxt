@@ -9,6 +9,14 @@ module.exports = {
     titleTemplate: '%s - RPG Schedule',
     title: 'RPG Schedule',
     meta: [
+      { property: "og:title", content: "RPG Schedule" },
+      { property: "og:description", content: "A Discord bot designed for scheduling RPG games with automated signup, rescheduling, and RSS." },
+      { property: "og:image", content: `https://www.rpg-schedule.com/images/social-logo.png` },
+      { property: "og:url", content: `https://www.rpg-schedule.com/` },
+      { name: "twitter:title", content: "RPG SChedule" },
+      { name: "twitter:description", content: " A Discord bot designed for scheduling RPG games with automated signup, rescheduling, and RSS." },
+      { name: "twitter:image", content: `https://www.rpg-schedule.com/images/social-logo.png` },
+      { name: "twitter:card", content: "summary_large_image" },
       { charset: 'utf-8' },
       { name: 'viewport', content: 'width=device-width, initial-scale=1' },
       { hid: 'description', name: 'description', content: process.env.npm_package_description || '' }

@@ -9,7 +9,8 @@
     "DELETE_GAME": "Supprimer partie",
     "SAVE_COPY": "Enregistrer la copie",
     "SIGN_UP": "S'inscrire",
-    "DROP_OUT": "Se désinscrire"
+    "DROP_OUT": "Se désinscrire",
+    "ADD_TO_GOOGLE_CALENDAR": "Ajouter à Google Calendar"
   },
   "nav": {
     "GAMES": "Parties",
@@ -67,6 +68,7 @@
     "COUNTDOWN": "Countdown",
     "MONTHLY_TYPE": "Type mensuel",
     "HIDE_DATE": "Masquer la date",
+    "SLOT": "Fente",
     "options": {
       "AUTOMATED_SIGNUP": "Inscription automatisée",
       "CUSTOM_SIGNUP_INSTRUCTIONS": "Instructions d'inscription personnalisées",
@@ -175,5 +177,10 @@
       "LANG": "Définissez la langue du bot. Prise en charge:",
       "RESCHEDULE_MODE": ""
     }
+  },
+  "other": {
+    "MAINTENANCE": "Le site sera en maintenance :TIME d'environ :DURATION heure(s).",
+    "UNDER MAINTENANCE": "est en maintenance",
+    "BACK_SOON": "Il sera bientôt de retour!"
   }
 }

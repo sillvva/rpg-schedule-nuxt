@@ -9,7 +9,8 @@
     "DELETE_GAME": "Spiel löschen",
     "SAVE_COPY": "Speichern als Kopie",
     "SIGN_UP": "Eintragen",
-    "DROP_OUT": "Austragen"
+    "DROP_OUT": "Austragen",
+    "ADD_TO_GOOGLE_CALENDAR": "Zum Google Kalender hinzufügen"
   },
   "nav": {
     "GAMES": "Spiele",
@@ -67,6 +68,7 @@
     "COUNTDOWN": "Countdown",
     "MONTHLY_TYPE": "Monatlicher Typ",
     "HIDE_DATE": "Datum ausblenden",
+    "SLOT": "Slot",
     "options": {
       "AUTOMATED_SIGNUP": "Automatisches Eintragen",
       "CUSTOM_SIGNUP_INSTRUCTIONS": "Benutzerdefinierter Befehl zum Eintragen",
@@ -175,5 +177,10 @@
       "LANG": "Wähle die Sprache des Bots. Unterstützt:",
       "RESCHEDULE_MODE": "Optionen: `repost` (standard, erstellt einen neuen Ankündigungsbeitrag), `update` (aktualisiert den originalen Ankündigungsbeitrag)"
     }
+  },
+  "other": {
+    "MAINTENANCE": "Die Website wird gewartet :TIME für ungefähr :DURATION stunde(n).",
+    "UNDER MAINTENANCE": "ist in Wartung",
+    "BACK_SOON": "Es wird bald zurück sein!"
   }
 }

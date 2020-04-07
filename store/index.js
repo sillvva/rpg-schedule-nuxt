@@ -92,6 +92,7 @@ export const mutations = {
       guild.games = guild.games.map(game => {
         const reserved = game.reserved.split("\n");
         const players = parseInt(game.players);
+        game.guildAccount = guild;
         game.slot = reserved.findIndex(r => r === account.user.tag) + 1;
         game.waitlisted = false;
         game.signedUp = false;
@@ -182,7 +183,7 @@ export const actions = {
       if (cookie.name == "token") tokenCookies.push(cookie.value);
     }
 
-    console.log("initAuth", tokenCookies, this.state.sessionToken);
+    // console.log("initAuth", tokenCookies, this.state.sessionToken);
 
     if (tokenCookies.length == 0) {
       if (this.state.sessionToken) {

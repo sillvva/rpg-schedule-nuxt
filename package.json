@@ -19,7 +19,8 @@
     "grapheme-splitter": "^1.0.4",
     "lodash": "^4.17.15",
     "moment": "^2.24.0",
-    "nuxt": "^2.0.0"
+    "nuxt": "^2.0.0",
+    "remarkable": "^2.0.0"
   },
   "devDependencies": {
     "nodemon": "^1.18.9",

@@ -1,4 +1,5 @@
 {
+  "code": "ru",
   "name": "Русский",
   "buttons": {
     "SUBMIT": "Отправить",
@@ -105,6 +106,7 @@
   },
   "config": {
     "COMMAND_LIST": "Список команд",
+    "CONFIGURATION": "настройки",
     "GENERAL_CONFIGURATION": "Основные настройки",
     "BOT_CONFIGURATION": "Настройки бота",
     "GAME_CONFIGURATION": "Настройки игры",

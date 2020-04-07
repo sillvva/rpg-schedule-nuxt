@@ -1,4 +1,5 @@
 {
+  "code": "it",
   "name": "Italiano",
   "buttons": {
     "SUBMIT": "Invia",
@@ -104,6 +105,9 @@
   "config": {
     "COMMAND_LIST": "Lista comandi",
     "CONFIGURATION": "Configurazione",
+    "GENERAL_CONFIGURATION": "Configurazione Generale",
+    "BOT_CONFIGURATION": "Configurazione del Bot",
+    "GAME_CONFIGURATION": "Configurazione del Gioco",
     "USAGE": "Utilizzo",
     "GUILD": "Gilda",
     "CHANNELS": "Canali",

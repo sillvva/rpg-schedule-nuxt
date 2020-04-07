@@ -1,4 +1,5 @@
 {
+  "code": "en",
   "name": "English",
   "buttons": {
     "SUBMIT": "Submit",
@@ -105,6 +106,7 @@
   },
   "config": {
     "COMMAND_LIST": "Command List",
+    "CONFIGURATION": "Configuration",
     "GENERAL_CONFIGURATION": "General Configuration",
     "BOT_CONFIGURATION": "Bot Configuration",
     "GAME_CONFIGURATION": "Game Configuration",

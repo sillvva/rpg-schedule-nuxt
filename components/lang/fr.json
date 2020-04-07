@@ -1,4 +1,5 @@
 {
+  "code": "fr",
   "name": "Français",
   "buttons": {
     "SUBMIT": "Envoyer",
@@ -105,6 +106,7 @@
   },
   "config": {
     "COMMAND_LIST": "Liste de commandes",
+    "CONFIGURATION": "Configuration",
     "GENERAL_CONFIGURATION": "Configuration générale",
     "BOT_CONFIGURATION": "Bot Configuration",
     "GAME_CONFIGURATION": "Configuration du jeu",

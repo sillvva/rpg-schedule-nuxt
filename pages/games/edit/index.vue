@@ -665,7 +665,8 @@ export default {
       updatedGame.c = updatedGame.channels.find(
         c => c.name === updatedGame.channel
       ).id;
-      let reservedList = this.game.reserved.map(r => r.tag).join(`\n`);
+      console.log(this.game.reserved)
+      let reservedList = (Array.isArray(this.game.reserved) ? this.game.reserved : []).map(r => r.tag).join(`\n`);
       if (reservedList !== this.reservedList) {
         updatedGame.reserved = this.reservedList
           .split(/\r?\n/)

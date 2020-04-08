@@ -319,11 +319,11 @@
         <v-toolbar-title>Credits</v-toolbar-title>
       </v-toolbar>
       <v-card-text>
-        <h4>
+        <h4 class="mb-3">
           <a href="https://www.mattdekok.dev/#donate" target="_blank">My Website</a>
         </h4>
         <h4>Patrons/Donors</h4>
-        <ul>
+        <ul class="mb-3">
           <li>JmanX</li>
           <li v-for="(pledge, p) in pledges" :key="p">
             {{pledge.full_name}}
@@ -336,7 +336,7 @@
           </li>
         </ul>
         <h4>Code/Language Contributors</h4>
-        <p>
+        <p class="mb-0">
           This list contains contributors who have added something to RPG Schedule. You can see the full list of contributors and their contributions
           <a
             href="https://github.com/sillvva/rpg-schedule/graphs/contributors"

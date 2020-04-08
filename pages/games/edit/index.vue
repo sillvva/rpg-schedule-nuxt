@@ -112,13 +112,18 @@
                       ></v-select>
                     </v-col>
                     <v-col cols="12" sm="12" class="py-0">
-                      <v-text-field
+                      <v-textarea
+                        rows="2"
                         id="customSignup"
                         :label="lang.game.CUSTOM_SIGNUP_INSTRUCTIONS"
                         v-model="game.customSignup"
                         :hint="game.method === enums.GameMethod.CUSTOM ? '' : lang.game.SIGNUP_INSTRUCTIONS_DESC"
                         persistent-hint
-                      ></v-text-field>
+                        auto-grow
+                        no-resize
+                        maxlength="1500"
+                        counter="1500"
+                      ></v-textarea>
                     </v-col>
                     <v-col
                       cols="6"
@@ -255,9 +260,9 @@
                         rows="7"
                         :label="lang.game.DESCRIPTION"
                         v-model="game.description"
-                        maxlength="1500"
+                        :maxlength="1500 - (game.method === enums.GameMethod.CUSTOM ? game.customSignup.length : 0)"
                         auto-grow
-                        counter="1500"
+                        :counter="1500 - (game.method === enums.GameMethod.CUSTOM ? game.customSignup.length : 0)"
                       ></v-textarea>
                     </v-col>
                   </v-row>

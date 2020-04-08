@@ -362,7 +362,7 @@ export const actions = {
         console.log(err);
       });
   },
-  async saveGame({ commit, dispatch }, gameData) {
+  async saveGame({ dispatch }, gameData) {
     await dispatch("fetchSiteSettings");
 
     return this.$axios

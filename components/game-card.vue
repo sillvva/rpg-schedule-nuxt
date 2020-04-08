@@ -231,14 +231,9 @@ export default {
         items.push({
           id: "reserved",
           label: this.lang.game.RESERVED,
-          value: `${
-            game.reserved.split("\n")[0].length == 0
-              ? 0
-              : Math.min(
-                  game.reserved.split("\n").length,
-                  parseInt(game.players)
-                )
-          }/${game.players}`,
+          value: `${Math.min(game.reserved.length, parseInt(game.players))}/${
+            game.players
+          }`,
           secondValue: game.signedUp
             ? `(${this.lang.game.SLOT} #${game.slot})`
             : null
@@ -247,8 +242,8 @@ export default {
           id: "waitlisted",
           label: this.lang.game.WAITLISTED,
           value:
-            game.reserved.split("\n").length -
-            Math.min(game.reserved.split("\n").length, parseInt(game.players)),
+            game.reserved.length -
+            Math.min(game.reserved.length, parseInt(game.players)),
           secondValue: game.waitlisted
             ? `(${this.lang.game.SLOT} #${game.slot})`
             : null
@@ -295,10 +290,7 @@ export default {
         if (new Date().getTime() >= new Date(date).getTime()) {
           this.game.moment.state = "red--text";
         }
-      }
-      catch(err) {
-
-      }
+      } catch (err) {}
     },
     mdParse(string) {
       const parsedString = string

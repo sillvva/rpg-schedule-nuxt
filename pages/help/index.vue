@@ -9,18 +9,36 @@
           <v-card-text>
             <h4>
               Want to contribute?
-              <a href="<%= config.urls.github.path %>" target="_blank">Github</a>
+              <a
+                :href="env.githubAPIUrl"
+                target="_blank"
+                style="white-space: nowrap;"
+              >Github (API & Bot)</a>
               |
-              <a href="https://www.patreon.com/rpg_schedule" target="_blank">Patreon</a>
+              <a
+                :href="env.githubUIUrl"
+                target="_blank"
+                style="white-space: nowrap;"
+              >Github (UI)</a>
               |
-              <a href="https://www.paypal.me/Sillvva" target="_blank">PayPal</a>
+              <a
+                :href="env.donateUrl"
+                target="_blank"
+                style="white-space: nowrap;"
+              >Patreon</a>
+              |
+              <a
+                :href="env.paypalUrl"
+                target="_blank"
+                style="white-space: nowrap;"
+              >PayPal</a>
             </h4>
             <h4>
-              Need assistance? Join my
-              <a
-                href="https://discord.gg/mazZEe3"
-                target="_blank"
-              >Discord server</a>.
+              Need assistance?
+              <span style="white-space: nowrap;">
+                Join my
+                <a href="https://discord.gg/mazZEe3" target="_blank">Discord server</a>.
+              </span>
             </h4>
             <h4>
               <a
@@ -311,7 +329,8 @@
         <v-toolbar-title>About the Bot</v-toolbar-title>
       </v-toolbar>
       <v-card-text>
-        <p>The bot is deployed from Github to Amazon Web Services as a Node.js and discord.js application with MongoDB for data storage.</p>
+        <p>The bot and API layer are deployed from Github to AWS Elastic Beanstalk as a Node.js and discord.js application with MongoDB for data storage.</p>
+        <p>The website is deployed from Github to AWS Elastic Beanstalk as a Nuxt.js web app that communicates with the API layer over web requests and web sockets.</p>
       </v-card-text>
     </v-card>
     <v-card class="mb-3">
@@ -319,11 +338,11 @@
         <v-toolbar-title>Credits</v-toolbar-title>
       </v-toolbar>
       <v-card-text>
-        <h4>
+        <h4 class="mb-3">
           <a href="https://www.mattdekok.dev/#donate" target="_blank">My Website</a>
         </h4>
         <h4>Patrons/Donors</h4>
-        <ul>
+        <ul class="mb-3">
           <li>JmanX</li>
           <li v-for="(pledge, p) in pledges" :key="p">
             {{pledge.full_name}}
@@ -336,7 +355,7 @@
           </li>
         </ul>
         <h4>Code/Language Contributors</h4>
-        <p>
+        <p class="mb-0">
           This list contains contributors who have added something to RPG Schedule. You can see the full list of contributors and their contributions
           <a
             href="https://github.com/sillvva/rpg-schedule/graphs/contributors"
@@ -365,8 +384,22 @@ export default {
   },
   data() {
     return {
-      pledges: []
+      pledges: [],
+      env: {}
     };
+  },
+  computed: {
+    storeEnv() {
+      return this.$store.getters.env;
+    }
+  },
+  watch: {
+    storeEnv: {
+      handler: function(newVal) {
+        this.env = newVal;
+      },
+      immediate: true
+    }
   },
   mounted() {
     updateToken(this);

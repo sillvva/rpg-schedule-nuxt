@@ -25,11 +25,13 @@ const baseState = {
   selectedLang: "en",
   lang: {},
   env: {
+    githubUIUrl: process.env.GITHUB_UI_URL,
+    githubAPIUrl: process.env.GITHUB_API_URL,
     baseUrl: process.env.BASE_URL,
     apiUrl: process.env.API_URL,
     authUrl: process.env.AUTH_URL,
+    paypalUrl: process.env.PAYPAL_URL,
     donateUrl: process.env.DONATE_URL,
-    githubURL: process.env.GITHUB_URL,
     twitterUrl: process.env.TWITTER_URL,
     inviteUrl: process.env.INVITE_URL
   },
@@ -90,10 +92,10 @@ export const mutations = {
     const account = cloneDeep(state.account);
     guilds = guilds.map(guild => {
       guild.games = guild.games.map(game => {
-        const reserved = game.reserved.split("\n");
+        const reserved = game.reserved;
         const players = parseInt(game.players);
         game.guildAccount = guild;
-        game.slot = reserved.findIndex(r => r === account.user.tag) + 1;
+        game.slot = Array.isArray(reserved) ? reserved.findIndex(r => r.tag === account.user.tag || r.id === account.user.id) + 1 : 0;
         game.waitlisted = false;
         game.signedUp = false;
         if (game.slot > players) game.waitlisted = true;
@@ -123,7 +125,7 @@ export const actions = {
   signOut({ commit }) {
     signOut(commit, this);
   },
-  authenticate({ commit }, code) {
+  authenticate({ commit, dispatch }, code) {
     return this.$axios
       .get(`${this.getters.env.apiUrl}/api/login?code=${code}`)
       .then(async result => {
@@ -163,7 +165,7 @@ export const actions = {
     d.setFullYear(d.getFullYear() + 1);
     this.$cookies.set("lang", selectedLang, { expires: d });
   },
-  async initAuth({ commit }, { req, app, allow }) {
+  async initAuth({ commit, dispatch }, { req, app, allow }) {
     const cookies = [];
     if (req) {
       const hCookies = req.headers.cookie.split("; ");
@@ -217,6 +219,9 @@ export const actions = {
             savedAuthResult = authResult;
             commit("setAccount", authResult.account);
             commit("setToken", authResult.token || tokenCookies[i]);
+            if (authResult.user) {
+              dispatch("setSelectedLang", authResult.user.lang);
+            }
           } else if (result.data.status == "error") {
             // console.log(5, tokenCookies[i]);
             if (authResult.reauthenticate) reauthenticated++;
@@ -275,6 +280,9 @@ export const actions = {
             successes++;
             savedAuthResult = authResult;
             commit("setGuilds", authResult.guilds);
+            if (authResult.user) {
+              dispatch("setSelectedLang", authResult.user.lang);
+            }
           } else if (result.data.status == "error") {
             // console.log(5, tokenCookies[i]);
             if (authResult.reauthenticate) reauthenticated++;
@@ -523,6 +531,61 @@ export const actions = {
       .then(result => {
         return result.data;
       });
+  },
+  saveUserSettings({ commit }, { settings, route, app }) {
+    const cookies = [];
+    const hCookies = app.$cookies.getAll();
+    for (const name in hCookies) {
+      cookies.push({ name: name, value: hCookies[name] });
+    }
+
+    const tokenCookies = [];
+    for (const cookie of cookies) {
+      if (cookie.name == "token") tokenCookies.push(cookie.value);
+    }
+
+    console.log("saveUserSettings", tokenCookies, settings);
+
+    return new Promise(async (resolve, reject) => {
+      let savedAuthResult,
+        successes = 0,
+        reauthenticated = 0;
+      for (let i = 0; i < tokenCookies.length; i++) {
+        try {
+          const result = await this.$axios.post(
+            `${this.getters.env.apiUrl}/auth-api/user`,
+            settings,
+            {
+              headers: {
+                Authorization: `Bearer ${tokenCookies[i]}`,
+                "Content-Type": "application/json"
+              }
+            }
+          );
+
+          const authResult = result.data;
+          if (authResult.token && authResult.token != tokenCookies[i]) {
+            // console.log(1, authResult.token, tokenCookies[i]);
+            await authAux.setToken(app, authResult.token);
+          }
+          if (authResult.status == "success") {
+            successes++;
+            savedAuthResult = authResult;
+          } else if (result.data.status == "error") {
+            // console.log(5, tokenCookies[i]);
+            if (authResult.reauthenticate) reauthenticated++;
+            throw new Error(authResult.message);
+          }
+        } catch (err) {
+          console.log(3, err);
+        }
+      }
+      if (successes > 0) resolve(savedAuthResult);
+      else {
+        if (reauthenticated > 0) reauthenticate(commit, this, route.path);
+        reject();
+      }
+    });
   }
 };
 

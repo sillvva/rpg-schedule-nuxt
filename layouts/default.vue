@@ -344,11 +344,30 @@ export default {
           route: this.$route
         });
       }
-      this.setSelectedLang();
-      this.settingsDialog = false;
+      this.$store
+        .dispatch("saveUserSettings", {
+          settings: {
+            lang: this.selectedLang
+          },
+          app: this,
+          route: this.$route
+        })
+        .then(result => {
+          if (result.status == "success") {
+            this.setSelectedLang();
+            this.settingsDialog = false;
+          }
+          else {
+            throw new Error(result.message);
+          }
+        })
+        .catch(err => {
+          alert(err.message || err);
+        });
     },
     setSelectedLang() {
-      if (!window || !this.lang.code) return;
+      if (process.server) return;
+      if (!this.lang.code) return;
       if (document.getElementById("moment-lang"))
         document.getElementById("moment-lang").remove();
       if (document.getElementById("moment-lang-load"))
@@ -440,6 +459,7 @@ export default {
         guilds.find(g => g.id == data.guildId)
       ) {
         // An existing game has been updated, update the store if it belongs to one of current user's guilds
+        let updated = false;
         guilds = guilds.map(guild => {
           const index = guild.games.findIndex(game => game._id == data.gameId);
           if (index < 0) {
@@ -451,12 +471,13 @@ export default {
             });
           } else {
             for (const prop in data.game) {
+              updated = true;
               guild.games[index][prop] = data.game[prop];
             }
           }
           return guild;
         });
-        this.$store.commit("setGuilds", guilds);
+        if (updated) this.$store.commit("setGuilds", guilds);
       } else if (
         data.action == "deleted" &&
         gamesPage &&

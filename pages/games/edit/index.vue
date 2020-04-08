@@ -251,7 +251,7 @@
                       <v-textarea
                         rows="7"
                         :label="lang.game.RESERVED"
-                        v-model="game.reserved"
+                        v-model="reservedList"
                         no-resize
                       ></v-textarea>
                     </v-col>
@@ -275,13 +275,37 @@
                   <v-row v-if="guildId || !gameId">
                     <v-spacer></v-spacer>
                     <v-col cols="12" md="6" lg="4" xl="3" class="py-0">
-                      <v-btn @click="save" width="100%" color="discord">{{lang.buttons.SAVE}}</v-btn>
+                      <v-btn
+                        @click="save"
+                        width="100%"
+                        :color="saveResult && saveResult != 'saving' ? saveResult : 'discord'"
+                        :disabled="saveResult == 'saving' || saveResult == 'success'"
+                      >
+                        <v-progress-circular
+                          indeterminate
+                          color="white"
+                          v-if="saveResult == 'saving'"
+                        ></v-progress-circular>
+                        <span v-if="saveResult != 'saving'">{{lang.buttons.SAVE}}</span>
+                      </v-btn>
                     </v-col>
                     <v-spacer></v-spacer>
                   </v-row>
                   <v-row v-if="gameId">
                     <v-col cols="12" md="6" class="py-md-0">
-                      <v-btn @click="save" width="100%" color="discord">{{lang.buttons.SAVE}}</v-btn>
+                      <v-btn
+                        @click="save"
+                        width="100%"
+                        :color="saveResult && saveResult != 'saving' ? saveResult : 'discord'"
+                        :disabled="saveResult == 'saving'"
+                      >
+                        <v-progress-circular
+                          indeterminate
+                          color="white"
+                          v-if="saveResult == 'saving'"
+                        ></v-progress-circular>
+                        <span v-if="saveResult != 'saving'">{{lang.buttons.SAVE}}</span>
+                      </v-btn>
                     </v-col>
                     <v-col cols="12" class="py-md-0 col-md">
                       <v-btn
@@ -326,6 +350,7 @@ export default {
       enums: this.$store.getters.enums,
       gameId: this.$route.query.g,
       guildId: this.$route.query.s,
+      reservedList: "",
       guilds: [],
       game: {},
       copy: false,
@@ -344,7 +369,9 @@ export default {
       weekdayItems: [],
       hintStyle:
         "color: rgba(255,255,255,0.7); font-size: 12px; min-height: 14px; position: absolute; bottom: 0;",
-      socket: null
+      socket: null,
+      saveResult: null,
+      prevSave: null
     };
   },
   computed: {
@@ -540,6 +567,11 @@ export default {
       } else if (data.action === "updated") {
         for (const prop in data.game) {
           this.game[prop] = data.game[prop];
+          if (prop === "reserved") {
+            this.reservedList = this.game.reserved
+              .map(r => r.tag)
+              .join(`\n`);
+          }
         }
       }
     });
@@ -581,6 +613,9 @@ export default {
             this.game.c = game.channels[0].id;
             this.game.channel = game.channels[0].name;
           }
+          this.reservedList = this.game.reserved
+            .map(r => r.tag)
+            .join(`\n`);
           if (!this.gameId) {
             this.setDefaultDates();
           }
@@ -616,6 +651,7 @@ export default {
       this.saveGame();
     },
     save() {
+      this.saveResult = "saving";
       this.copy = false;
       this.saveGame();
     },
@@ -629,6 +665,14 @@ export default {
       updatedGame.c = updatedGame.channels.find(
         c => c.name === updatedGame.channel
       ).id;
+      console.log(this.game.reserved)
+      let reservedList = (Array.isArray(this.game.reserved) ? this.game.reserved : []).map(r => r.tag).join(`\n`);
+      if (reservedList !== this.reservedList) {
+        updatedGame.reserved = this.reservedList
+          .split(/\r?\n/)
+          .filter(r => r.trim().length > 0)
+          .map(r => ({ tag: r.trim() }));
+      }
       delete updatedGame.title;
       delete updatedGame.guildConfig;
       delete updatedGame.errors;
@@ -645,6 +689,8 @@ export default {
       delete updatedGame.messageId;
       delete updatedGame.reminderMessageId;
       delete updatedGame.pm;
+      delete updatedGame.sequence;
+      this.prevSave = updatedGame;
       this.$store
         .dispatch("saveGame", updatedGame)
         .then(result => {
@@ -654,9 +700,14 @@ export default {
             );
           }
           this.game = cloneDeep(result.game);
+          this.reservedList = this.game.reserved
+            .map(r => r.tag)
+            .join(`\n`);
           this.dateTimeLinks();
+          this.saveResult = "success";
         })
         .catch(err => {
+          this.saveResult = "error";
           console.log(err.message || err);
           alert(err.message || err);
         });

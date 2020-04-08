@@ -1,7 +1,7 @@
 <template>
   <v-dialog v-model="cardDialog" scrollable max-width="500px">
     <template v-slot:activator="{ on }">
-      <v-card v-on="on" color="grey darken-3" max-width="100%">
+      <v-card v-on="on" color="grey darken-3" max-width="100%" height="100%">
         <v-card-title class="subtitle-1" style="position: relative;">
           {{game && game.adventure}}
           <v-btn
@@ -10,7 +10,7 @@
             :title="lang.buttons.SIGN_UP"
             color="green"
             fab
-            x-small
+            small
             absolute
             bottom
             right
@@ -23,7 +23,7 @@
             :title="lang.buttons.DROP_OUT"
             color="red"
             fab
-            x-small
+            small
             absolute
             bottom
             right

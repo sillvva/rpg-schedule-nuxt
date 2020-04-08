@@ -25,11 +25,13 @@ const baseState = {
   selectedLang: "en",
   lang: {},
   env: {
+    githubUIUrl: process.env.GITHUB_UI_URL,
+    githubAPIUrl: process.env.GITHUB_API_URL,
     baseUrl: process.env.BASE_URL,
     apiUrl: process.env.API_URL,
     authUrl: process.env.AUTH_URL,
+    paypalUrl: process.env.PAYPAL_URL,
     donateUrl: process.env.DONATE_URL,
-    githubURL: process.env.GITHUB_URL,
     twitterUrl: process.env.TWITTER_URL,
     inviteUrl: process.env.INVITE_URL
   },

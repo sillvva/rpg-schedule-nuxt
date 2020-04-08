@@ -251,7 +251,7 @@
                       <v-textarea
                         rows="7"
                         :label="lang.game.RESERVED"
-                        v-model="game.reservedList"
+                        v-model="reservedList"
                         no-resize
                       ></v-textarea>
                     </v-col>
@@ -281,7 +281,11 @@
                         :color="saveResult && saveResult != 'saving' ? saveResult : 'discord'"
                         :disabled="saveResult == 'saving' || saveResult == 'success'"
                       >
-                        <v-progress-circular indeterminate color="white" v-if="saveResult == 'saving'"></v-progress-circular>
+                        <v-progress-circular
+                          indeterminate
+                          color="white"
+                          v-if="saveResult == 'saving'"
+                        ></v-progress-circular>
                         <span v-if="saveResult != 'saving'">{{lang.buttons.SAVE}}</span>
                       </v-btn>
                     </v-col>
@@ -295,7 +299,11 @@
                         :color="saveResult && saveResult != 'saving' ? saveResult : 'discord'"
                         :disabled="saveResult == 'saving'"
                       >
-                        <v-progress-circular indeterminate color="white" v-if="saveResult == 'saving'"></v-progress-circular>
+                        <v-progress-circular
+                          indeterminate
+                          color="white"
+                          v-if="saveResult == 'saving'"
+                        ></v-progress-circular>
                         <span v-if="saveResult != 'saving'">{{lang.buttons.SAVE}}</span>
                       </v-btn>
                     </v-col>
@@ -342,6 +350,7 @@ export default {
       enums: this.$store.getters.enums,
       gameId: this.$route.query.g,
       guildId: this.$route.query.s,
+      reservedList: "",
       guilds: [],
       game: {},
       copy: false,
@@ -558,6 +567,11 @@ export default {
       } else if (data.action === "updated") {
         for (const prop in data.game) {
           this.game[prop] = data.game[prop];
+          if (prop === "reserved") {
+            this.reservedList = this.game.reserved
+              .map(r => r.tag)
+              .join(`\n`);
+          }
         }
       }
     });
@@ -599,7 +613,7 @@ export default {
             this.game.c = game.channels[0].id;
             this.game.channel = game.channels[0].name;
           }
-          this.game.reservedList = this.game.reserved
+          this.reservedList = this.game.reserved
             .map(r => r.tag)
             .join(`\n`);
           if (!this.gameId) {
@@ -637,7 +651,7 @@ export default {
       this.saveGame();
     },
     save() {
-      this.saveResult = 'saving';
+      this.saveResult = "saving";
       this.copy = false;
       this.saveGame();
     },
@@ -652,15 +666,14 @@ export default {
         c => c.name === updatedGame.channel
       ).id;
       let reservedList = this.game.reserved.map(r => r.tag).join(`\n`);
-      if (reservedList !== updatedGame.reservedList) {
-        updatedGame.reserved = updatedGame.reservedList
+      if (reservedList !== this.reservedList) {
+        updatedGame.reserved = this.reservedList
           .split(/\r?\n/)
           .filter(r => r.trim().length > 0)
           .map(r => ({ tag: r.trim() }));
       }
       delete updatedGame.title;
       delete updatedGame.guildConfig;
-      delete updatedGame.reservedList;
       delete updatedGame.errors;
       delete updatedGame.is;
       delete updatedGame.enums;
@@ -686,14 +699,14 @@ export default {
             );
           }
           this.game = cloneDeep(result.game);
-          this.game.reservedList = this.game.reserved
+          this.reservedList = this.game.reserved
             .map(r => r.tag)
             .join(`\n`);
           this.dateTimeLinks();
-          this.saveResult = 'success';
+          this.saveResult = "success";
         })
         .catch(err => {
-          this.saveResult = 'error';
+          this.saveResult = "error";
           console.log(err.message || err);
           alert(err.message || err);
         });

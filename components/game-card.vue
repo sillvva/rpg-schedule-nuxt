@@ -10,7 +10,7 @@
             :title="lang.buttons.SIGN_UP"
             color="green"
             fab
-            small
+            x-small
             absolute
             bottom
             right
@@ -23,7 +23,7 @@
             :title="lang.buttons.DROP_OUT"
             color="red"
             fab
-            small
+            x-small
             absolute
             bottom
             right
@@ -36,7 +36,7 @@
             color="info"
             @click.stop
             fab
-            small
+            x-small
             absolute
             bottom
             right

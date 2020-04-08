@@ -366,7 +366,8 @@ export default {
         });
     },
     setSelectedLang() {
-      if (!window || !this.lang.code) return;
+      if (process.server) return;
+      if (!this.lang.code) return;
       if (document.getElementById("moment-lang"))
         document.getElementById("moment-lang").remove();
       if (document.getElementById("moment-lang-load"))

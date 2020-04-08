@@ -123,7 +123,7 @@ export const actions = {
   signOut({ commit }) {
     signOut(commit, this);
   },
-  authenticate({ commit }, code) {
+  authenticate({ commit, dispatch }, code) {
     return this.$axios
       .get(`${this.getters.env.apiUrl}/api/login?code=${code}`)
       .then(async result => {
@@ -163,7 +163,7 @@ export const actions = {
     d.setFullYear(d.getFullYear() + 1);
     this.$cookies.set("lang", selectedLang, { expires: d });
   },
-  async initAuth({ commit }, { req, app, allow }) {
+  async initAuth({ commit, dispatch }, { req, app, allow }) {
     const cookies = [];
     if (req) {
       const hCookies = req.headers.cookie.split("; ");
@@ -217,6 +217,9 @@ export const actions = {
             savedAuthResult = authResult;
             commit("setAccount", authResult.account);
             commit("setToken", authResult.token || tokenCookies[i]);
+            if (authResult.user) {
+              dispatch("setSelectedLang", authResult.user.lang);
+            }
           } else if (result.data.status == "error") {
             // console.log(5, tokenCookies[i]);
             if (authResult.reauthenticate) reauthenticated++;
@@ -275,6 +278,9 @@ export const actions = {
             successes++;
             savedAuthResult = authResult;
             commit("setGuilds", authResult.guilds);
+            if (authResult.user) {
+              dispatch("setSelectedLang", authResult.user.lang);
+            }
           } else if (result.data.status == "error") {
             // console.log(5, tokenCookies[i]);
             if (authResult.reauthenticate) reauthenticated++;

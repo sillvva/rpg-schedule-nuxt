@@ -2,6 +2,7 @@
   <v-container fluid>
     <v-card v-for="(guild, g) in guilds" v-bind:key="g" max-width="100%">
       <v-toolbar color="discord">
+        <v-img :src="guild.icon" max-width="40" class="mr-3"></v-img>
         <v-toolbar-title>{{guild.name}}</v-toolbar-title>
         <v-spacer></v-spacer>
       </v-toolbar>

@@ -271,7 +271,7 @@ export const actions = {
             }
           );
           const authResult = result.data;
-          // console.log(6.2, JSON.stringify(authResult));
+          // console.log(6.1, tokenCookies[i], JSON.stringify(authResult));
           if (authResult.token && authResult.token != tokenCookies[i]) {
             // console.log(1, authResult.token, tokenCookies[i]);
             await authAux.setToken(app, authResult.token);
@@ -284,7 +284,7 @@ export const actions = {
               dispatch("setSelectedLang", authResult.user.lang);
             }
           } else if (result.data.status == "error") {
-            // console.log(5, tokenCookies[i]);
+            // console.log(5);
             if (authResult.reauthenticate) reauthenticated++;
             throw new Error(authResult.message);
           }

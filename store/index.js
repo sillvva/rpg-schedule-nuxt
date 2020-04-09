@@ -249,6 +249,7 @@ export const actions = {
       }
       if (successes > 0) resolve(savedAuthResult);
       else {
+        aux.log('actions.initAuth', reauthenticated, allow);
         if (reauthenticated > 0 && !allow)
           reauthenticate(commit, this, (req && req.originalUrl) || route.path);
         reject();

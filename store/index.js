@@ -183,8 +183,8 @@ export const actions = {
   },
   async initAuth({ commit, dispatch }, { req, app, allow }) {
     const cookies = [];
-    if (req) {
-      const hCookies = req.headers.cookie.split("; ");
+    if (req && process.server) {
+      const hCookies = (req.headers.cookie || "").split("; ");
       hCookies.forEach(hc => {
         const hCookie = hc.split("=");
         cookies.push({ name: hCookie[0], value: hCookie[1] });

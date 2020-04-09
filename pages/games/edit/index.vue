@@ -665,7 +665,6 @@ export default {
       updatedGame.c = updatedGame.channels.find(
         c => c.name === updatedGame.channel
       ).id;
-      console.log(this.game.reserved)
       let reservedList = (Array.isArray(this.game.reserved) ? this.game.reserved : []).map(r => r.tag).join(`\n`);
       if (reservedList !== this.reservedList) {
         updatedGame.reserved = this.reservedList
@@ -777,7 +776,6 @@ export default {
           break;
         case "2": // weekly
           if (validDays.length === 0) break;
-          console.log(validDays);
           dateGenerator = moment(baseDate)
             .recur()
             .every(validDays)

@@ -8,7 +8,7 @@ const signOut = async (commit, app) => {
   try {
     app.$cookies.remove("token");
     commit("resetState");
-    await app.$store.dispatch("fetchSiteSettings");
+    // await app.$store.dispatch("fetchSiteSettings");
   }
   catch(err) {
     aux.log("store - signOut()", err.message || err);

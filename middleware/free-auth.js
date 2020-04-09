@@ -1,3 +1,5 @@
+import aux from "../components/appaux";
+
 export default async function({ store, req, route, app }) {
   try {
     await store.dispatch("initAuth", {
@@ -6,5 +8,7 @@ export default async function({ store, req, route, app }) {
       app: app,
       allow: true
     });
-  } catch (err) {}
+  } catch (err) {
+    aux.log("free-auth.js", err.message || err);
+  }
 }

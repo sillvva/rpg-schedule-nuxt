@@ -1,12 +1,18 @@
 import { cloneDeep } from "lodash";
 
+import aux from "../components/appaux";
 import config from "../components/config";
 import authAux from "../components/auth";
 
 const signOut = async (commit, app) => {
-  app.$cookies.remove("token");
-  commit("resetState");
-  await app.$store.dispatch("fetchSiteSettings");
+  try {
+    app.$cookies.remove("token");
+    commit("resetState");
+    await app.$store.dispatch("fetchSiteSettings");
+  }
+  catch(err) {
+    aux.log("store - signOut()", err.message || err);
+  }
   return;
 };
 
@@ -117,7 +123,12 @@ export const mutations = {
 
 export const actions = {
   nuxtServerInit({ dispatch }, context) {
-    dispatch("fetchSiteSettings");
+    try {
+      dispatch("fetchSiteSettings");
+    }
+    catch(err) {
+      aux.log("actions.nuxtServerInit", err.message || err);
+    }
   },
   setUser({ commit }, user) {
     commit("setAccount", user);
@@ -136,22 +147,27 @@ export const actions = {
       });
   },
   fetchLangs({ commit, dispatch }) {
-    let lang = "en";
-    const langCookie = this.$cookies.get("lang");
-    if (langCookie) lang = langCookie;
+    try {
+      let lang = "en";
+      const langCookie = this.$cookies.get("lang");
+      if (langCookie) lang = langCookie;
 
-    commit("setLang", require(`../components/lang/${lang}.json`));
-    const langOptions = require(`../components/lang/langs.json`);
-    const langs = langOptions.langs.map(lang => {
-      const langData = require(`../components/lang/${lang}.json`);
-      return {
-        name: langData.name,
-        code: lang
-      };
-    });
-    commit("setLangs", langs);
+      commit("setLang", require(`../components/lang/${lang}.json`));
+      const langOptions = require(`../components/lang/langs.json`);
+      const langs = langOptions.langs.map(lang => {
+        const langData = require(`../components/lang/${lang}.json`);
+        return {
+          name: langData.name,
+          code: lang
+        };
+      });
+      commit("setLangs", langs);
 
-    dispatch("setSelectedLang", lang);
+      dispatch("setSelectedLang", lang);
+    }
+    catch(err) {
+      aux.log("actions.fetchLangs", err.message || err);
+    }
   },
   setSelectedLang({ commit }, selectedLang) {
     const langCookie = this.$cookies.get("lang");
@@ -185,7 +201,7 @@ export const actions = {
       if (cookie.name == "token") tokenCookies.push(cookie.value);
     }
 
-    // console.log("initAuth", tokenCookies, this.state.sessionToken);
+    // aux.log("initAuth", tokenCookies, this.state.sessionToken);
 
     if (tokenCookies.length == 0) {
       if (this.state.sessionToken) {
@@ -209,9 +225,9 @@ export const actions = {
             }
           );
           const authResult = result.data;
-          console.log(6, tokenCookies[i], JSON.stringify(authResult));
+          // aux.log(6, tokenCookies[i], JSON.stringify(authResult));
           if (authResult.token && authResult.token != tokenCookies[i]) {
-            // console.log(1, authResult.token, tokenCookies[i]);
+            // aux.log(1, authResult.token, tokenCookies[i]);
             await authAux.setToken(app, authResult.token);
           }
           if (authResult.status == "success") {
@@ -223,16 +239,17 @@ export const actions = {
               dispatch("setSelectedLang", authResult.user.lang);
             }
           } else if (result.data.status == "error") {
-            // console.log(5, tokenCookies[i]);
+            // aux.log(5, tokenCookies[i]);
             if (authResult.reauthenticate) reauthenticated++;
             throw new Error(authResult.message);
           }
         } catch (err) {
-          console.log(3, err);
+          aux.log('actions.initAuth', err);
         }
       }
       if (successes > 0) resolve(savedAuthResult);
       else {
+        aux.log('actions.initAuth', reauthenticated, allow);
         if (reauthenticated > 0 && !allow)
           reauthenticate(commit, this, (req && req.originalUrl) || route.path);
         reject();
@@ -253,7 +270,7 @@ export const actions = {
       if (cookie.name == "token") tokenCookies.push(cookie.value);
     }
 
-    console.log("fetchGuilds", tokenCookies);
+    aux.log("fetchGuilds", tokenCookies);
 
     return new Promise(async (resolve, reject) => {
       let savedAuthResult,
@@ -271,9 +288,9 @@ export const actions = {
             }
           );
           const authResult = result.data;
-          // console.log(6.1, tokenCookies[i], JSON.stringify(authResult));
+          // aux.log(6.1, tokenCookies[i], JSON.stringify(authResult));
           if (authResult.token && authResult.token != tokenCookies[i]) {
-            // console.log(1, authResult.token, tokenCookies[i]);
+            // aux.log(1, authResult.token, tokenCookies[i]);
             await authAux.setToken(app, authResult.token);
           }
           if (authResult.status == "success") {
@@ -284,12 +301,12 @@ export const actions = {
               dispatch("setSelectedLang", authResult.user.lang);
             }
           } else if (result.data.status == "error") {
-            // console.log(5);
+            // aux.log(5);
             if (authResult.reauthenticate) reauthenticated++;
             throw new Error(authResult.message);
           }
         } catch (err) {
-          console.log(3, err);
+          aux.log(3, err);
         }
       }
       if (successes > 0) resolve(savedAuthResult);
@@ -313,7 +330,7 @@ export const actions = {
       if (cookie.name == "token") tokenCookies.push(cookie.value);
     }
 
-    console.log("rsvpGame", tokenCookies);
+    aux.log("rsvpGame", tokenCookies);
 
     return new Promise(async (resolve, reject) => {
       let savedAuthResult,
@@ -335,19 +352,19 @@ export const actions = {
           );
           const authResult = result.data;
           if (authResult.token && authResult.token != tokenCookies[i]) {
-            // console.log(1, authResult.token, tokenCookies[i]);
+            // aux.log(1, authResult.token, tokenCookies[i]);
             await authAux.setToken(app, authResult.token);
           }
           if (authResult.status == "success") {
             successes++;
             savedAuthResult = authResult;
           } else if (result.data.status == "error") {
-            // console.log(5, tokenCookies[i]);
+            // aux.log(5, tokenCookies[i]);
             if (authResult.reauthenticate) reauthenticated++;
             throw new Error(authResult.message);
           }
         } catch (err) {
-          console.log(3, err);
+          aux.log(3, err);
         }
       }
       if (successes > 0) resolve(savedAuthResult);
@@ -367,7 +384,7 @@ export const actions = {
         return result.data.game;
       })
       .catch(err => {
-        console.log(err);
+        aux.log(err);
       });
   },
   async saveGame({ dispatch }, gameData) {
@@ -417,7 +434,7 @@ export const actions = {
       if (cookie.name == "token") tokenCookies.push(cookie.value);
     }
 
-    console.log("saveSiteSettings", tokenCookies);
+    aux.log("saveSiteSettings", tokenCookies);
 
     return new Promise(async (resolve, reject) => {
       let savedAuthResult,
@@ -438,19 +455,19 @@ export const actions = {
 
           const authResult = result.data;
           if (authResult.token && authResult.token != tokenCookies[i]) {
-            // console.log(1, authResult.token, tokenCookies[i]);
+            // aux.log(1, authResult.token, tokenCookies[i]);
             await authAux.setToken(app, authResult.token);
           }
           if (authResult.status == "success") {
             successes++;
             savedAuthResult = authResult;
           } else if (result.data.status == "error") {
-            // console.log(5, tokenCookies[i]);
+            // aux.log(5, tokenCookies[i]);
             if (authResult.reauthenticate) reauthenticated++;
             throw new Error(authResult.message);
           }
         } catch (err) {
-          console.log(3, err);
+          aux.log(3, err);
         }
       }
       if (successes > 0) resolve(savedAuthResult);
@@ -472,7 +489,7 @@ export const actions = {
       if (cookie.name == "token") tokenCookies.push(cookie.value);
     }
 
-    console.log("saveGuildConfig", tokenCookies);
+    aux.log("saveGuildConfig", tokenCookies);
 
     return new Promise(async (resolve, reject) => {
       let savedAuthResult,
@@ -496,7 +513,7 @@ export const actions = {
 
           const authResult = result.data;
           if (authResult.token && authResult.token != tokenCookies[i]) {
-            // console.log(1, authResult.token, tokenCookies[i]);
+            // aux.log(1, authResult.token, tokenCookies[i]);
             await authAux.setToken(app, authResult.token);
           }
           if (authResult.status == "success") {
@@ -510,12 +527,12 @@ export const actions = {
             });
             commit("setGuilds", guilds);
           } else if (authResult.status == "error") {
-            // console.log(5, tokenCookies[i], authResult);
+            // aux.log(5, tokenCookies[i], authResult);
             if (authResult.reauthenticate) reauthenticated++;
             throw new Error(authResult.message);
           }
         } catch (err) {
-          console.log(3, err);
+          aux.log(3, err);
         }
       }
       if (successes > 0) resolve(savedAuthResult);
@@ -544,7 +561,7 @@ export const actions = {
       if (cookie.name == "token") tokenCookies.push(cookie.value);
     }
 
-    console.log("saveUserSettings", tokenCookies, settings);
+    aux.log("saveUserSettings", tokenCookies, settings);
 
     return new Promise(async (resolve, reject) => {
       let savedAuthResult,
@@ -565,19 +582,19 @@ export const actions = {
 
           const authResult = result.data;
           if (authResult.token && authResult.token != tokenCookies[i]) {
-            // console.log(1, authResult.token, tokenCookies[i]);
+            // aux.log(1, authResult.token, tokenCookies[i]);
             await authAux.setToken(app, authResult.token);
           }
           if (authResult.status == "success") {
             successes++;
             savedAuthResult = authResult;
           } else if (result.data.status == "error") {
-            // console.log(5, tokenCookies[i]);
+            // aux.log(5, tokenCookies[i]);
             if (authResult.reauthenticate) reauthenticated++;
             throw new Error(authResult.message);
           }
         } catch (err) {
-          console.log(3, err);
+          aux.log(3, err);
         }
       }
       if (successes > 0) resolve(savedAuthResult);

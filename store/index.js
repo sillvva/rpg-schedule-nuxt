@@ -209,7 +209,7 @@ export const actions = {
             }
           );
           const authResult = result.data;
-          // console.log(6, JSON.stringify(authResult));
+          console.log(6, tokenCookies[i], JSON.stringify(authResult));
           if (authResult.token && authResult.token != tokenCookies[i]) {
             // console.log(1, authResult.token, tokenCookies[i]);
             await authAux.setToken(app, authResult.token);

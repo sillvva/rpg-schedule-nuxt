@@ -1,4 +1,5 @@
 import moment from "moment";
+import aux from "../components/appaux";
 
 export default async function({ store, req, route, app }) {
   try {
@@ -10,5 +11,7 @@ export default async function({ store, req, route, app }) {
         app: app
       });
     // }
-  } catch (err) {}
+  } catch (err) {
+    aux.log("check-auth.js", err.message || err);
+  }
 }

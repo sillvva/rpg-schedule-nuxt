@@ -362,7 +362,7 @@ export default {
           }
         })
         .catch(err => {
-          alert(err.message || err);
+          alert(err && err.message || err);
         });
     },
     setSelectedLang() {
@@ -416,7 +416,7 @@ export default {
           }
         }
       } catch (err) {
-        console.log(err.message || err);
+        console.log(err && err.message || err);
       }
     }
   },

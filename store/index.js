@@ -11,7 +11,7 @@ const signOut = async (commit, app) => {
     // await app.$store.dispatch("fetchSiteSettings");
   }
   catch(err) {
-    aux.log("store - signOut()", err.message || err);
+    aux.log("store - signOut()", err && err.message || err);
   }
   return;
 };
@@ -127,7 +127,7 @@ export const actions = {
       dispatch("fetchSiteSettings");
     }
     catch(err) {
-      aux.log("actions.nuxtServerInit", err.message || err);
+      aux.log("actions.nuxtServerInit", err && err.message || err);
     }
   },
   setUser({ commit }, user) {
@@ -166,7 +166,7 @@ export const actions = {
       dispatch("setSelectedLang", lang);
     }
     catch(err) {
-      aux.log("actions.fetchLangs", err.message || err);
+      aux.log("actions.fetchLangs", err && err.message || err);
     }
   },
   setSelectedLang({ commit }, selectedLang) {
@@ -241,10 +241,10 @@ export const actions = {
           } else if (result.data.status == "error") {
             // aux.log(5, tokenCookies[i]);
             if (authResult.reauthenticate) reauthenticated++;
-            throw new Error(authResult.message);
+            throw new Error(authResult && authResult.message);
           }
         } catch (err) {
-          aux.log('actions.initAuth', err);
+          aux.log('actions.initAuth', authResult, err);
         }
       }
       if (successes > 0) resolve(savedAuthResult);
@@ -303,7 +303,7 @@ export const actions = {
           } else if (result.data.status == "error") {
             // aux.log(5);
             if (authResult.reauthenticate) reauthenticated++;
-            throw new Error(authResult.message);
+            throw new Error(authResult && authResult.message);
           }
         } catch (err) {
           aux.log(3, err);
@@ -361,7 +361,7 @@ export const actions = {
           } else if (result.data.status == "error") {
             // aux.log(5, tokenCookies[i]);
             if (authResult.reauthenticate) reauthenticated++;
-            throw new Error(authResult.message);
+            throw new Error(authResult && authResult.message);
           }
         } catch (err) {
           aux.log(3, err);
@@ -380,7 +380,7 @@ export const actions = {
     return this.$axios
       .get(`${this.getters.env.apiUrl}/api/game?${param}=${value}`)
       .then(result => {
-        if (result.data.status == "error") throw new Error(result.data.message);
+        if (result.data.status == "error") throw new Error(result.data && result.data.message);
         return result.data.game;
       })
       .catch(err => {
@@ -403,7 +403,7 @@ export const actions = {
         }
       )
       .then(result => {
-        if (result.data.status == "error") throw new Error(result.data.message);
+        if (result.data.status == "error") throw new Error(result.data && result.data.message);
         return result.data;
       });
   },
@@ -411,7 +411,7 @@ export const actions = {
     return this.$axios
       .get(`${this.getters.env.apiUrl}/api/delete-game?g=${gameId}`)
       .then(result => {
-        if (result.data.status == "error") throw new Error(result.data.message);
+        if (result.data.status == "error") throw new Error(result.data && result.data.message);
         return result.data;
       });
   },
@@ -464,7 +464,7 @@ export const actions = {
           } else if (result.data.status == "error") {
             // aux.log(5, tokenCookies[i]);
             if (authResult.reauthenticate) reauthenticated++;
-            throw new Error(authResult.message);
+            throw new Error(authResult && authResult.message);
           }
         } catch (err) {
           aux.log(3, err);
@@ -529,7 +529,7 @@ export const actions = {
           } else if (authResult.status == "error") {
             // aux.log(5, tokenCookies[i], authResult);
             if (authResult.reauthenticate) reauthenticated++;
-            throw new Error(authResult.message);
+            throw new Error(authResult && authResult.message);
           }
         } catch (err) {
           aux.log(3, err);
@@ -591,7 +591,7 @@ export const actions = {
           } else if (result.data.status == "error") {
             // aux.log(5, tokenCookies[i]);
             if (authResult.reauthenticate) reauthenticated++;
-            throw new Error(authResult.message);
+            throw new Error(authResult && authResult.message);
           }
         } catch (err) {
           aux.log(3, err);

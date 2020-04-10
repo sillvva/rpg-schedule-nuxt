@@ -326,7 +326,7 @@ export default {
               guild.editing = false;
             })
             .catch(err => {
-              alert(err.message || err);
+              alert(err && err.message || err);
             });
         }
       }

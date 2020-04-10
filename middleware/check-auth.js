@@ -12,6 +12,6 @@ export default async function({ store, req, route, app }) {
       });
     // }
   } catch (err) {
-    aux.log("check-auth.js", err.message || err);
+    aux.log("check-auth.js", err && err.message || err);
   }
 }

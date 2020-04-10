@@ -707,8 +707,8 @@ export default {
         })
         .catch(err => {
           this.saveResult = "error";
-          console.log(err.message || err);
-          alert(err.message || err);
+          console.log(err && err.message || err);
+          alert(err && err.message || err);
         });
     },
     getTZUrls() {

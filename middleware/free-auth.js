@@ -9,6 +9,6 @@ export default async function({ store, req, route, app }) {
       allow: true
     });
   } catch (err) {
-    aux.log("free-auth.js", err.message || err);
+    aux.log("free-auth.js", err && err.message || err);
   }
 }

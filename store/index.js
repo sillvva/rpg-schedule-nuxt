@@ -239,12 +239,12 @@ export const actions = {
               dispatch("setSelectedLang", authResult.user.lang);
             }
           } else if (result.data.status == "error") {
-            // aux.log(5, tokenCookies[i]);
+            aux.log('actions.initAuth', authResult);
             if (authResult.reauthenticate) reauthenticated++;
             throw new Error(authResult && authResult.message);
           }
         } catch (err) {
-          aux.log('actions.initAuth', authResult, err);
+          aux.log('actions.initAuth', err);
         }
       }
       if (successes > 0) resolve(savedAuthResult);
@@ -301,7 +301,6 @@ export const actions = {
               dispatch("setSelectedLang", authResult.user.lang);
             }
           } else if (result.data.status == "error") {
-            // aux.log(5);
             if (authResult.reauthenticate) reauthenticated++;
             throw new Error(authResult && authResult.message);
           }
@@ -359,7 +358,6 @@ export const actions = {
             successes++;
             savedAuthResult = authResult;
           } else if (result.data.status == "error") {
-            // aux.log(5, tokenCookies[i]);
             if (authResult.reauthenticate) reauthenticated++;
             throw new Error(authResult && authResult.message);
           }
@@ -462,7 +460,6 @@ export const actions = {
             successes++;
             savedAuthResult = authResult;
           } else if (result.data.status == "error") {
-            // aux.log(5, tokenCookies[i]);
             if (authResult.reauthenticate) reauthenticated++;
             throw new Error(authResult && authResult.message);
           }
@@ -527,7 +524,6 @@ export const actions = {
             });
             commit("setGuilds", guilds);
           } else if (authResult.status == "error") {
-            // aux.log(5, tokenCookies[i], authResult);
             if (authResult.reauthenticate) reauthenticated++;
             throw new Error(authResult && authResult.message);
           }

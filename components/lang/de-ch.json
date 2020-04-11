@@ -180,7 +180,7 @@
   },
   "other": {
     "MAINTENANCE": "Die Website wird gewartet :TIME für ungefähr :DURATION stunde(n).",
-    "UNDER MAINTENANCE": "ist in Wartung",
+    "UNDER_MAINTENANCE": "ist in Wartung",
     "BACK_SOON": "Es wird bald zurück sein!"
   }
 }

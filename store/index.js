@@ -120,8 +120,15 @@ export const mutations = {
 };
 
 export const actions = {
-  nuxtServerInit({ dispatch }, context) {
+  nuxtServerInit({ dispatch, commit }, { req }) {
     try {
+      // if (req.headers.cookie) {
+      //   const cookies = req.header.cookies.split("; ");
+      //   const tc = cookies.find(c => c.startsWith("token="));
+      //   if (tc && tc.split("=")[1] === )
+      // }
+      // console.log(req.headers.cookie);
+      // commit("resetState");
       dispatch("fetchSiteSettings");
     }
     catch(err) {

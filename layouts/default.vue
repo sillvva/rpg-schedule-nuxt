@@ -264,6 +264,7 @@ export default {
     },
     routePath() {
       this.maintenance();
+      this.notSignedIn();
       return this.$route.path;
     },
     storeSiteSettings() {
@@ -274,6 +275,7 @@ export default {
     storeAccount: {
       handler: function(newVal) {
         this.account = newVal;
+        this.notSignedIn();
       },
       immediate: true
     },
@@ -322,7 +324,9 @@ export default {
   methods: {
     signOut() {
       this.$store.dispatch("signOut");
-      this.$router.push("/");
+      this.$router.push("/").then(() => {
+        window.location.reload(true);
+      });
     },
     saveSettings() {
       if (this.account && this.account.user.tag === this.config.author) {

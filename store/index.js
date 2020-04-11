@@ -16,9 +16,15 @@ const signOut = async (commit, app) => {
 };
 
 const reauthenticate = async (commit, app, redirect) => {
-  app.$cookies.set("redirect", redirect);
-  app.$cookies.remove("token");
+  if (app.$cookies) {
+    app.$cookies.set("redirect", redirect);
+    app.$cookies.remove("token");
+  }
   commit("resetState");
+  if (app.$router) {
+    app.$router.replace("/");
+    if (window) window.location.reload(true);
+  }
 };
 
 const baseState = {
@@ -313,7 +319,7 @@ export const actions = {
       }
       if (successes > 0) resolve(savedAuthResult);
       else {
-        if (reauthenticated > 0) reauthenticate(commit, this, `/games/${page}`);
+        if (reauthenticated > 0) reauthenticate(commit, app, `/games/${page}`);
         reject();
       }
     });
@@ -370,7 +376,7 @@ export const actions = {
       }
       if (successes > 0) resolve(savedAuthResult);
       else {
-        if (reauthenticated > 0) reauthenticate(commit, this, route.path);
+        if (reauthenticated > 0) reauthenticate(commit, app, route.path);
         reject();
       }
     });

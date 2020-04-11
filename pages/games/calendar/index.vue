@@ -182,7 +182,6 @@ export default {
         .filter(function(g) {
           return g.date >= moment().format("YYYY-MM-DD") && !g.hideDate;
         });
-      console.log(this.games);
     },
     daysInMonth(month, year) {
       return new Date(year, month, 0).getDate();

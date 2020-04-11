@@ -2,7 +2,7 @@
   <v-app dark>
     <v-system-bar
       :color="maintenanceBarColor"
-      v-if="maintenanceBar && lang && lang.other && lang.other.MAINTENANCE && maintenanceTime && settings"
+      v-if="!maintenanceMode && maintenanceBar && lang && lang.other && lang.other.MAINTENANCE && maintenanceTime && settings"
     >
       <v-spacer></v-spacer>
       <span>{{lang.other.MAINTENANCE.replace(":TIME", maintenanceTime.toLowerCase()).replace(":DURATION", `${settings.maintenanceDuration}`)}}</span>
@@ -14,7 +14,7 @@
       app
       clipped-left
       :class="maintenanceBar && `mt-6`"
-      v-if="!['/','/maintenace'].includes(this.$route.path)"
+      v-if="!['/','/maintenace'].includes(this.$route.path) && !maintenanceMode"
     >
       <v-app-bar-nav-icon class="hidden-lg-and-up" @click.stop="drawer = !drawer"></v-app-bar-nav-icon>
       <v-img src="/images/logo2.png" max-width="40" max-height="40" contain />
@@ -230,6 +230,7 @@ export default {
     return {
       account: {},
       settings: this.$store.getters.siteSettings,
+      maintenanceMode: false,
       maintenanceBar: false,
       maintenanceBarColor: "discord",
       maintenanceTime: "",
@@ -385,6 +386,7 @@ export default {
       try {
         this.maintenanceBar = false;
         this.maintenanceTime = "";
+        this.maintenanceMode = false;
         this.settingMaintenanceDate = "";
         this.settingMaintenanceTime = "";
         this.settingMaintenanceDuration = 0;
@@ -398,6 +400,7 @@ export default {
               this.account.user.tag == this.config.author
             )
           ) {
+            this.maintenanceMode = true;
             this.$router.push(this.config.urls.maintenance.path);
           } else {
             if (this.settings.maintenanceTime / 1000 <= moment().unix())

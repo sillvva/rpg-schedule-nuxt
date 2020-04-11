@@ -322,6 +322,7 @@ export default {
   methods: {
     signOut() {
       this.$store.dispatch("signOut");
+      this.$router.push("/");
     },
     saveSettings() {
       if (this.account && this.account.user.tag === this.config.author) {

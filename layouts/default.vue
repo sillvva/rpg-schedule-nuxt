@@ -112,7 +112,7 @@
 
     <v-navigation-drawer
       v-model="drawer"
-      v-if="!['/','/maintenace'].includes(this.$route.path)"
+      v-if="!['/','/maintenace'].includes(this.$route.path) && !maintenanceMode"
       :class="maintenanceBar && `mt-6`"
       fixed
       clipped

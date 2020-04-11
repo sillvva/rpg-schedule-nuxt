@@ -29,7 +29,7 @@
             lg="3"
             xl="2"
           >
-            <GameCard :gameData="game" :numColumns="1" :exclude="['gm', 'server']" edit></GameCard>
+            <GameCard :gameData="game" :numColumns="1" :exclude="['gm', 'server']" :edit="true"></GameCard>
           </v-col>
         </v-row>
       </v-container>

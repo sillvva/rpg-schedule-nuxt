@@ -288,6 +288,7 @@ export default {
       handler: function(newVal) {
         if (newVal && newVal.nav) {
           this.lang = newVal;
+          this.setSelectedLang();
         }
       },
       immediate: true

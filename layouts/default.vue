@@ -381,6 +381,7 @@ export default {
     },
     maintenance() {
       try {
+        const prevM = this.maintenanceMode;
         this.maintenanceBar = false;
         this.maintenanceTime = "";
         this.maintenanceMode = false;
@@ -388,6 +389,9 @@ export default {
         this.settingMaintenanceTime = "";
         this.settingMaintenanceDuration = 0;
         this.maintenanceBarColor = "discord";
+        if (prevM && !this.maintenanceMode) {
+          return this.signOut();
+        }
         if (this.settings && this.settings.maintenanceTime > 0) {
           if (
             this.settings.maintenanceTime / 1000 <= moment().unix() &&

@@ -568,9 +568,7 @@ export default {
         for (const prop in data.game) {
           this.game[prop] = data.game[prop];
           if (prop === "reserved") {
-            this.reservedList = this.game.reserved
-              .map(r => r.tag)
-              .join(`\n`);
+            this.reservedList = this.game.reserved.map(r => r.tag).join(`\n`);
           }
         }
       }
@@ -609,13 +607,24 @@ export default {
         .then(game => {
           const g = cloneDeep(this.game);
           this.game = cloneDeep(game);
+          if (this.game && this.game.guildConfig) {
+            if (
+              this.game.guildConfig.password &&
+              this.game.guildConfig.password.length > 0
+            ) {
+              const pass = prompt("Password?", "");
+              if (pass !== this.game.guildConfig.password) {
+                return this.$router.replace(
+                  this.config.urls.game.dashboard.path
+                );
+              }
+            }
+          }
           if (!g.c) {
             this.game.c = game.channels[0].id;
             this.game.channel = game.channels[0].name;
           }
-          this.reservedList = this.game.reserved
-            .map(r => r.tag)
-            .join(`\n`);
+          this.reservedList = this.game.reserved.map(r => r.tag).join(`\n`);
           if (!this.gameId) {
             this.setDefaultDates();
           }
@@ -665,7 +674,12 @@ export default {
       updatedGame.c = updatedGame.channels.find(
         c => c.name === updatedGame.channel
       ).id;
-      let reservedList = (Array.isArray(this.game.reserved) ? this.game.reserved : []).map(r => r.tag).join(`\n`);
+      let reservedList = (Array.isArray(this.game.reserved)
+        ? this.game.reserved
+        : []
+      )
+        .map(r => r.tag)
+        .join(`\n`);
       if (reservedList !== this.reservedList) {
         updatedGame.reserved = this.reservedList
           .split(/\r?\n/)
@@ -699,16 +713,14 @@ export default {
             );
           }
           this.game = cloneDeep(result.game);
-          this.reservedList = this.game.reserved
-            .map(r => r.tag)
-            .join(`\n`);
+          this.reservedList = this.game.reserved.map(r => r.tag).join(`\n`);
           this.dateTimeLinks();
           this.saveResult = "success";
         })
         .catch(err => {
           this.saveResult = "error";
-          console.log(err && err.message || err);
-          alert(err && err.message || err);
+          console.log((err && err.message) || err);
+          alert((err && err.message) || err);
         });
     },
     getTZUrls() {

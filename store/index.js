@@ -128,7 +128,6 @@ export const actions = {
         const tc = cookies.find(c => c.startsWith("token="));
         console.log(context.$route && context.$route.path, tc, !!context.$cookies);
       }
-      dispatch("fetchSiteSettings");
     }
     catch(err) {
       aux.log("actions.nuxtServerInit", err && err.message || err);

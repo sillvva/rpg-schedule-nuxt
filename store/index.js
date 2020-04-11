@@ -8,7 +8,6 @@ const signOut = async (commit, app) => {
   try {
     app.$cookies.remove("token");
     commit("resetState");
-    // await app.$store.dispatch("fetchSiteSettings");
   }
   catch(err) {
     aux.log("store - signOut()", err && err.message || err);
@@ -20,7 +19,6 @@ const reauthenticate = async (commit, app, redirect) => {
   app.$cookies.set("redirect", redirect);
   app.$cookies.remove("token");
   commit("resetState");
-  // await app.$store.dispatch("fetchSiteSettings");
 };
 
 const baseState = {

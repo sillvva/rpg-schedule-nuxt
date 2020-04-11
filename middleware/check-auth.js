@@ -9,6 +9,8 @@ export default async function({ store, req, route, app }) {
         req: req,
         route: route,
         app: app
+      }).catch(err => {
+        console.log("check-auth", err);
       });
     // }
   } catch (err) {

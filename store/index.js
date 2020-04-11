@@ -8,9 +8,8 @@ const signOut = async (commit, app) => {
   try {
     app.$cookies.remove("token");
     commit("resetState");
-  }
-  catch(err) {
-    aux.log("store - signOut()", err && err.message || err);
+  } catch (err) {
+    aux.log("store - signOut()", (err && err.message) || err);
   }
   return;
 };
@@ -105,7 +104,11 @@ export const mutations = {
         const reserved = game.reserved;
         const players = parseInt(game.players);
         game.guildAccount = guild;
-        game.slot = Array.isArray(reserved) ? reserved.findIndex(r => r.tag === account.user.tag || r.id === account.user.id) + 1 : 0;
+        game.slot = Array.isArray(reserved)
+          ? reserved.findIndex(
+              r => r.tag === account.user.tag || r.id === account.user.id
+            ) + 1
+          : 0;
         game.waitlisted = false;
         game.signedUp = false;
         if (game.slot > players) game.waitlisted = true;
@@ -134,9 +137,8 @@ export const actions = {
         const tc = cookies.find(c => c.startsWith("token="));
         // console.log(tc);
       }
-    }
-    catch(err) {
-      aux.log("actions.nuxtServerInit", err && err.message || err);
+    } catch (err) {
+      aux.log("actions.nuxtServerInit", (err && err.message) || err);
     }
   },
   setUser({ commit }, user) {
@@ -173,9 +175,8 @@ export const actions = {
       commit("setLangs", langs);
 
       dispatch("setSelectedLang", lang);
-    }
-    catch(err) {
-      aux.log("actions.fetchLangs", err && err.message || err);
+    } catch (err) {
+      aux.log("actions.fetchLangs", (err && err.message) || err);
     }
   },
   setSelectedLang({ commit }, selectedLang) {
@@ -248,17 +249,17 @@ export const actions = {
               dispatch("setSelectedLang", authResult.user.lang);
             }
           } else if (result.data.status == "error") {
-            aux.log('actions.initAuth', authResult);
+            aux.log("actions.initAuth", authResult);
             if (authResult.reauthenticate) reauthenticated++;
             throw new Error(authResult && authResult.message);
           }
         } catch (err) {
-          aux.log('actions.initAuth', err);
+          aux.log("actions.initAuth", err);
         }
       }
       if (successes > 0) resolve(savedAuthResult);
       else {
-        aux.log('actions.initAuth', reauthenticated, allow);
+        aux.log("actions.initAuth", reauthenticated, allow);
         if (reauthenticated > 0 && !allow)
           reauthenticate(commit, this, (req && req.originalUrl) || route.path);
         reject();
@@ -280,6 +281,7 @@ export const actions = {
     }
 
     aux.log("fetchGuilds", tokenCookies);
+    dispatch("emptyGuilds");
 
     return new Promise(async (resolve, reject) => {
       let savedAuthResult,
@@ -323,6 +325,18 @@ export const actions = {
         reject();
       }
     });
+  },
+  emptyGuilds({ commit }) {
+    if (this.getters.account) {
+      const guilds = cloneDeep(this.getters.account.guilds);
+      commit(
+        "setGuilds",
+        guilds.map(g => {
+          g.games = [];
+          return g;
+        })
+      );
+    }
   },
   async rsvpGame({ commit, dispatch }, { gameId, route, app }) {
     await dispatch("fetchSiteSettings");
@@ -387,7 +401,8 @@ export const actions = {
     return this.$axios
       .get(`${this.getters.env.apiUrl}/api/game?${param}=${value}`)
       .then(result => {
-        if (result.data.status == "error") throw new Error(result.data && result.data.message);
+        if (result.data.status == "error")
+          throw new Error(result.data && result.data.message);
         return result.data.game;
       })
       .catch(err => {
@@ -410,7 +425,8 @@ export const actions = {
         }
       )
       .then(result => {
-        if (result.data.status == "error") throw new Error(result.data && result.data.message);
+        if (result.data.status == "error")
+          throw new Error(result.data && result.data.message);
         return result.data;
       });
   },
@@ -418,7 +434,8 @@ export const actions = {
     return this.$axios
       .get(`${this.getters.env.apiUrl}/api/delete-game?g=${gameId}`)
       .then(result => {
-        if (result.data.status == "error") throw new Error(result.data && result.data.message);
+        if (result.data.status == "error")
+          throw new Error(result.data && result.data.message);
         return result.data;
       });
   },

@@ -274,6 +274,7 @@ export default {
     storeAccount: {
       handler: function(newVal) {
         this.account = newVal;
+        this.maintenance();
       },
       immediate: true
     },
@@ -381,8 +382,17 @@ export default {
       };
       document.body.appendChild(el);
     },
+    sessionEnd() {
+      if (!process.server && !this.$cookies.get('sessionExpires')) {
+        const d = new Date();
+        d.setFullYear(d.getFullYear() + 1);
+        this.$cookies.set("sessionExpires", 1, { expires: d });
+        this.signOut();
+      }
+    },
     maintenance() {
       try {
+        this.sessionEnd();
         const prevM = this.maintenanceMode;
         this.maintenanceBar = false;
         this.maintenanceTime = "";
@@ -404,7 +414,7 @@ export default {
             )
           ) {
             this.maintenanceMode = true;
-            this.$router.push(this.config.urls.maintenance.path);
+            this.$router.replace(this.config.urls.maintenance.path);
           } else {
             if (this.settings.maintenanceTime / 1000 <= moment().unix())
               this.maintenanceBarColor = "red";

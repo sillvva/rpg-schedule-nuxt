@@ -620,6 +620,11 @@ export default {
               }
             }
           }
+          if (this.$store.getters.account) {
+            if (!g.dm || g.dm.trim().length === 0) {
+              this.game.dm = this.$store.getters.account.user.tag;
+            }
+          }
           if (!g.c) {
             this.game.c = game.channels[0].id;
             this.game.channel = game.channels[0].name;

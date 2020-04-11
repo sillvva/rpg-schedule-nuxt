@@ -124,7 +124,7 @@ export const actions = {
     try {
       commit("resetState");
       if (context.req.headers.cookie) {
-        const cookies = context.req.header.cookies.split("; ");
+        const cookies = context.req.header.cookie.split("; ");
         const tc = cookies.find(c => c.startsWith("token="));
         console.log(context.$route && context.$route.path, tc, !!context.$cookies);
       }

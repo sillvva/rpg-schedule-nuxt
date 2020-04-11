@@ -264,7 +264,6 @@ export default {
     },
     routePath() {
       this.maintenance();
-      this.notSignedIn();
       return this.$route.path;
     },
     storeSiteSettings() {

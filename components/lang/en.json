@@ -180,7 +180,7 @@
   },
   "other": {
     "MAINTENANCE": "The site will be under maintenance :TIME for approximately :DURATION hour(s).",
-    "UNDER MAINTENANCE": "is under maintenance",
+    "UNDER_MAINTENANCE": "is under maintenance",
     "BACK_SOON": "It will be back soon!"
   }
 }

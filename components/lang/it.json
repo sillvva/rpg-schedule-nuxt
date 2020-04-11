@@ -178,7 +178,7 @@
   },
   "other": {
     "MAINTENANCE": "Il sito sarà in manutenzione :TIME per circa :DURATION ora / e.",
-    "UNDER MAINTENANCE": "è in manutenzione",
+    "UNDER_MAINTENANCE": "è in manutenzione",
     "BACK_SOON": "Tornerà presto!"
   }
 }

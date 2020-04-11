@@ -123,11 +123,10 @@ export const actions = {
   nuxtServerInit({ dispatch, commit }, context) {
     try {
       commit("resetState");
-      if (req.headers.cookie) {
+      if (context.req.headers.cookie) {
         const cookies = context.req.header.cookies.split("; ");
         const tc = cookies.find(c => c.startsWith("token="));
-        console.log(tc);
-        console.log(context.$route && context.$route.path);
+        console.log(context.$route && context.$route.path, tc, !!context.$cookies);
       }
       dispatch("fetchSiteSettings");
     }

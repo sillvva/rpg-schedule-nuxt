@@ -275,7 +275,6 @@ export default {
     storeAccount: {
       handler: function(newVal) {
         this.account = newVal;
-        this.notSignedIn();
       },
       immediate: true
     },
@@ -290,7 +289,6 @@ export default {
       handler: function(newVal) {
         if (newVal && newVal.nav) {
           this.lang = newVal;
-          this.setSelectedLang();
         }
       },
       immediate: true

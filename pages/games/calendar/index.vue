@@ -66,14 +66,18 @@
                   <br />
                   <span
                     v-if="date.games.length > 0"
-                    :class="`cal-games-count ${date.games.find(g => g.dm === account.user.tag || g.reserved.indexOf(account.user.tag) >= 0) ? 'selected' : ''}`"
+                    :class="`cal-games-count ${date.games.find(g => g.dm === account.user.tag || g.reserved.indexOf(account.user.tag) >= 0 || (Array.isArray(g.reserved) && g.reserved.find(r => r.tag === account.user.tag || r.id === account.user.id))) ? 'selected' : ''}`"
                   >{{date.games.length}}</span>
                 </div>
               </div>
             </div>
           </v-col>
           <v-col cols="12" class="col-sm py-0">
-            <div v-for="(game, i) in (dates.find(d => d.md === selDate) || { games: [] }).games" :key="i" class="mb-2">
+            <div
+              v-for="(game, i) in (dates.find(d => d.md === selDate) || { games: [] }).games"
+              :key="i"
+              class="mb-2"
+            >
               <GameCard v-if="game" :gameData="game" :numColumns="2"></GameCard>
             </div>
           </v-col>
@@ -151,12 +155,11 @@ export default {
   },
   mounted() {
     updateToken(this);
-    this.$store
-      .dispatch("fetchGuilds", {
-        page: "my-games",
-        games: true,
-        app: this
-      });
+    this.$store.dispatch("fetchGuilds", {
+      page: "upcoming",
+      games: true,
+      app: this
+    });
   },
   methods: {
     allGames() {
@@ -179,6 +182,7 @@ export default {
         .filter(function(g) {
           return g.date >= moment().format("YYYY-MM-DD") && !g.hideDate;
         });
+      console.log(this.games);
     },
     daysInMonth(month, year) {
       return new Date(year, month, 0).getDate();

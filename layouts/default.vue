@@ -322,6 +322,7 @@ export default {
   methods: {
     signOut() {
       this.$store.dispatch("signOut");
+      this.$router.push("/");
     },
     saveSettings() {
       if (this.account && this.account.user.tag === this.config.author) {
@@ -380,6 +381,7 @@ export default {
     },
     maintenance() {
       try {
+        const prevM = this.maintenanceMode;
         this.maintenanceBar = false;
         this.maintenanceTime = "";
         this.maintenanceMode = false;
@@ -387,6 +389,9 @@ export default {
         this.settingMaintenanceTime = "";
         this.settingMaintenanceDuration = 0;
         this.maintenanceBarColor = "discord";
+        if (prevM && !this.maintenanceMode) {
+          return this.signOut();
+        }
         if (this.settings && this.settings.maintenanceTime > 0) {
           if (
             this.settings.maintenanceTime / 1000 <= moment().unix() &&

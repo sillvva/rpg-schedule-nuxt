@@ -13,7 +13,6 @@
       fixed
       app
       clipped-left
-      :class="maintenanceBar && `mt-6`"
       v-if="!['/','/maintenace'].includes(this.$route.path) && !maintenanceMode"
     >
       <v-app-bar-nav-icon class="hidden-lg-and-up" @click.stop="drawer = !drawer"></v-app-bar-nav-icon>
@@ -113,7 +112,6 @@
     <v-navigation-drawer
       v-model="drawer"
       v-if="!['/','/maintenace'].includes(this.$route.path) && !maintenanceMode"
-      :class="maintenanceBar && `mt-6`"
       fixed
       clipped
       app

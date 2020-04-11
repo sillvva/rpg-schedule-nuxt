@@ -629,7 +629,7 @@ export default {
             this.game.c = game.channels[0].id;
             this.game.channel = game.channels[0].name;
           }
-          this.reservedList = this.game.reserved.map(r => r.tag).join(`\n`);
+          this.reservedList = Array.isArray(this.game.reserved) ? this.game.reserved.map(r => r.tag).join(`\n`) : this.game.reserved;
           if (!this.gameId) {
             this.setDefaultDates();
           }

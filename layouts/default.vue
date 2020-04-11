@@ -1,14 +1,5 @@
 <template>
   <v-app dark>
-    <v-system-bar
-      :color="maintenanceBarColor"
-      v-if="!maintenanceMode && maintenanceBar && lang && lang.other && lang.other.MAINTENANCE && maintenanceTime && settings"
-    >
-      <v-spacer></v-spacer>
-      <span>{{lang.other.MAINTENANCE.replace(":TIME", maintenanceTime.toLowerCase()).replace(":DURATION", `${settings.maintenanceDuration}`)}}</span>
-      <v-spacer></v-spacer>
-    </v-system-bar>
-
     <v-app-bar
       fixed
       app
@@ -189,6 +180,14 @@
     </v-navigation-drawer>
 
     <v-content>
+      <v-system-bar
+        :color="maintenanceBarColor"
+        v-if="!maintenanceMode && maintenanceBar && lang && lang.other && lang.other.MAINTENANCE && maintenanceTime && settings"
+      >
+        <v-spacer></v-spacer>
+        <span>{{lang.other.MAINTENANCE.replace(":TIME", maintenanceTime.toLowerCase()).replace(":DURATION", `${settings.maintenanceDuration}`)}}</span>
+        <v-spacer></v-spacer>
+      </v-system-bar>
       <nuxt :key="$route.fullPath" />
     </v-content>
   </v-app>
@@ -355,13 +354,12 @@ export default {
           if (result.status == "success") {
             this.setSelectedLang();
             this.settingsDialog = false;
-          }
-          else {
+          } else {
             throw new Error(result.message);
           }
         })
         .catch(err => {
-          alert(err && err.message || err);
+          alert((err && err.message) || err);
         });
     },
     setSelectedLang() {
@@ -417,7 +415,7 @@ export default {
           }
         }
       } catch (err) {
-        console.log(err && err.message || err);
+        console.log((err && err.message) || err);
       }
     }
   },

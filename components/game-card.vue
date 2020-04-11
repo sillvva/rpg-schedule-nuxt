@@ -3,10 +3,12 @@
     <template v-slot:activator="{ on }">
       <v-card v-on="on" color="grey darken-3" max-width="100%" height="100%">
         <v-card-title class="subtitle-1" style="position: relative;">
-          {{game && game.adventure}}
+          <div class="game-title">
+            {{game && game.adventure}}
+          </div>
           <v-btn
             @click.stop="rsvpGameId = game._id; rsvp();"
-            v-if="game && account && game.dm !== account.user.tag && game.method === 'automated' && game.slot === 0"
+            v-if="!edit && game && account && game.dm !== account.user.tag && game.method === 'automated' && game.slot === 0"
             :title="lang.buttons.SIGN_UP"
             color="green"
             fab
@@ -19,7 +21,7 @@
           </v-btn>
           <v-btn
             @click.stop="rsvpGameId = game._id; rsvp();"
-            v-if="game && account && game.dm !== account.user.tag && game.method === 'automated' && game.slot > 0"
+            v-if="!edit && game && account && game.dm !== account.user.tag && game.method === 'automated' && game.slot > 0"
             :title="lang.buttons.DROP_OUT"
             color="red"
             fab
@@ -32,7 +34,7 @@
           </v-btn>
           <v-btn
             :to="`${config.urls.game.create.path}?g=${game._id}`"
-            v-if="game && account && game.dm === account.user.tag"
+            v-if="edit || (game && account && game.dm === account.user.tag)"
             color="info"
             @click.stop
             fab
@@ -107,7 +109,7 @@ import { Remarkable } from "remarkable";
 import { cloneDeep } from "lodash";
 
 export default {
-  props: ["gameData", "numColumns", "filter", "exclude"],
+  props: ["gameData", "numColumns", "filter", "exclude", "edit"],
   data() {
     return {
       game: this.gameData,
@@ -301,3 +303,11 @@ export default {
   }
 };
 </script>
+
+<style>
+.v-card__title .game-title {
+  white-space: nowrap;
+  text-overflow: ellipsis;
+  overflow: hidden;
+}
+</style>

@@ -1,6 +1,6 @@
 <template>
   <v-container fluid>
-    <v-card v-for="(guild, g) in guilds" v-bind:key="g" max-width="100%">
+    <v-card v-for="(guild, g) in guilds" v-bind:key="g" max-width="100%" class="mb-3">
       <v-toolbar color="discord">
         <v-img :src="guild.icon" max-width="40" class="mr-3 hidden-xs-only"></v-img>
         <v-toolbar-title>{{guild.name}}</v-toolbar-title>
@@ -226,7 +226,7 @@
             lg="3"
             xl="2"
           >
-            <GameCard :gameData="game" :numColumns="1" :exclude="['server']"></GameCard>
+            <GameCard :gameData="game" :numColumns="1" :exclude="['server']" edit></GameCard>
           </v-col>
         </v-row>
       </v-container>

@@ -29,7 +29,7 @@
             lg="3"
             xl="2"
           >
-            <GameCard :gameData="game" :numColumns="1" :exclude="['gm', 'server']" :edit="true"></GameCard>
+            <GameCard v-if="game.dm === account.user.tag" :gameData="game" :numColumns="1" :exclude="['gm', 'server']" :edit="true"></GameCard>
           </v-col>
         </v-row>
       </v-container>
@@ -69,10 +69,14 @@ export default {
     return {
       guilds: [],
       lang: {},
-      config: this.$store.getters.config
+      config: this.$store.getters.config,
+      account: this.$store.getters.account || {},
     };
   },
   computed: {
+    storeAccount() {
+      return this.$store.getters.account;
+    },
     storeGuilds() {
       return this.$store.getters.account
         ? this.$store.getters.account.guilds
@@ -83,6 +87,12 @@ export default {
     }
   },
   watch: {
+    storeAccount: {
+      handler: function(newVal) {
+        this.account = newVal;
+      },
+      immediate: true
+    },
     storeGuilds: {
       handler: function(newVal) {
         this.guilds = cloneDeep(newVal);

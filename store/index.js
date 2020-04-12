@@ -158,6 +158,7 @@ export const actions = {
     commit("resetState");
   },
   authenticate({ commit }, code) {
+    console.log(code, this.getters.env.apiUrl);
     return this.$axios
       .get(`${this.getters.env.apiUrl}/api/login?code=${code}`)
       .then(async result => {
@@ -167,7 +168,7 @@ export const actions = {
       });
   },
   async initAuth(vuexContext, req) {
-    vuexContext.commit("resetState");
+    vuexContext.commit("setToken", null);
 
     const cookies = [];
     if (req) {
@@ -228,7 +229,6 @@ export const actions = {
       }
       if (successes > 0) resolve(savedAuthResult);
       else {
-        vuexContext.commit("resetState");
         reject();
       }
     });

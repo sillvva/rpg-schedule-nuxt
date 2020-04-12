@@ -1,8 +1,4 @@
 const updateToken = (app) => {
-  if (!app.$cookies.get('token') && app.$store.getters.sessionToken) {
-    app.$store.commit("setToken", null);
-    app.$router.replace("/");
-  }
   if (app.$store.getters.sessionToken && app.$cookies.get('token') && app.$store.getters.sessionToken != app.$cookies.get('token')) {
     console.log('Refreshing token:', app.$store.getters.sessionToken, app.$cookies.get('token'))
     setToken(app, app.$store.getters.sessionToken);

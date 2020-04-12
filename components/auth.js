@@ -1,7 +1,7 @@
 const updateToken = (app) => {
   if (app.$store.getters.sessionToken && app.$store.getters.sessionToken != app.$cookies.get('token')) {
-    console.log('Refreshing token:', app.$store.getters.sessionToken, app.$cookies.get('token'))
-    setToken(app, app.$store.getters.sessionToken);
+    // console.log('Refreshing token:', app.$store.getters.sessionToken, app.$cookies.get('token'))
+    // setToken(app, app.$store.getters.sessionToken);
   }
 };
 

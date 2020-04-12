@@ -5,7 +5,7 @@ import authAux from "../../components/auth";
 
 export default {
   head: {
-    title: "Loggin In"
+    title: "Logging In"
   },
   mounted() {
     const redirect = this.$cookies.get("redirect");

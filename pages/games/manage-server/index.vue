@@ -241,7 +241,7 @@ import { cloneDeep } from "lodash";
 import GraphemeSplitter from "grapheme-splitter";
 
 export default {
-  middleware: ["check-auth", "authenticated"],
+  middleware: ["authenticated"],
   head: {
     title: "Manage Server"
   },

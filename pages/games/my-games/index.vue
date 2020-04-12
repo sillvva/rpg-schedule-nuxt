@@ -58,7 +58,7 @@ import GameCard from "../../../components/game-card";
 import { cloneDeep } from "lodash";
 
 export default {
-  middleware: ["check-auth", "authenticated"],
+  middleware: ["authenticated"],
   head: {
     title: "My Games"
   },

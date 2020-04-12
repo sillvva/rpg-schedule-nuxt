@@ -196,7 +196,6 @@
 <script>
 import lang from "../components/lang/en.json";
 import { cloneDeep } from "lodash";
-// import moment from "moment";
 
 let lastGuildRefresh = new Date().getTime();
 
@@ -383,7 +382,7 @@ export default {
       document.body.appendChild(el);
     },
     sessionEnd() {
-      if (!process.server && !this.$cookies.get('sessionExpires')) {
+      if (process.client && !this.$cookies.get('sessionExpires')) {
         const d = new Date();
         d.setFullYear(d.getFullYear() + 1);
         this.$cookies.set("sessionExpires", 1, { expires: d });
@@ -393,7 +392,7 @@ export default {
     maintenance() {
       try {
         this.sessionEnd();
-        const prevM = this.maintenanceMode;
+        const prevM = this.maintenanceBar || this.maintenanceMode;
         this.maintenanceBar = false;
         this.maintenanceTime = "";
         this.maintenanceMode = false;
@@ -401,7 +400,7 @@ export default {
         this.settingMaintenanceTime = "";
         this.settingMaintenanceDuration = 0;
         this.maintenanceBarColor = "discord";
-        if (prevM && !this.maintenanceMode) {
+        if (prevM && this.settings.maintenanceDuration === 0) {
           return this.signOut();
         }
         if (this.settings && this.settings.maintenanceTime > 0) {

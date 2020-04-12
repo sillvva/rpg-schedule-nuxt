@@ -324,7 +324,7 @@ export default {
       this.$store.dispatch("signOut").then(() => {
         this.$cookies.remove("token");
         this.$router.push("/", () => {
-          // window.location.reload();
+          // window.location.reload(true);
         });
       });
     },

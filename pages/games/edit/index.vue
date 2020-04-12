@@ -31,19 +31,11 @@
                       ></v-select>
                     </v-col>
                     <v-col cols="12" sm="6" class="py-0">
-                      <v-text-field
-                        :label="lang.game.CHANNEL"
-                        readonly
-                        id="channel"
-                        :value="game.channel"
-                        v-if="game.channels && game.channels.length === 1"
-                      ></v-text-field>
                       <v-select
                         :label="lang.game.CHANNEL"
                         id="channel"
                         v-model="game.channel"
                         :items="game.channels ? game.channels.map(c => ({ text: c.name, value: c.name })) : []"
-                        v-if="game.channels && game.channels.length > 1"
                       ></v-select>
                     </v-col>
                     <v-col cols="12" sm="5" md="4" lg="6" class="py-0">
@@ -636,6 +628,9 @@ export default {
       if (!game.c) {
         this.game.c = game.channels[0].id;
         this.game.channel = game.channels[0].name;
+      }
+      else {
+        this.game.channel = game.channels.find(c => c.id === game.c).name
       }
       this.reservedList = Array.isArray(this.game.reserved)
         ? this.game.reserved.map(r => r.tag).join(`\n`)

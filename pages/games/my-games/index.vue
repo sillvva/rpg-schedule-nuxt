@@ -29,7 +29,7 @@
             lg="3"
             xl="2"
           >
-            <GameCard v-if="game.dm === account.user.tag" :gameData="game" :numColumns="1" :exclude="['gm', 'server']" :edit="true"></GameCard>
+            <GameCard v-if="game.dm.tag === account.user.tag" :gameData="game" :numColumns="1" :exclude="['gm', 'server']" :edit="true"></GameCard>
           </v-col>
         </v-row>
       </v-container>

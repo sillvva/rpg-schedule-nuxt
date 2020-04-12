@@ -119,7 +119,7 @@ export const mutations = {
   },
   setGuilds(state, guilds) {
     const account = cloneDeep(state.account);
-    guilds = guilds.map(guild => {
+    guilds = (guilds || []).map(guild => {
       guild.games = guild.games.map(game => {
         const reserved = game.reserved;
         const players = parseInt(game.players);

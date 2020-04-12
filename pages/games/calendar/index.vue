@@ -66,7 +66,7 @@
                   <br />
                   <span
                     v-if="date.games.length > 0"
-                    :class="`cal-games-count ${date.games.find(g => g.dm === account.user.tag || g.reserved.indexOf(account.user.tag) >= 0 || (Array.isArray(g.reserved) && g.reserved.find(r => r.tag === account.user.tag || r.id === account.user.id))) ? 'selected' : ''}`"
+                    :class="`cal-games-count ${date.reserved ? 'selected' : ''}`"
                   >{{date.games.length}}</span>
                 </div>
               </div>
@@ -211,7 +211,7 @@ export default {
               .filter(g => g.date === dx)
               .find(
                 g =>
-                  g.dm === this.account.user.tag ||
+                  g.dm.tag === this.account.user.tag ||
                   g.reserved.indexOf(this.account.user.tag) >= 0
               )
           });
@@ -305,7 +305,7 @@ export default {
 }
 
 .col-game {
-  height: 100%; 
+  height: 100%;
   overflow-y: auto;
 }
 

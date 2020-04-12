@@ -8,7 +8,7 @@
           </div>
           <v-btn
             @click.stop="rsvpGameId = game._id; rsvp();"
-            v-if="!edit && game && account && game.dm !== account.user.tag && game.method === 'automated' && game.slot === 0"
+            v-if="!edit && game && account && game.dm.tag !== account.user.tag && game.method === 'automated' && game.slot === 0"
             :title="lang.buttons.SIGN_UP"
             color="green"
             fab
@@ -21,7 +21,7 @@
           </v-btn>
           <v-btn
             @click.stop="rsvpGameId = game._id; rsvp();"
-            v-if="!edit && game && account && game.dm !== account.user.tag && game.method === 'automated' && game.slot > 0"
+            v-if="!edit && game && account && game.dm.tag !== account.user.tag && game.method === 'automated' && game.slot > 0"
             :title="lang.buttons.DROP_OUT"
             color="red"
             fab
@@ -34,7 +34,7 @@
           </v-btn>
           <v-btn
             :to="`${config.urls.game.create.path}?g=${game._id}`"
-            v-if="edit || (game && account && game.dm === account.user.tag)"
+            v-if="edit || (game && account && game.dm.tag === account.user.tag)"
             color="info"
             @click.stop
             fab
@@ -190,7 +190,7 @@ export default {
         items.push({
           id: "gm",
           label: this.lang.game.GM,
-          value: game.dm.split("#")[0]
+          value: game.dm.tag.split("#")[0]
         });
         if (game.hideDate) {
           items.push({

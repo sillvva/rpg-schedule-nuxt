@@ -167,6 +167,8 @@ export const actions = {
       });
   },
   async initAuth(vuexContext, req) {
+    vuexContext.commit("resetState");
+
     const cookies = [];
     if (req) {
       const hCookies = (req.headers.cookie || "").split("; ");
@@ -186,10 +188,9 @@ export const actions = {
       if (cookie.name == "token") tokenCookies.push(cookie.value);
     }
 
-    aux.log("initAuth", tokenCookies, this.getters.sessionToken, baseState.sessionToken);
+    aux.log("initAuth", tokenCookies, this.getters.sessionToken);
 
     if (tokenCookies.length == 0) {
-      vuexContext.commit("resetState");
       return;
     }
 

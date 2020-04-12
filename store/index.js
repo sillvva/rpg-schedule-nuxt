@@ -5,16 +5,6 @@ import config from "../components/config";
 import authAux from "../components/auth";
 import moment from "moment";
 
-const signOut = async (commit, app) => {
-  try {
-    app.$cookies.remove("token");
-    commit("resetState");
-  } catch (err) {
-    aux.log("store - signOut()", (err && err.message) || err);
-  }
-  return;
-};
-
 const reauthenticate = async (vuexContext, app, redirect) => {
   if (app.$cookies) {
     app.$cookies.set("redirect", redirect);
@@ -164,8 +154,8 @@ export const actions = {
   setUser({ commit }, user) {
     commit("setAccount", user);
   },
-  signOut({ commit }) {
-    signOut(commit, this);
+  async signOut({ commit }) {
+    commit("resetState");
   },
   authenticate({ commit }, code) {
     return this.$axios

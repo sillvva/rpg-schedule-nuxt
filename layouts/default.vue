@@ -321,9 +321,11 @@ export default {
   },
   methods: {
     signOut() {
-      this.$store.dispatch("signOut");
-      this.$router.push("/").then(() => {
-        window.location.reload(true);
+      this.$store.dispatch("signOut").then(() => {
+        this.$cookies.remove("token");
+        this.$router.push("/", () => {
+          // window.location.reload();
+        });
       });
     },
     saveSettings() {
@@ -384,7 +386,7 @@ export default {
     sessionEnd() {
       if (process.client && !this.$cookies.get('sessionExpires')) {
         const d = new Date();
-        d.setFullYear(d.getFullYear() + 1);
+        d.getDate(d.getDate() + 14);
         this.$cookies.set("sessionExpires", 1, { expires: d });
         this.signOut();
       }

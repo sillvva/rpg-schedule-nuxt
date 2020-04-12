@@ -396,31 +396,27 @@ export default {
       immediate: true
     }
   },
-  mounted() {
+  async mounted() {
     if (!this.gameId && !this.guildId && !this.$store.getters.account) {
       return this.$router.replace(this.config.urls.game.dashboard.path);
     }
     if (this.gameId) this.fetchGame("g", this.gameId);
     else if (this.guildId) this.fetchGame("s", this.guildId);
     else if (this.$store.getters.account) {
-      const fetchGuilds = async () => {
-        await this.$store.dispatch("fetchGuilds", {
-          page: "my-games",
-          games: true,
-          app: this
-        });
-        const account = cloneDeep(this.$store.getters.account);
-        this.guilds = account.guilds
-          .filter(guild => guild.permission || guild.isAdmin)
-          .map(g => ({ text: g.name, value: g.id }));
-        if (this.guilds.length > 0) {
-          this.game.s = this.guilds[0].value;
-          await this.selectGuild();
-        }
-        this.game.dmTag = account.user.tag;
-      };
-
-      fetchGuilds();
+      await this.$store.dispatch("fetchGuilds", {
+        page: "my-games",
+        games: true,
+        app: this
+      });
+      const account = cloneDeep(this.$store.getters.account);
+      this.guilds = account.guilds
+        .filter(guild => guild.permission || guild.isAdmin)
+        .map(g => ({ text: g.name, value: g.id }));
+      if (this.guilds.length > 0) {
+        this.game.s = this.guilds[0].value;
+        await this.selectGuild();
+      }
+      this.game.dmTag = account.user.tag;
     }
 
     this.reminderItems = [
@@ -552,6 +548,7 @@ export default {
         data.action === "deleted" &&
         !localStorage.getItem("rescheduled")
       ) {
+        localStorage.setItem("rescheduled", 1);
         alert("This game has been deleted");
         this.$router.replace(
           this.$store.getters.config.urls.game.dashboard.path
@@ -564,12 +561,6 @@ export default {
           }
         }
       }
-    });
-
-    this.$store.dispatch("fetchGuilds", {
-      page: "my-games",
-      games: true,
-      app: this
     });
   },
   beforeDestroy() {
@@ -606,7 +597,7 @@ export default {
           this.modGame(cloneDeep(game));
         });
     },
-    modGame(game) {
+    async modGame(game) {
       this.game = cloneDeep(game);
       if (this.game && this.game.guildConfig) {
         if (
@@ -624,13 +615,30 @@ export default {
         if (!game.dm || this.game.dm.tag.trim().length === 0) {
           this.game.dmTag = this.$store.getters.account.user.tag;
         }
+      } else {
+        try {
+          const result = await this.$store.dispatch("fetchGuilds", {
+            page: "my-games",
+            games: true,
+            app: this
+          });
+          if (!this.gameId) {
+            this.game.dm = {
+              tag: result.account.user.tag,
+              id: result.account.user.id
+            };
+            this.game.dmTag = this.game.dm.tag;
+          }
+        }
+        catch(err) {
+          console.log(err);
+        }
       }
       if (!game.c) {
         this.game.c = game.channels[0].id;
         this.game.channel = game.channels[0].name;
-      }
-      else {
-        this.game.channel = game.channels.find(c => c.id === game.c).name
+      } else {
+        this.game.channel = game.channels.find(c => c.id === game.c).name;
       }
       this.reservedList = Array.isArray(this.game.reserved)
         ? this.game.reserved.map(r => r.tag).join(`\n`)

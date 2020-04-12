@@ -216,7 +216,7 @@ export default {
               `${game.guildAccount.name} - ${game.where}`
             )}&trp=false&sprop=&details=${encodeURI(game.description)}`,
             target: "_blank",
-            class: "discord--text",
+            class: "discord--text hidden-xs-only",
             value: this.lang.buttons.ADD_TO_GOOGLE_CALENDAR
           });
         }

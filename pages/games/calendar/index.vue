@@ -1,6 +1,6 @@
 <template>
-  <v-container fluid>
-    <v-card>
+  <v-container fluid style="height: 100%;">
+    <v-card style="height: 100%;">
       <v-toolbar color="discord" v-if="lang.game && baseDate && moment">
         <v-toolbar-title class="d-none d-md-flex mb-0 align-center">
           <span>{{moment(`${selYear}-${selMonth+1 < 10 ? '0' : ''}${selMonth+1}-${selDate < 10 ? '0' : ''}${selDate}T00:00:00`).format('LL')}}</span>
@@ -20,7 +20,7 @@
           fab
           small
           class="hidden-xs-only ml-2"
-          :href="`${env.apiUrl.replace(/https?/,'webcal')}${config.urls.ics.path.replace(':uid', account.user.id)}`"
+          :href="`${env.apiUrl.replace(/https?/,'webcal')}${config.urls.ics.path.replace(':uid', account.user && account.user.id)}`"
         >
           <v-icon>mdi-download</v-icon>
         </v-btn>
@@ -42,9 +42,9 @@
         <v-btn color="white" light class="ml-3" min-width="48px" @click="incrementMonth">&#9658;</v-btn>
         <v-spacer class="d-md-none"></v-spacer>
       </v-toolbar>
-      <v-container fluid class="pa-0 pa-md-2">
-        <v-row dense>
-          <v-col cols="12" class="col-sm py-0">
+      <v-container fluid class="pa-0 pa-sm-2" style="height: calc(100% - 64px);">
+        <v-row dense class="row-cal">
+          <v-col cols="12" class="col-sm py-0 col-cal">
             <div class="calendar">
               <div class="col cal-header grey darken-3" v-for="(wd, i) in [0,1,2,3,4,5,6]" :key="i">
                 <span class="wd">{{moment().day(wd).format('dddd').slice(0,1).toUpperCase()}}</span>
@@ -72,7 +72,7 @@
               </div>
             </div>
           </v-col>
-          <v-col cols="12" class="col-sm py-0">
+          <v-col cols="12" class="col-sm py-0 col-game">
             <div
               v-for="(game, i) in (dates.find(d => d.md === selDate) || { games: [] }).games"
               :key="i"
@@ -94,7 +94,7 @@ import { cloneDeep } from "lodash";
 import moment from "moment";
 
 export default {
-  middleware: ["check-auth", "authenticated"],
+  middleware: ["authenticated"],
   head: {
     title: "Calendar"
   },
@@ -156,13 +156,14 @@ export default {
   mounted() {
     updateToken(this);
     this.$store.dispatch("fetchGuilds", {
-      page: "upcoming",
+      page: "calendar",
       games: true,
       app: this
     });
   },
   methods: {
     allGames() {
+      if (!this.account.guilds) return;
       this.games = this.account.guilds
         .filter(guild => guild.games.length > 0)
         .reduce((acc, guild) => {
@@ -299,9 +300,27 @@ export default {
   background: #28a745;
 }
 
-@media (max-width: 500px) {
+.row-cal {
+  height: 100%;
+}
+
+.col-game {
+  height: 100%; 
+  overflow-y: auto;
+}
+
+@media (max-width: 599px) {
   #calendar-name-2 {
     font-size: 1.4em;
+  }
+  .row-cal {
+    display: block;
+  }
+  .col-game {
+    height: auto;
+  }
+  .col-cal {
+    height: 353px;
   }
 }
 

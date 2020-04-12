@@ -196,7 +196,6 @@
 <script>
 import lang from "../components/lang/en.json";
 import { cloneDeep } from "lodash";
-// import moment from "moment";
 
 let lastGuildRefresh = new Date().getTime();
 
@@ -274,6 +273,7 @@ export default {
     storeAccount: {
       handler: function(newVal) {
         this.account = newVal;
+        this.maintenance();
       },
       immediate: true
     },
@@ -381,9 +381,18 @@ export default {
       };
       document.body.appendChild(el);
     },
+    sessionEnd() {
+      if (process.client && !this.$cookies.get('sessionExpires')) {
+        const d = new Date();
+        d.setFullYear(d.getFullYear() + 1);
+        this.$cookies.set("sessionExpires", 1, { expires: d });
+        this.signOut();
+      }
+    },
     maintenance() {
       try {
-        const prevM = this.maintenanceMode;
+        this.sessionEnd();
+        const prevM = this.maintenanceBar || this.maintenanceMode;
         this.maintenanceBar = false;
         this.maintenanceTime = "";
         this.maintenanceMode = false;
@@ -391,7 +400,7 @@ export default {
         this.settingMaintenanceTime = "";
         this.settingMaintenanceDuration = 0;
         this.maintenanceBarColor = "discord";
-        if (prevM && !this.maintenanceMode) {
+        if (prevM && this.settings.maintenanceDuration === 0) {
           return this.signOut();
         }
         if (this.settings && this.settings.maintenanceTime > 0) {
@@ -404,7 +413,7 @@ export default {
             )
           ) {
             this.maintenanceMode = true;
-            this.$router.push(this.config.urls.maintenance.path);
+            this.$router.replace(this.config.urls.maintenance.path);
           } else {
             if (this.settings.maintenanceTime / 1000 <= moment().unix())
               this.maintenanceBarColor = "red";

@@ -62,7 +62,7 @@
                       ></v-text-field>
                     </v-col>
                     <v-col cols="12" sm="3" class="py-0">
-                      <v-text-field id="dm" :label="lang.game.GM" v-model="game.dm"></v-text-field>
+                      <v-text-field id="dm" :label="lang.game.GM" v-model="game.dmTag"></v-text-field>
                     </v-col>
                     <v-col cols="12" sm="3" class="py-0">
                       <v-text-field
@@ -425,7 +425,7 @@ export default {
           this.game.s = this.guilds[0].value;
           await this.selectGuild();
         }
-        this.game.dm = account.user.tag;
+        this.game.dmTag = account.user.tag;
       };
 
       fetchGuilds();
@@ -573,6 +573,12 @@ export default {
         }
       }
     });
+
+    this.$store.dispatch("fetchGuilds", {
+      page: "my-games",
+      games: true,
+      app: this
+    });
   },
   beforeDestroy() {
     if (this.socket) this.socket.close();
@@ -605,36 +611,39 @@ export default {
           value: value
         })
         .then(game => {
-          const g = cloneDeep(this.game);
-          this.game = cloneDeep(game);
-          if (this.game && this.game.guildConfig) {
-            if (
-              this.game.guildConfig.password &&
-              this.game.guildConfig.password.length > 0
-            ) {
-              const pass = prompt("Password?", "");
-              if (pass !== this.game.guildConfig.password) {
-                return this.$router.replace(
-                  this.config.urls.game.dashboard.path
-                );
-              }
-            }
-          }
-          if (this.$store.getters.account) {
-            if (!g.dm || g.dm.trim().length === 0) {
-              this.game.dm = this.$store.getters.account.user.tag;
-            }
-          }
-          if (!g.c) {
-            this.game.c = game.channels[0].id;
-            this.game.channel = game.channels[0].name;
-          }
-          this.reservedList = Array.isArray(this.game.reserved) ? this.game.reserved.map(r => r.tag).join(`\n`) : this.game.reserved;
-          if (!this.gameId) {
-            this.setDefaultDates();
-          }
-          this.dateTimeLinks();
+          this.modGame(cloneDeep(game));
         });
+    },
+    modGame(game) {
+      this.game = cloneDeep(game);
+      if (this.game && this.game.guildConfig) {
+        if (
+          this.game.guildConfig.password &&
+          this.game.guildConfig.password.length > 0
+        ) {
+          const pass = prompt("Password?", "");
+          if (pass !== this.game.guildConfig.password) {
+            return this.$router.replace(this.config.urls.game.dashboard.path);
+          }
+        }
+      }
+      this.game.dmTag = game.dm && game.dm.tag;
+      if (this.$store.getters.account) {
+        if (!game.dm || this.game.dm.tag.trim().length === 0) {
+          this.game.dmTag = this.$store.getters.account.user.tag;
+        }
+      }
+      if (!game.c) {
+        this.game.c = game.channels[0].id;
+        this.game.channel = game.channels[0].name;
+      }
+      this.reservedList = Array.isArray(this.game.reserved)
+        ? this.game.reserved.map(r => r.tag).join(`\n`)
+        : this.game.reserved;
+      if (!this.gameId) {
+        this.setDefaultDates();
+      }
+      this.dateTimeLinks();
     },
     setDefaultDates() {
       this.game.date = moment().format("YYYY-MM-DD");
@@ -691,10 +700,22 @@ export default {
           .filter(r => r.trim().length > 0)
           .map(r => ({ tag: r.trim() }));
       }
+      if (
+        this.$store.getters.account &&
+        updatedGame.dmTag === this.$store.getters.account.user.tag
+      ) {
+        updatedGame.dm = {
+          tag: updatedGame.dmTag,
+          id: this.$store.getters.account.user.id
+        };
+      } else {
+        updatedGame.dm = updatedGame.dmTag;
+      }
       delete updatedGame.title;
       delete updatedGame.guildConfig;
       delete updatedGame.errors;
       delete updatedGame.is;
+      delete updatedGame.dmTag;
       delete updatedGame.enums;
       delete updatedGame._guild;
       delete updatedGame._channel;
@@ -717,9 +738,7 @@ export default {
               `${this.config.urls.game.create.path}?g=${result._id}`
             );
           }
-          this.game = cloneDeep(result.game);
-          this.reservedList = this.game.reserved.map(r => r.tag).join(`\n`);
-          this.dateTimeLinks();
+          this.modGame(cloneDeep(result.game));
           this.saveResult = "success";
         })
         .catch(err => {

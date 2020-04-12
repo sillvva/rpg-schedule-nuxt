@@ -6,7 +6,7 @@ phases:
       # Install dependencies needed for running application
       - npm install
 
-      # Build Nuxt Project
+      # Build Project
       - npm run build
 
       # Upgrade AWS CLI to the latest version

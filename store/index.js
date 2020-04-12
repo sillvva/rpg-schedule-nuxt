@@ -3,24 +3,24 @@ import { cloneDeep } from "lodash";
 import aux from "../components/appaux";
 import config from "../components/config";
 import authAux from "../components/auth";
+import moment from "moment";
 
 const signOut = async (commit, app) => {
   try {
     app.$cookies.remove("token");
     commit("resetState");
-  }
-  catch(err) {
-    aux.log("store - signOut()", err && err.message || err);
+  } catch (err) {
+    aux.log("store - signOut()", (err && err.message) || err);
   }
   return;
 };
 
-const reauthenticate = async (commit, app, redirect) => {
+const reauthenticate = async (vuexContext, app, redirect) => {
   if (app.$cookies) {
     app.$cookies.set("redirect", redirect);
     app.$cookies.remove("token");
   }
-  commit("resetState");
+  vuexContext.commit("resetState");
   if (app.$router) {
     app.$router.replace("/");
     if (window) window.location.reload(true);
@@ -84,6 +84,25 @@ export const mutations = {
     }
   },
   setAccount(state, account) {
+    const guilds = account.guilds.map(guild => {
+      guild.games = guild.games.map(game => {
+        const reserved = game.reserved;
+        const players = parseInt(game.players);
+        game.guildAccount = guild;
+        game.slot = Array.isArray(reserved)
+          ? reserved.findIndex(
+              r => r.tag === account.user.tag || r.id === account.user.id
+            ) + 1
+          : 0;
+        game.waitlisted = false;
+        game.signedUp = false;
+        if (game.slot > players) game.waitlisted = true;
+        else if (game.slot > 0) game.signedUp = true;
+        return game;
+      });
+      return guild;
+    });
+    account.guilds = guilds;
     state.account = account;
   },
   setToken(state, sessionToken) {
@@ -100,12 +119,16 @@ export const mutations = {
   },
   setGuilds(state, guilds) {
     const account = cloneDeep(state.account);
-    guilds = guilds.map(guild => {
+    guilds = (guilds || []).map(guild => {
       guild.games = guild.games.map(game => {
         const reserved = game.reserved;
         const players = parseInt(game.players);
         game.guildAccount = guild;
-        game.slot = Array.isArray(reserved) ? reserved.findIndex(r => r.tag === account.user.tag || r.id === account.user.id) + 1 : 0;
+        game.slot = Array.isArray(reserved)
+          ? reserved.findIndex(
+              r => r.tag === account.user.tag || r.id === account.user.id
+            ) + 1
+          : 0;
         game.waitlisted = false;
         game.signedUp = false;
         if (game.slot > players) game.waitlisted = true;
@@ -126,17 +149,16 @@ export const mutations = {
 };
 
 export const actions = {
-  nuxtServerInit({ dispatch, commit }, context) {
+  async nuxtServerInit(vuexContext, context) {
     try {
-      commit("resetState");
-      if (context.req.headers.cookie) {
-        const cookies = context.req.headers.cookie.split("; ");
-        const tc = cookies.find(c => c.startsWith("token="));
-        // console.log(tc);
-      }
-    }
-    catch(err) {
-      aux.log("actions.nuxtServerInit", err && err.message || err);
+      vuexContext.commit("resetState");
+      await vuexContext.dispatch("fetchSiteSettings");
+      // if (context.req.headers.cookie) {
+      //   const cookies = context.req.headers.cookie.split("; ");
+      //   const tc = cookies.find(c => c.startsWith("token="));
+      // }
+    } catch (err) {
+      aux.log("actions.nuxtServerInit", (err && err.message) || err);
     }
   },
   setUser({ commit }, user) {
@@ -145,15 +167,79 @@ export const actions = {
   signOut({ commit }) {
     signOut(commit, this);
   },
-  authenticate({ commit, dispatch }, code) {
+  authenticate({ commit }, code) {
     return this.$axios
       .get(`${this.getters.env.apiUrl}/api/login?code=${code}`)
       .then(async result => {
         const authResult = result.data;
         commit("setToken", authResult.token);
-        commit("setAccount", authResult.account);
         return authResult;
       });
+  },
+  async initAuth(vuexContext, req) {
+    const cookies = [];
+    if (req) {
+      const hCookies = (req.headers.cookie || "").split("; ");
+      hCookies.forEach(hc => {
+        const hCookie = hc.split("=");
+        cookies.push({ name: hCookie[0], value: hCookie[1] });
+      });
+    } else {
+      const hCookies = this.$cookies.getAll();
+      for (const name in hCookies) {
+        cookies.push({ name: name, value: hCookies[name] });
+      }
+    }
+
+    const tokenCookies = [];
+    for (const cookie of cookies) {
+      if (cookie.name == "token") tokenCookies.push(cookie.value);
+    }
+
+    aux.log("initAuth", tokenCookies);
+
+    if (tokenCookies.length == 0) {
+      return;
+    }
+
+    return new Promise(async (resolve, reject) => {
+      let savedAuthResult,
+        successes = 0;
+      if (process.client && (moment().unix() - vuexContext.getters.lastRefreshed) / (60 * 60) < 12) {
+        return resolve({ status: "success" });
+      }
+      for (let i = 0; i < tokenCookies.length; i++) {
+        try {
+          let result = await this.$axios.get(
+            `${this.getters.env.apiUrl}/auth-api/user`,
+            {
+              headers: {
+                authorization: `Bearer ${tokenCookies[i]}`
+              }
+            }
+          );
+          const authResult = result.data;
+          if (authResult.status == "success") {
+            successes++;
+            savedAuthResult = authResult;
+            vuexContext.commit("setToken", authResult.token || tokenCookies[i]);
+            vuexContext.commit("setLastRefreshed", moment().unix());
+            if (authResult.user) {
+              vuexContext.dispatch("setSelectedLang", authResult.user.lang);
+            }
+          } else if (result.data.status == "error") {
+            throw new Error(authResult && authResult.message);
+          }
+        } catch (err) {
+          aux.log("actions.initAuth", err);
+        }
+      }
+      if (successes > 0) resolve(savedAuthResult);
+      else {
+        vuexContext.commit("resetState");
+        reject();
+      }
+    });
   },
   fetchLangs({ commit, dispatch }) {
     try {
@@ -173,9 +259,8 @@ export const actions = {
       commit("setLangs", langs);
 
       dispatch("setSelectedLang", lang);
-    }
-    catch(err) {
-      aux.log("actions.fetchLangs", err && err.message || err);
+    } catch (err) {
+      aux.log("actions.fetchLangs", (err && err.message) || err);
     }
   },
   setSelectedLang({ commit }, selectedLang) {
@@ -190,139 +275,54 @@ export const actions = {
     d.setFullYear(d.getFullYear() + 1);
     this.$cookies.set("lang", selectedLang, { expires: d });
   },
-  async initAuth({ commit, dispatch }, { req, app, allow }) {
-    const cookies = [];
-    if (req && process.server) {
-      const hCookies = (req.headers.cookie || "").split("; ");
-      hCookies.forEach(hc => {
-        const hCookie = hc.split("=");
-        cookies.push({ name: hCookie[0], value: hCookie[1] });
-      });
-    } else {
-      const hCookies = this.$cookies.getAll();
-      for (const name in hCookies) {
-        cookies.push({ name: name, value: hCookies[name] });
-      }
-    }
-
-    const tokenCookies = [];
-    for (const cookie of cookies) {
-      if (cookie.name == "token") tokenCookies.push(cookie.value);
-    }
-
-    // aux.log("initAuth", tokenCookies, this.state.sessionToken);
-
-    if (tokenCookies.length == 0) {
-      if (this.state.sessionToken) {
-        signOut(commit, this);
-      }
-      return;
-    }
+  async fetchGuilds(vuexContext, { page, games, app }) {
+    await vuexContext.dispatch("fetchSiteSettings");
+    vuexContext.dispatch("emptyGuilds");
 
     return new Promise(async (resolve, reject) => {
-      let savedAuthResult,
-        successes = 0,
-        reauthenticated = 0;
-      for (let i = 0; i < tokenCookies.length; i++) {
-        try {
-          let result = await this.$axios.get(
-            `${this.getters.env.apiUrl}/auth-api/user`,
-            {
-              headers: {
-                authorization: `Bearer ${tokenCookies[i]}`
-              }
+      try {
+        let result = await this.$axios.get(
+          `${this.getters.env.apiUrl}/auth-api/guilds?${page &&
+            `&page=${page}`}${games && `&games=${games}`}`,
+          {
+            headers: {
+              authorization: `Bearer ${vuexContext.getters.sessionToken}`
             }
-          );
-          const authResult = result.data;
-          // aux.log(6, tokenCookies[i], JSON.stringify(authResult));
-          if (authResult.token && authResult.token != tokenCookies[i]) {
-            // aux.log(1, authResult.token, tokenCookies[i]);
-            await authAux.setToken(app, authResult.token);
           }
-          if (authResult.status == "success") {
-            successes++;
-            savedAuthResult = authResult;
-            commit("setAccount", authResult.account);
-            commit("setToken", authResult.token || tokenCookies[i]);
-            if (authResult.user) {
-              dispatch("setSelectedLang", authResult.user.lang);
-            }
-          } else if (result.data.status == "error") {
-            aux.log('actions.initAuth', authResult);
-            if (authResult.reauthenticate) reauthenticated++;
-            throw new Error(authResult && authResult.message);
-          }
-        } catch (err) {
-          aux.log('actions.initAuth', err);
+        );
+        const authResult = result.data;
+        if (authResult.token && authResult.token != vuexContext.getters.sessionToken) {
+          vuexContext.commit("setToken", authResult.token);
+          vuexContext.commit("setLastRefreshed", moment().unix());
+          await authAux.setToken(app, authResult.token);
         }
-      }
-      if (successes > 0) resolve(savedAuthResult);
-      else {
-        aux.log('actions.initAuth', reauthenticated, allow);
-        if (reauthenticated > 0 && !allow)
-          reauthenticate(commit, this, (req && req.originalUrl) || route.path);
-        reject();
+        if (authResult.status == "success") {
+          vuexContext.commit("setAccount", authResult.account);
+          if (authResult.user) {
+            vuexContext.dispatch("setSelectedLang", authResult.user.lang);
+          }
+        } else if (result.data.status == "error") {
+          throw new Error(authResult);
+        }
+        resolve(authResult);
+      } catch (err) {
+        aux.log('fetchGuilds', err && err.message);
+        if (err.reauthenticate) reauthenticate(vuexContext, app, `/games/${page}`);
+        reject(err && err.message);
       }
     });
   },
-  async fetchGuilds({ commit, dispatch }, { page, games, app }) {
-    await dispatch("fetchSiteSettings");
-
-    const cookies = [];
-    const hCookies = this.$cookies.getAll();
-    for (const name in hCookies) {
-      cookies.push({ name: name, value: hCookies[name] });
+  emptyGuilds({ commit }) {
+    if (this.getters.account) {
+      const guilds = cloneDeep(this.getters.account.guilds);
+      commit(
+        "setGuilds",
+        guilds.map(g => {
+          g.games = [];
+          return g;
+        })
+      );
     }
-
-    const tokenCookies = [];
-    for (const cookie of cookies) {
-      if (cookie.name == "token") tokenCookies.push(cookie.value);
-    }
-
-    aux.log("fetchGuilds", tokenCookies);
-
-    return new Promise(async (resolve, reject) => {
-      let savedAuthResult,
-        successes = 0,
-        reauthenticated = 0;
-      for (let i = 0; i < tokenCookies.length; i++) {
-        try {
-          let result = await this.$axios.get(
-            `${this.getters.env.apiUrl}/auth-api/guilds?${page &&
-              `&page=${page}`}${games && `&games=${games}`}`,
-            {
-              headers: {
-                authorization: `Bearer ${tokenCookies[i]}`
-              }
-            }
-          );
-          const authResult = result.data;
-          // aux.log(6.1, tokenCookies[i], JSON.stringify(authResult));
-          if (authResult.token && authResult.token != tokenCookies[i]) {
-            // aux.log(1, authResult.token, tokenCookies[i]);
-            await authAux.setToken(app, authResult.token);
-          }
-          if (authResult.status == "success") {
-            successes++;
-            savedAuthResult = authResult;
-            commit("setGuilds", authResult.guilds);
-            if (authResult.user) {
-              dispatch("setSelectedLang", authResult.user.lang);
-            }
-          } else if (result.data.status == "error") {
-            if (authResult.reauthenticate) reauthenticated++;
-            throw new Error(authResult && authResult.message);
-          }
-        } catch (err) {
-          aux.log(3, err);
-        }
-      }
-      if (successes > 0) resolve(savedAuthResult);
-      else {
-        if (reauthenticated > 0) reauthenticate(commit, app, `/games/${page}`);
-        reject();
-      }
-    });
   },
   async rsvpGame({ commit, dispatch }, { gameId, route, app }) {
     await dispatch("fetchSiteSettings");
@@ -387,7 +387,8 @@ export const actions = {
     return this.$axios
       .get(`${this.getters.env.apiUrl}/api/game?${param}=${value}`)
       .then(result => {
-        if (result.data.status == "error") throw new Error(result.data && result.data.message);
+        if (result.data.status == "error")
+          throw new Error(result.data && result.data.message);
         return result.data.game;
       })
       .catch(err => {
@@ -410,7 +411,8 @@ export const actions = {
         }
       )
       .then(result => {
-        if (result.data.status == "error") throw new Error(result.data && result.data.message);
+        if (result.data.status == "error")
+          throw new Error(result.data && result.data.message);
         return result.data;
       });
   },
@@ -418,68 +420,47 @@ export const actions = {
     return this.$axios
       .get(`${this.getters.env.apiUrl}/api/delete-game?g=${gameId}`)
       .then(result => {
-        if (result.data.status == "error") throw new Error(result.data && result.data.message);
+        if (result.data.status == "error")
+          throw new Error(result.data && result.data.message);
         return result.data;
       });
   },
-  fetchSiteSettings({ commit }) {
+  fetchSiteSettings(vuexContext) {
     return this.$axios
       .get(`${this.getters.env.apiUrl}/api/site`)
       .then(result => {
-        commit("setSiteSettings", result.data.settings);
+        vuexContext.commit("setSiteSettings", result.data.settings);
       });
   },
-  saveSiteSettings({ commit }, { settings, route, app }) {
-    const cookies = [];
-    const hCookies = app.$cookies.getAll();
-    for (const name in hCookies) {
-      cookies.push({ name: name, value: hCookies[name] });
-    }
-
-    const tokenCookies = [];
-    for (const cookie of cookies) {
-      if (cookie.name == "token") tokenCookies.push(cookie.value);
-    }
-
-    aux.log("saveSiteSettings", tokenCookies);
-
+  saveSiteSettings(vuexContext, { settings, route, app }) {
     return new Promise(async (resolve, reject) => {
-      let savedAuthResult,
-        successes = 0,
-        reauthenticated = 0;
-      for (let i = 0; i < tokenCookies.length; i++) {
-        try {
-          const result = await this.$axios.post(
-            `${this.getters.env.apiUrl}/auth-api/site`,
-            settings,
-            {
-              headers: {
-                Authorization: `Bearer ${tokenCookies[i]}`,
-                "Content-Type": "application/json"
-              }
+      try {
+        const result = await this.$axios.post(
+          `${this.getters.env.apiUrl}/auth-api/site`,
+          settings,
+          {
+            headers: {
+              Authorization: `Bearer ${vuexContext.getters.sessionToken}`,
+              "Content-Type": "application/json"
             }
-          );
+          }
+        );
 
-          const authResult = result.data;
-          if (authResult.token && authResult.token != tokenCookies[i]) {
-            // aux.log(1, authResult.token, tokenCookies[i]);
-            await authAux.setToken(app, authResult.token);
-          }
-          if (authResult.status == "success") {
-            successes++;
-            savedAuthResult = authResult;
-          } else if (result.data.status == "error") {
-            if (authResult.reauthenticate) reauthenticated++;
-            throw new Error(authResult && authResult.message);
-          }
-        } catch (err) {
-          aux.log(3, err);
+        const authResult = result.data;
+        if (authResult.token && authResult.token != vuexContext.getters.sessionToken) {
+          vuexContext.commit("setToken", authResult.token);
+          vuexContext.commit("setLastRefreshed", moment().unix());
+          await authAux.setToken(app, authResult.token);
         }
-      }
-      if (successes > 0) resolve(savedAuthResult);
-      else {
-        if (reauthenticated > 0) reauthenticate(commit, this, route.path);
-        reject();
+        if (authResult.status == "success") {
+        } else if (result.data.status == "error") {
+          throw new Error(authResult);
+        }
+        resolve(authResult);
+      } catch (err) {
+        aux.log('saveSiteSettings', err && err.message);
+        if (err.reauthenticate) reauthenticate(vuexContext, app, route);
+        reject(err && err.message);
       }
     });
   },
@@ -614,6 +595,9 @@ export const actions = {
 export const getters = {
   sessionToken(state) {
     return state.sessionToken;
+  },
+  lastRefreshed(state) {
+    return state.lastRefreshed;
   },
   langs(state) {
     return state.langs;

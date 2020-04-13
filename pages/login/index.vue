@@ -8,7 +8,6 @@ export default {
     title: "Logging In"
   },
   mounted() {
-    console.log(this.$route.query);
     const redirect = this.$cookies.get("redirect");
     if (this.$route.query.redirect) {
       this.$cookies.set("redirect", this.$route.query.redirect);

@@ -321,6 +321,7 @@ export default {
   },
   methods: {
     signOut() {
+      console.log('ui signout')
       this.$store.dispatch("signOut").then(() => {
         this.$cookies.remove("token");
         this.$router.push("/", () => {
@@ -383,17 +384,8 @@ export default {
       };
       document.body.appendChild(el);
     },
-    sessionEnd() {
-      if (process.client && !this.$cookies.get('sessionExpires')) {
-        const d = new Date();
-        d.getDate(d.getDate() + 14);
-        this.$cookies.set("sessionExpires", 1, { expires: d });
-        this.signOut();
-      }
-    },
     maintenance() {
       try {
-        this.sessionEnd();
         const prevM = this.maintenanceBar || this.maintenanceMode;
         this.maintenanceBar = false;
         this.maintenanceTime = "";

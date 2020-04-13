@@ -4,24 +4,27 @@
 import authAux from "../../components/auth";
 
 export default {
+  layout: "loading",
   head: {
     title: "Logging In"
   },
   mounted() {
-    const redirect = this.$cookies.get("redirect");
     if (this.$route.query.redirect) {
       this.$cookies.set("redirect", this.$route.query.redirect);
       window.location = this.$store.getters.env.authUrl;
     }
     if (this.$route.query.code) {
+      const redirect = this.$cookies.get("redirect");
       this.$store
         .dispatch("authenticate", this.$route.query.code)
-        .then(async (result) => {
+        .then(async result => {
           authAux.setToken(this, result.token);
           setTimeout(() => {
-            this.$router.replace(redirect || this.$store.state.config.urls.game.games.path);
             this.$cookies.remove("redirect");
-          }, 500)
+            this.$router.replace(
+              redirect || this.$store.state.config.urls.game.games.path
+            );
+          }, 500);
         });
     }
   }

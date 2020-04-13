@@ -158,14 +158,14 @@ export const actions = {
     commit("resetState");
   },
   authenticate({ commit }, code) {
-    console.log(code, this.getters.env.apiUrl);
-    return this.$axios
-      .get(`${this.getters.env.apiUrl}/api/login?code=${code}`)
-      .then(async result => {
-        const authResult = result.data;
-        commit("setToken", authResult.token);
-        return authResult;
-      });
+    console.log(`${this.getters.env.apiUrl}/api/login?code=${code}`);
+    // return this.$axios
+    //   .get(`${this.getters.env.apiUrl}/api/login?code=${code}`)
+    //   .then(async result => {
+    //     const authResult = result.data;
+    //     commit("setToken", authResult.token);
+    //     return authResult;
+    //   });
   },
   async initAuth(vuexContext, req) {
     vuexContext.commit("setToken", null);

@@ -5,24 +5,16 @@ import config from "../components/config";
 import authAux from "../components/auth";
 import moment from "moment";
 
-const reauthenticate = async (vuexContext, app, redirect) => {
-  if (app.$cookies) {
-    app.$cookies.set("redirect", redirect);
-    app.$cookies.remove("token");
-  }
-  vuexContext.commit("resetState");
-  if (app.$router) {
-    app.$router.replace("/");
-    if (window) window.location.reload(true);
-  }
+const resetItems = {
+  sessionToken: null,
+  lastRefreshed: 0,
+  account: null
 };
 
 const baseState = {
-  sessionToken: null,
-  lastRefreshed: 0,
-  account: null,
-  langs: [],
+  ...resetItems,
   selectedLang: "en",
+  langs: [],
   lang: {},
   env: {
     githubUIUrl: process.env.GITHUB_UI_URL,
@@ -64,14 +56,25 @@ const baseState = {
   settings: {}
 };
 
+const reauthenticate = async (vuexContext, app, redirect) => {
+  if (app.$cookies) {
+    app.$cookies.set("redirect", redirect);
+    app.$cookies.remove("token");
+  }
+  vuexContext.commit("resetState", resetItems);
+  if (app.$router) {
+    app.$router.replace("/");
+    if (window) window.location.reload(true);
+  }
+};
+
 export const state = () => baseState;
 
 export const mutations = {
-  resetState(state) {
-    const bs = cloneDeep(baseState);
-    for (var key in bs) {
-      state[key] = bs[key];
-    }
+  resetState(state, resetItems) {
+    state.sessionToken = resetItems.sessionToken;
+    state.lastRefreshed = resetItems.lastRefreshed;
+    state.account = resetItems.account;
   },
   setAccount(state, account) {
     const guilds = account.guilds.map(guild => {
@@ -141,12 +144,8 @@ export const mutations = {
 export const actions = {
   async nuxtServerInit(vuexContext, context) {
     try {
-      vuexContext.commit("resetState");
+      vuexContext.commit("resetState", resetItems);
       await vuexContext.dispatch("fetchSiteSettings");
-      // if (context.req.headers.cookie) {
-      //   const cookies = context.req.headers.cookie.split("; ");
-      //   const tc = cookies.find(c => c.startsWith("token="));
-      // }
     } catch (err) {
       aux.log("actions.nuxtServerInit", (err && err.message) || err);
     }
@@ -155,21 +154,18 @@ export const actions = {
     commit("setAccount", user);
   },
   async signOut({ commit }) {
-    commit("resetState");
+    commit("resetState", resetItems);
   },
   authenticate({ commit }, code) {
-    console.log(`${this.getters.env.apiUrl}/api/login?code=${code}`);
-    // return this.$axios
-    //   .get(`${this.getters.env.apiUrl}/api/login?code=${code}`)
-    //   .then(async result => {
-    //     const authResult = result.data;
-    //     commit("setToken", authResult.token);
-    //     return authResult;
-    //   });
+    return this.$axios
+      .get(`${this.getters.env.apiUrl}/api/login?code=${code}`)
+      .then(async result => {
+        const authResult = result.data;
+        commit("setToken", authResult.token);
+        return authResult;
+      });
   },
   async initAuth(vuexContext, req) {
-    vuexContext.commit("setToken", null);
-
     const cookies = [];
     if (req) {
       const hCookies = (req.headers.cookie || "").split("; ");
@@ -189,20 +185,20 @@ export const actions = {
       if (cookie.name == "token") tokenCookies.push(cookie.value);
     }
 
-    aux.log("initAuth", tokenCookies, this.getters.sessionToken);
-
-    if (tokenCookies.length == 0) {
-      return;
-    }
+    aux.log("initAuth", tokenCookies, vuexContext.getters.sessionToken);
 
     return new Promise(async (resolve, reject) => {
-      let savedAuthResult,
+      let savedAuthResult = { message: "No session tokens found", noTokens: true },
         successes = 0;
-      if (process.client && (moment().unix() - vuexContext.getters.lastRefreshed) / (60 * 60) < 12) {
-        return resolve({ status: "success" });
-      }
-      for (let i = 0; i < tokenCookies.length; i++) {
-        try {
+      try {
+        if (
+          process.client &&
+          vuexContext.getters.sessionToken &&
+          (moment().unix() - vuexContext.getters.lastRefreshed) / (60 * 60) < 12
+        ) {
+          return resolve({ status: "success" });
+        }
+        for (let i = 0; i < tokenCookies.length; i++) {
           let result = await this.$axios.get(
             `${this.getters.env.apiUrl}/auth-api/user`,
             {
@@ -220,16 +216,17 @@ export const actions = {
             if (authResult.user) {
               vuexContext.dispatch("setSelectedLang", authResult.user.lang);
             }
+            break;
           } else if (result.data.status == "error") {
             throw new Error(authResult && authResult.message);
           }
-        } catch (err) {
-          aux.log("actions.initAuth", err);
         }
+      } catch (err) {
+        aux.log("actions.initAuth", err);
       }
       if (successes > 0) resolve(savedAuthResult);
       else {
-        reject();
+        reject(savedAuthResult);
       }
     });
   },
@@ -283,7 +280,10 @@ export const actions = {
           }
         );
         const authResult = result.data;
-        if (authResult.token && authResult.token != vuexContext.getters.sessionToken) {
+        if (
+          authResult.token &&
+          authResult.token != vuexContext.getters.sessionToken
+        ) {
           vuexContext.commit("setToken", authResult.token);
           vuexContext.commit("setLastRefreshed", moment().unix());
           await authAux.setToken(app, authResult.token);
@@ -298,8 +298,9 @@ export const actions = {
         }
         resolve(authResult);
       } catch (err) {
-        aux.log('fetchGuilds', err && err.message);
-        if (err.reauthenticate) reauthenticate(vuexContext, app, `/games/${page}`);
+        aux.log("fetchGuilds", err && err.message);
+        if (err.reauthenticate)
+          reauthenticate(vuexContext, app, `/games/${page}`);
         reject(err && err.message);
       }
     });
@@ -439,7 +440,10 @@ export const actions = {
         );
 
         const authResult = result.data;
-        if (authResult.token && authResult.token != vuexContext.getters.sessionToken) {
+        if (
+          authResult.token &&
+          authResult.token != vuexContext.getters.sessionToken
+        ) {
           vuexContext.commit("setToken", authResult.token);
           vuexContext.commit("setLastRefreshed", moment().unix());
           await authAux.setToken(app, authResult.token);
@@ -450,7 +454,7 @@ export const actions = {
         }
         resolve(authResult);
       } catch (err) {
-        aux.log('saveSiteSettings', err && err.message);
+        aux.log("saveSiteSettings", err && err.message);
         if (err.reauthenticate) reauthenticate(vuexContext, app, route);
         reject(err && err.message);
       }

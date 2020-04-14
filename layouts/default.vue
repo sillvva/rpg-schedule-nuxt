@@ -162,7 +162,7 @@
             <v-list-item-title>{{lang.nav.CALENDAR}}</v-list-item-title>
           </v-list-item>
 
-          <v-list-item :to="config.urls.game.server.path">
+          <v-list-item :to="config.urls.game.server.path" v-if="account && account.guilds.find(g => g.isAdmin)">
             <v-list-item-title>{{lang.nav.MANAGE_SERVER}}</v-list-item-title>
           </v-list-item>
         </v-list-item-group>

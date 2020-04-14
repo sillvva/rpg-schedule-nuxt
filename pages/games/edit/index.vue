@@ -14,20 +14,12 @@
                 <v-col cols="12" lg="7" class="py-0">
                   <v-row dense>
                     <v-col cols="12" sm="6" class="py-0">
-                      <v-text-field
-                        id="guild"
-                        :label="lang.game.SERVER"
-                        readonly
-                        :value="game.guild"
-                        v-if="guildId || gameId"
-                      ></v-text-field>
                       <v-select
                         id="guild"
                         :label="lang.game.SERVER"
                         v-model="game.s"
-                        :items="guilds"
+                        :items="guilds.filter(c => !gameId || c.value === game.s)"
                         @change="selectGuild"
-                        v-if="!(guildId || gameId)"
                       ></v-select>
                     </v-col>
                     <v-col cols="12" sm="6" class="py-0">
@@ -35,7 +27,8 @@
                         :label="lang.game.CHANNEL"
                         id="channel"
                         v-model="game.channel"
-                        :items="game.channels ? game.channels.map(c => ({ text: c.name, value: c.name })) : []"
+                        required
+                        :items="game.channels ? game.channels.map(c => ({ text: c.name, value: c.name })).filter(c => !gameId || c.value === game.channel) : []"
                       ></v-select>
                     </v-col>
                     <v-col cols="12" sm="5" md="4" lg="6" class="py-0">
@@ -402,22 +395,21 @@ export default {
     }
     if (this.gameId) this.fetchGame("g", this.gameId);
     else if (this.guildId) this.fetchGame("s", this.guildId);
-    else if (this.$store.getters.account) {
-      await this.$store.dispatch("fetchGuilds", {
-        page: "my-games",
-        games: true,
-        app: this
-      });
-      const account = cloneDeep(this.$store.getters.account);
-      this.guilds = account.guilds
-        .filter(guild => guild.permission || guild.isAdmin)
-        .map(g => ({ text: g.name, value: g.id }));
-      if (this.guilds.length > 0) {
-        this.game.s = this.guilds[0].value;
-        await this.selectGuild();
-      }
-      this.game.dmTag = account.user.tag;
+    
+    await this.$store.dispatch("fetchGuilds", {
+      page: "my-games",
+      games: true,
+      app: this
+    });
+    const account = cloneDeep(this.$store.getters.account);
+    this.guilds = account.guilds
+      .filter(guild => guild.permission || guild.isAdmin)
+      .map(g => ({ text: g.name, value: g.id }));
+    if (this.guilds.length > 0) {
+      this.game.s = this.guilds[0].value;
+      await this.selectGuild();
     }
+    this.game.dmTag = account.user.tag;
 
     this.reminderItems = [
       {
@@ -617,11 +609,6 @@ export default {
         }
       } else {
         try {
-          const result = await this.$store.dispatch("fetchGuilds", {
-            page: "my-games",
-            games: true,
-            app: this
-          });
           if (!this.gameId) {
             this.game.dm = {
               tag: result.account.user.tag,

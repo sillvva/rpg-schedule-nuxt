@@ -75,7 +75,10 @@ export default {
   watch: {
     storeGuilds: {
       handler: function(newVal) {
-        this.guilds = cloneDeep(newVal);
+        this.guilds = cloneDeep(newVal).map(g => ({
+          ...g,
+          collapsed: false
+        }));
       },
       immediate: true
     },

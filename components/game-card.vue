@@ -81,7 +81,7 @@
     </template>
     <v-card>
       <v-card-title>
-        {{game && game.adventure}}
+        <span>{{game && game.adventure}}</span>
         <v-spacer></v-spacer>
         <v-btn fab small text @click="cardDialog = false">
           <v-icon>mdi-close</v-icon>

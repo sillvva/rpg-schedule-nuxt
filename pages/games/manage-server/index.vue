@@ -1,7 +1,7 @@
 <template>
   <v-container fluid>
     <div v-if="$store.getters.account && $store.getters.account.user.tag === config.author">
-      <v-text-field label="Search Guilds" v-model="searchQuery" @keyup="searchGuild"></v-text-field>
+      <v-text-field label="Search" v-model="searchQuery" @keyup="searchGuild" filled dense style="margin-bottom: -10px;"></v-text-field>
     </div>
     <v-card v-for="(guild, g) in guilds" v-bind:key="g" max-width="100%" class="mb-3">
       <v-toolbar color="discord">

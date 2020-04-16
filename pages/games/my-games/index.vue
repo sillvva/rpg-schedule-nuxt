@@ -1,27 +1,63 @@
 <template>
   <v-container fluid>
-    <v-card v-for="(guild, g) in guilds" v-bind:key="g" max-width="100%" class="mb-3">
-      <v-toolbar color="discord">
-        <v-img v-if="guild.icon" :src="guild.icon" max-width="40" class="mr-3 hidden-xs-only" style="border-radius: 50%;"></v-img>
+    <v-app-bar dense class="mb-3">
+      <v-text-field
+        v-model="searchQuery"
+        @keyup="searchGuild"
+        dense
+        prepend-inner-icon="mdi-magnify"
+        style="margin-bottom: -10px;"
+      ></v-text-field>
+      <v-btn
+        text
+        small
+        v-if="guilds.filter(g => g.collapsed).length > 0"
+        @click="expandAll"
+        class="hidden-xs-only ml-3"
+      >Expand All</v-btn>
+      <v-btn
+        text
+        small
+        v-if="guilds.filter(g => !g.collapsed).length > 0"
+        @click="collapseAll"
+        class="hidden-xs-only ml-3"
+      >Collapse All</v-btn>
+    </v-app-bar>
+    <v-card
+      v-for="(guild, g) in guilds.filter(g => !g.filtered)"
+      v-bind:key="g"
+      max-width="100%"
+      class="mb-3"
+    >
+      <v-toolbar color="discord" dense>
+        <v-img
+          v-if="guild.icon"
+          :src="guild.icon"
+          max-width="30"
+          class="mr-3 hidden-xs-only"
+          style="border-radius: 50%;"
+        ></v-img>
         <v-toolbar-title>{{guild.name}}</v-toolbar-title>
         <v-spacer></v-spacer>
         <v-btn
           :to="`${config.urls.game.create.path}?s=${guild.id}`"
           :title="lang.buttons.NEW_GAME"
-          color="green"
-          fab
-          small
+          icon
           class="hidden-xs-only"
           v-if="guild.permission || guild.isAdmin"
         >
           <v-icon>mdi-plus</v-icon>
         </v-btn>
+        <v-btn icon @click="guild.collapsed = !guild.collapsed">
+          <v-icon v-if="!guild.collapsed">mdi-chevron-down</v-icon>
+          <v-icon v-if="guild.collapsed">mdi-chevron-up</v-icon>
+        </v-btn>
       </v-toolbar>
 
-      <v-container fluid>
+      <v-container fluid v-if="!guild.collapsed">
         <v-row dense>
           <v-col
-            v-for="(game, i) in guild.games"
+            v-for="(game, i) in guild.games.filter(game => !game.filtered)"
             v-bind:key="i"
             cols="12"
             sm="6"
@@ -29,7 +65,13 @@
             lg="3"
             xl="2"
           >
-            <GameCard v-if="game.dm.tag === account.user.tag" :gameData="game" :numColumns="1" :exclude="['gm', 'server']" :edit="true"></GameCard>
+            <GameCard
+              v-if="game.dm.tag === account.user.tag"
+              :gameData="game"
+              :numColumns="1"
+              :exclude="['gm', 'server']"
+              :edit="true"
+            ></GameCard>
           </v-col>
         </v-row>
       </v-container>
@@ -71,6 +113,7 @@ export default {
       lang: {},
       config: this.$store.getters.config,
       account: this.$store.getters.account || {},
+      searchQuery: ""
     };
   },
   computed: {
@@ -95,7 +138,10 @@ export default {
     },
     storeGuilds: {
       handler: function(newVal) {
-        this.guilds = cloneDeep(newVal);
+        this.guilds = cloneDeep(newVal).map(g => ({
+          ...g,
+          collapsed: false
+        }));
       },
       immediate: true
     },
@@ -108,12 +154,84 @@ export default {
   },
   mounted() {
     updateToken(this);
-    this.$store
-      .dispatch("fetchGuilds", {
-        page: "my-games",
-        games: true,
-        app: this
+    this.$store.dispatch("fetchGuilds", {
+      page: "my-games",
+      games: true,
+      app: this
+    });
+  },
+  methods: {
+    collapseAll() {
+      this.guilds = this.guilds.map(g => {
+        g.collapsed = true;
+        return g;
       });
+    },
+    expandAll() {
+      this.guilds = this.guilds.map(g => {
+        g.collapsed = false;
+        return g;
+      });
+    },
+    searchGuild($event) {
+      if ($event.key != "Enter") return;
+      const regex = /((\w+):)?"([^"]+)"|((\w+):)?([^ ]+)/gm,
+        matches = [];
+      let m;
+      while ((m = regex.exec(this.searchQuery)) !== null) {
+        if (m.index === regex.lastIndex) {
+          regex.lastIndex++;
+        }
+        if (m[3] && m[3].length > 0) {
+          matches.push({ type: m[2] || "any", query: m[3] });
+        }
+        if (m[6] && m[6].length > 0) {
+          matches.push({ type: m[5] || "any", query: m[6] });
+        }
+      }
+      this.guilds = this.guilds.map(guild => {
+        guild.games = guild.games.map(game => {
+          if (matches.length > 0) {
+            if (
+              !matches
+                .map(match => ({
+                  type: match.type,
+                  regex: new RegExp(match.query, "gi")
+                }))
+                .find(match => {
+                  return (
+                    (match.type === "any" &&
+                      (match.regex.test(game.adventure) ||
+                        match.regex.test(game.dm.tag) ||
+                        match.regex.test(guild.name))) ||
+                    match.regex.test(
+                      (match.type === "gm" && game.dm.tag) ||
+                        (match.type === "name" && game.adventure) ||
+                        (match.type === "server" && guild.name) ||
+                        (match.type === "reserved" &&
+                          game.reserved.reduce(
+                            (i, r) => `${i}\n${r.tag}`,
+                            ""
+                          )) ||
+                        game[match.type]
+                    )
+                  );
+                })
+            ) {
+              game.filtered = true;
+            } else {
+              game.filtered = false;
+            }
+          } else {
+            game.filtered = false;
+          }
+          return game;
+        });
+        if (guild.games.find(game => !game.filtered)) guild.filtered = false;
+        else guild.filtered = true;
+        return guild;
+      });
+    }
   }
 };
 </script>

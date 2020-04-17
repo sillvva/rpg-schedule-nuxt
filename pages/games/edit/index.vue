@@ -116,16 +116,33 @@
                       v-if="game.when === enums.GameWhen.DATETIME"
                       class="py-0"
                     >
-                      <v-text-field
-                        id="date"
-                        type="date"
-                        :label="lang.game.DATE"
-                        v-model="game.date"
-                        @change="dateTimeLinks"
-                        @keyup="dateTimeLinks"
-                        :hint="nextDate && `Next: ${nextDate}`"
-                        persistent-hint
-                      ></v-text-field>
+                      <v-menu
+                        v-model="dateMenu"
+                        :close-on-content-click="false"
+                        transition="scale-transition"
+                        offset-y
+                        min-width="290px"
+                      >
+                        <template v-slot:activator="{ on }">
+                          <v-text-field
+                            id="date"
+                            type="date"
+                            :label="lang.game.DATE"
+                            v-model="game.date"
+                            @change="dateTimeLinks"
+                            :hint="nextDate && `Next: ${nextDate}`"
+                            prepend-inner-icon="mdi-calendar"
+                            persistent-hint
+                            readonly
+                            v-on="on"
+                          ></v-text-field>
+                        </template>
+                        <v-date-picker
+                          v-model="game.date"
+                          @input="dateMenu = false;"
+                          :locale="lang.code"
+                        ></v-date-picker>
+                      </v-menu>
                     </v-col>
                     <v-col
                       cols="6"
@@ -133,14 +150,31 @@
                       v-if="game.when === enums.GameWhen.DATETIME"
                       class="py-0"
                     >
-                      <v-text-field
-                        id="time"
-                        type="time"
-                        :label="lang.game.TIME"
-                        v-model="game.time"
-                        @change="dateTimeLinks"
-                        @keyup="dateTimeLinks"
-                      ></v-text-field>
+                      <v-menu
+                        v-model="timeMenu"
+                        :close-on-content-click="false"
+                        transition="scale-transition"
+                        offset-y
+                        min-width="290px"
+                      >
+                        <template v-slot:activator="{ on }">
+                          <v-text-field
+                            id="time"
+                            type="time"
+                            :label="lang.game.TIME"
+                            v-model="game.time"
+                            @change="dateTimeLinks"
+                            readonly
+                            v-on="on"
+                          ></v-text-field>
+                        </template>
+                        <v-time-picker
+                          ampm-in-title
+                          v-model="game.time"
+                          @input="timeMenu = false;"
+                          :format="/ (AM|PM)/i.test(new Date().toLocaleString()) ? 'ampm' : '24hr'"
+                        ></v-time-picker>
+                      </v-menu>
                     </v-col>
                     <v-col
                       cols="6"
@@ -357,6 +391,8 @@ export default {
       copy: false,
       convertLink: "",
       monthlyWeekdayDesc: "",
+      dateMenu: false,
+      timeMenu: false,
       nextDate: "",
       weekdays: [],
       repeatOptions: [],
@@ -522,6 +558,9 @@ export default {
     async modGame(game) {
       this.game = cloneDeep(game);
       if (this.game.weekdays) {
+        if (!Array.isArray(this.game.weekdays)) {
+          this.game.weekdays = Array(7).fill(false).map((w, i) => this.game.weekdays[i]);
+        }
         this.weekdays = this.game.weekdays
           .map((w, i) => (w ? i : false))
           .filter(w => w !== false);

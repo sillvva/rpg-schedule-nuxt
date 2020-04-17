@@ -1,6 +1,14 @@
 <template>
   <v-container fluid>
-    <v-app-bar dense class="mb-3">
+    <v-text-field
+      v-model="searchQuery"
+      @keyup="search"
+      flat
+      solo
+      prepend-inner-icon="mdi-magnify"
+      class="hidden-sm-and-up mb-n4"
+    ></v-text-field>
+    <v-app-bar dense class="mb-3 hidden-xs-only">
       <v-text-field
         v-model="searchQuery"
         @keyup="search"
@@ -14,14 +22,14 @@
         small
         v-if="guilds.filter(g => g.collapsed).length > 0"
         @click="expandAll"
-        class="hidden-xs-only ml-4"
+        class="ml-4"
       >Expand All</v-btn>
       <v-btn
         text
         small
         v-if="guilds.filter(g => !g.collapsed).length > 0"
         @click="collapseAll"
-        class="hidden-xs-only ml-4"
+        class="ml-4"
       >Collapse All</v-btn>
     </v-app-bar>
     <v-card

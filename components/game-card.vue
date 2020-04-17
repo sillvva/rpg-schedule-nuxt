@@ -208,11 +208,12 @@ export default {
             value: this.lang.game.labesl.TBD
           });
         } else {
+          const tdiff = game.timestamp - moment().valueOf();
           items.push({
             id: "when",
             label: this.lang.game.WHEN,
             class: [game.moment.state, "nowrap"].filter(c => c).join(" "),
-            value: `${game.moment.calendar} (${game.moment.from})`
+            value: [game.moment.calendar, tdiff > 0 && tdiff / 86400000 >= 6.5 && `(${game.moment.from})`].filter(c => c).join(" ")
           });
           items.push({
             id: "calendar",

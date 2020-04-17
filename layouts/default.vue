@@ -129,7 +129,7 @@
             small
             absolute
             right
-            v-if="account.guilds.find(guild => guild.permission || guild.isAdmin)"
+            v-if="account.guilds.find(guild => (guild.permission || guild.isAdmin) && guild.announcementChannels.length > 0)"
           >
             <v-icon>mdi-plus</v-icon>
           </v-btn>

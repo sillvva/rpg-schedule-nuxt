@@ -22,7 +22,7 @@
                         @change="selectGuild"
                       ></v-select>
                     </v-col>
-                    <v-col cols="12" sm="6" class="py-0">
+                    <v-col cols="12" sm="6" class="py-0" v-if="channels">
                       <v-select
                         :label="lang.game.CHANNEL"
                         id="channel"
@@ -412,16 +412,15 @@ export default {
         this.account = newVal;
         if (newVal) {
           this.guilds = this.account.guilds
-            .filter(guild => guild.permission || guild.isAdmin)
+            .filter(
+              guild =>
+                (guild.permission || guild.isAdmin) &&
+                guild.announcementChannels.length > 0
+            )
             .map(g => ({ text: g.name, value: g.id }));
           if (this.guilds.length > 0) {
             this.game.s = this.guilds[0].value;
             await this.selectGuild();
-          }
-
-          const guild = this.account.guilds.find(g => g.id === this.game.s);
-          if (guild) {
-            this.channels = guild.announcementChannels;
           }
 
           this.modGame(this.game);
@@ -477,6 +476,7 @@ export default {
   },
   methods: {
     async selectGuild() {
+      this.modGame(this.game);
       if (this.guilds.length > 0) {
         if (this.game.c) {
           await this.fetchGameChannels("s", this.game.s);
@@ -521,20 +521,32 @@ export default {
     },
     async modGame(game) {
       this.game = cloneDeep(game);
-      this.weekdays = this.game.weekdays
-        .map((w, i) => (w ? i : false))
-        .filter(w => w !== false);
-      this.game.dmTag = game.dm && game.dm.tag;
+      if (this.game.weekdays) {
+        this.weekdays = this.game.weekdays
+          .map((w, i) => (w ? i : false))
+          .filter(w => w !== false);
+      }
+      if (this.game.dm) {
+        this.game.dmTag = this.game.dm.tag;
+      }
       if (this.account) {
+        const guild = this.account.guilds.find(g => g.id === this.game.s);
+        if (guild) {
+          this.channels = guild.announcementChannels;
+        }
         if (!game.dm || this.game.dm.tag.trim().length === 0) {
           this.game.dmTag = this.account.user.tag;
         }
       }
-      if (!game.c) {
-        this.game.c = game.channels[0].id;
-        this.game.channel = game.channels[0].name;
-      } else {
-        this.game.channel = game.channels.find(c => c.id === game.c).name;
+      if (this.game.channels) {
+        if (!game.c) {
+          this.game.c = this.game.channels[0].id;
+          this.game.channel = this.game.channels[0].name;
+        } else {
+          this.game.channel = this.game.channels.find(
+            c => c.id === game.c
+          ).name;
+        }
       }
       this.reservedList = Array.isArray(this.game.reserved)
         ? this.game.reserved.map(r => r.tag).join(`\n`)

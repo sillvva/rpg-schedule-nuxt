@@ -191,7 +191,7 @@
         <span>{{lang.other.MAINTENANCE.replace(":TIME", maintenanceTime.toLowerCase()).replace(":DURATION", `${settings.maintenanceDuration}`)}}</span>
         <v-spacer></v-spacer>
       </v-system-bar>
-      <nuxt :key="urlConfig.refreshOnParamsChange ? $route.fullPath : $route.path" />
+      <nuxt :key="!urlConfig || urlConfig.refreshOnParamsChange ? $route.fullPath : $route.path" />
     </v-content>
   </v-app>
 </template>

@@ -349,8 +349,7 @@
             <span
               v-if="pledge.vanity && !pledge.url.startsWith('https://www.patreon.com/user')"
             >
-              (
-              <a :href="pledge.url" target="_blank">{{pledge.patron.attributes.vanity}}</a>)
+              (<a :href="pledge.url" target="_blank">{{pledge.vanity}}</a>)
             </span>
           </li>
         </ul>

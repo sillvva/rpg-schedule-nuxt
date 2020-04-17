@@ -1,5 +1,5 @@
 <template>
-  <v-container fluid style="height: 100%;">
+  <v-container fluid style="height: 100%;" class="cal-cont">
     <v-card style="height: 100%;">
       <v-toolbar color="discord" v-if="lang.game && baseDate && moment">
         <v-toolbar-title class="d-none d-md-flex mb-0 align-center">
@@ -262,6 +262,10 @@ export default {
   flex-wrap: wrap;
 }
 
+.cal-cont {
+  padding-bottom: 0;
+}
+
 .cal-header {
   text-align: center;
   padding: 6px 6px !important;
@@ -319,8 +323,19 @@ export default {
   .col-game {
     height: auto;
   }
-  .col-cal {
-    height: 353px;
+  /* .col-cal .weeks-5 {
+    height: 303px;
+  }
+  .col-cal .weeks-4 {
+    height: 253px;
+  } */
+  .cal-cont {
+    padding: 0;
+    overflow: hidden;
+  }
+  .cal-day {
+    padding: 3px !important;
+    min-height: 50px;
   }
 }
 

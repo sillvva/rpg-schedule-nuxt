@@ -38,11 +38,11 @@
         small
         :href="config.urls.donate.path"
         target="_blank"
-        class="hidden-md-and-up discord--text"
+        class="hidden-xs-only hidden-md-and-up discord--text"
       >
         <v-icon dark>mdi-gift-outline</v-icon>
       </v-btn>
-      <span class="hidden-md-and-up">&nbsp;&nbsp;</span>
+      <span class="hidden-xs-only hidden-md-and-up">&nbsp;&nbsp;</span>
       <v-btn text href="/r/donate" target="_blank" class="hidden-sm-and-down discord--text">
         <v-icon left dark>mdi-gift-outline</v-icon>
         <span>{{lang.nav.DONATE}}</span>
@@ -55,7 +55,7 @@
         </template>
         <v-card>
           <v-card-title>
-            Settings
+            <span>Settings</span>
             <v-spacer></v-spacer>
             <v-btn fab small text @click="settingsDialog = false">
               <v-icon>mdi-close</v-icon>
@@ -162,7 +162,10 @@
             <v-list-item-title>{{lang.nav.CALENDAR}}</v-list-item-title>
           </v-list-item>
 
-          <v-list-item :to="config.urls.game.server.path">
+          <v-list-item
+            :to="config.urls.game.server.path"
+            v-if="account && account.guilds.find(g => g.isAdmin)"
+          >
             <v-list-item-title>{{lang.nav.MANAGE_SERVER}}</v-list-item-title>
           </v-list-item>
         </v-list-item-group>
@@ -188,13 +191,14 @@
         <span>{{lang.other.MAINTENANCE.replace(":TIME", maintenanceTime.toLowerCase()).replace(":DURATION", `${settings.maintenanceDuration}`)}}</span>
         <v-spacer></v-spacer>
       </v-system-bar>
-      <nuxt :key="$route.fullPath" />
+      <nuxt :key="urlConfig.refreshOnParamsChange ? $route.fullPath : $route.path" />
     </v-content>
   </v-app>
 </template>
 
 <script>
 import lang from "../components/lang/en.json";
+import aux from "../components/appaux";
 import { cloneDeep } from "lodash";
 
 let lastGuildRefresh = new Date().getTime();
@@ -267,6 +271,10 @@ export default {
     },
     storeSiteSettings() {
       return this.$store.getters.siteSettings;
+    },
+    urlConfig() {
+      const parsedURLs = aux.parseConfigURLs(this.config.urls);
+      return parsedURLs.find(path => path.session && this.$route.path === path.path);
     }
   },
   watch: {
@@ -321,7 +329,7 @@ export default {
   },
   methods: {
     signOut() {
-      console.log('ui signout')
+      console.log("ui signout");
       this.$store.dispatch("signOut").then(() => {
         this.$cookies.remove("token");
         this.$router.push("/", () => {
@@ -527,3 +535,12 @@ export default {
   }
 };
 </script>
+
+<style>
+.v-card .v-card__title span {
+  max-width: calc(100% - 50px);
+  text-overflow: ellipsis;
+  overflow: hidden;
+  white-space: nowrap;
+}
+</style>

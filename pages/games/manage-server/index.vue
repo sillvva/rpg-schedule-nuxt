@@ -1,13 +1,48 @@
 <template>
   <v-container fluid>
-    <v-card v-for="(guild, g) in guilds" v-bind:key="g" max-width="100%" class="mb-3">
-      <v-toolbar color="discord">
-        <v-img v-if="guild.icon" :src="guild.icon" max-width="40" class="mr-3 hidden-xs-only" style="border-radius: 50%;"></v-img>
+    <v-app-bar dense class="mb-3">
+      <v-text-field
+        v-model="searchQuery"
+        @keyup="search"
+        flat
+        solo
+        prepend-inner-icon="mdi-magnify"
+        style="height: 48px; margin-left: -16px;"
+      ></v-text-field>
+      <v-btn
+        text
+        small
+        v-if="guilds.filter(g => g.collapsed).length > 0"
+        @click="expandAll"
+        class="hidden-xs-only ml-4"
+      >Expand All</v-btn>
+      <v-btn
+        text
+        small
+        v-if="guilds.filter(g => !g.collapsed).length > 0"
+        @click="collapseAll"
+        class="hidden-xs-only ml-4"
+      >Collapse All</v-btn>
+    </v-app-bar>
+    <v-card
+      v-for="(guild, g) in guilds.filter(gld => !gld.filtered)"
+      v-bind:key="g"
+      max-width="100%"
+      class="mb-3"
+    >
+      <v-toolbar dense color="discord">
+        <v-img
+          v-if="guild.icon"
+          :src="guild.icon"
+          max-width="30"
+          class="mr-3 hidden-xs-only"
+          style="border-radius: 50%;"
+        ></v-img>
         <v-toolbar-title>{{guild.name}}</v-toolbar-title>
         <v-spacer></v-spacer>
         <v-dialog v-model="guild.editing" scrollable max-width="600px">
           <template v-slot:activator="{ on }">
-            <v-btn fab small v-on="on" class="white" light>
+            <v-btn icon v-on="on">
               <v-icon dark>mdi-cog</v-icon>
             </v-btn>
           </template>
@@ -152,7 +187,7 @@
                     <v-select
                       :label="lang.config.CHANNELS"
                       v-model="guild.config.channel"
-                      :items="guild.channels.cache.filter(channel => channel.type === 'text').map(channel => {
+                      :items="guild.channels.filter(channel => channel.type === 'text').map(channel => {
                         return { text: channel.name, value: channel.id };
                       })"
                       :hint="lang.config.desc.ADD_CHANNEL"
@@ -213,12 +248,16 @@
             </v-card-actions>
           </v-card>
         </v-dialog>
+        <v-btn icon @click="guild.collapsed = !guild.collapsed">
+          <v-icon v-if="!guild.collapsed">mdi-chevron-down</v-icon>
+          <v-icon v-if="guild.collapsed">mdi-chevron-up</v-icon>
+        </v-btn>
       </v-toolbar>
 
-      <v-container fluid>
+      <v-container fluid v-if="!guild.collapsed">
         <v-row dense>
           <v-col
-            v-for="(game, i) in guild.games"
+            v-for="(game, i) in guild.games.filter(game => !game.filtered)"
             v-bind:key="i"
             cols="12"
             sm="6"
@@ -254,6 +293,7 @@ export default {
       lang: {},
       langs: {},
       config: this.$store.getters.config,
+      searchQuery: this.$route.query.s,
       emojiRule: value => {
         const splitter = new GraphemeSplitter();
         const rgx = /(?:[\u2700-\u27bf]|(?:\ud83c[\udde6-\uddff]){2}|[\ud800-\udbff][\udc00-\udfff]|[\u0023-\u0039]\ufe0f?\u20e3|\u3299|\u3297|\u303d|\u3030|\u24c2|\ud83c[\udd70-\udd71]|\ud83c[\udd7e-\udd7f]|\ud83c\udd8e|\ud83c[\udd91-\udd9a]|\ud83c[\udde6-\uddff]|\ud83c[\ude01-\ude02]|\ud83c\ude1a|\ud83c\ude2f|\ud83c[\ude32-\ude3a]|\ud83c[\ude50-\ude51]|\u203c|\u2049|[\u25aa-\u25ab]|\u25b6|\u25c0|[\u25fb-\u25fe]|\u00a9|\u00ae|\u2122|\u2139|\ud83c\udc04|[\u2600-\u26FF]|\u2b05|\u2b06|\u2b07|\u2b1b|\u2b1c|\u2b50|\u2b55|\u231a|\u231b|\u2328|\u23cf|[\u23e9-\u23f3]|[\u23f8-\u23fa]|\ud83c\udccf|\u2934|\u2935|[\u2190-\u21ff])/g;
@@ -283,7 +323,19 @@ export default {
   watch: {
     storeGuilds: {
       handler: function(newVal) {
-        this.guilds = cloneDeep(newVal);
+        this.guilds = cloneDeep(newVal).map(g => ({
+          ...g,
+          collapsed: false,
+          filtered: false
+        }));
+        if (
+          !(
+            this.$store.getters.account &&
+            this.$store.getters.account.user.tag === this.config.author
+          )
+        ) {
+          this.searchGuild();
+        }
       },
       immediate: true
     },
@@ -302,12 +354,11 @@ export default {
   },
   mounted() {
     updateToken(this);
-    this.$store
-      .dispatch("fetchGuilds", {
-        page: "server",
-        games: true,
-        app: this
-      })
+    this.$store.dispatch("fetchGuilds", {
+      page: "server",
+      games: true,
+      app: this
+    });
   },
   methods: {
     saveGuildConfiguration() {
@@ -326,13 +377,108 @@ export default {
               guild.editing = false;
             })
             .catch(err => {
-              alert(err && err.message || err);
+              alert((err && err.message) || err);
             });
         }
       }
     },
     cloneDeep(val) {
       return cloneDeep(val);
+    },
+    search($event) {
+      if (!$event || $event.key != "Enter") return;
+      if (this.searchQuery.trim().length == 0) {
+        this.$router.push(this.$route.path);
+      } else {
+        this.$router.push(
+          `${this.$route.path}?s=${encodeURIComponent(this.searchQuery.trim())}`
+        );
+      }
+      this.searchGuild();
+    },
+    searchGuild() {
+      if (
+        this.$store.getters.account &&
+        this.$store.getters.account.user.tag === this.config.author
+      ) {
+        this.guilds = [];
+        this.$store.dispatch("fetchGuilds", {
+          page: "server",
+          games: true,
+          app: this,
+          search: this.searchQuery.trim().length > 0 ? this.searchQuery : null
+        });
+      } else {
+        const regex = /((\w+):)?"([^"]+)"|((\w+):)?([^ ]+)/gm,
+          matches = [];
+        let m;
+        while ((m = regex.exec(this.searchQuery)) !== null) {
+          if (m.index === regex.lastIndex) {
+            regex.lastIndex++;
+          }
+          if (m[3] && m[3].length > 0) {
+            matches.push({ type: m[2] || "any", query: m[3] });
+          }
+          if (m[6] && m[6].length > 0) {
+            matches.push({ type: m[5] || "any", query: m[6] });
+          }
+        }
+        this.guilds = this.guilds.map(guild => {
+          guild.games = guild.games.map(game => {
+            if (matches.length > 0) {
+              if (
+                !matches
+                  .map(match => ({
+                    type: match.type,
+                    regex: new RegExp(match.query, "gi")
+                  }))
+                  .find(match => {
+                    return (
+                      (match.type === "any" &&
+                        (match.regex.test(game.adventure) ||
+                          match.regex.test(game.dm.tag) ||
+                          match.regex.test(guild.name))) ||
+                      match.regex.test(
+                        (match.type === "gm" && game.dm.tag) ||
+                          (match.type === "name" && game.adventure) ||
+                          (match.type === "server" && guild.name) ||
+                          (match.type === "reserved" &&
+                            game.reserved.reduce(
+                              (i, r) => `${i}\n${r.tag}`,
+                              ""
+                            )) ||
+                          game[match.type]
+                      )
+                    );
+                  })
+              ) {
+                game.filtered = true;
+              } else {
+                game.filtered = false;
+              }
+            } else {
+              game.filtered = false;
+            }
+            return game;
+          });
+          if (guild.games.find(game => !game.filtered)) guild.filtered = false;
+          else guild.filtered = true;
+          return guild;
+        });
+        this.expandAll();
+      }
+    },
+    collapseAll() {
+      this.guilds = this.guilds.map(g => {
+        g.collapsed = true;
+        return g;
+      });
+    },
+    expandAll() {
+      this.guilds = this.guilds.map(g => {
+        g.collapsed = false;
+        return g;
+      });
     }
   }
 };

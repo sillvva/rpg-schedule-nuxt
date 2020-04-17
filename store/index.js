@@ -64,7 +64,7 @@ const reauthenticate = async (vuexContext, app, redirect) => {
   vuexContext.commit("resetState", resetItems);
   if (app.$router) {
     app.$router.replace("/");
-    if (window) window.location.reload(true);
+    // if (window) window.location.reload(true);
   }
 };
 
@@ -185,10 +185,11 @@ export const actions = {
       if (cookie.name == "token") tokenCookies.push(cookie.value);
     }
 
-    aux.log("initAuth", tokenCookies, vuexContext.getters.sessionToken);
-
     return new Promise(async (resolve, reject) => {
-      let savedAuthResult = { message: "No session tokens found", noTokens: true },
+      let savedAuthResult = {
+          message: "No session tokens found",
+          noTokens: true
+        },
         successes = 0;
       try {
         if (
@@ -198,6 +199,9 @@ export const actions = {
         ) {
           return resolve({ status: "success" });
         }
+
+        aux.log("initAuth", tokenCookies, vuexContext.getters.sessionToken);
+
         for (let i = 0; i < tokenCookies.length; i++) {
           let result = await this.$axios.get(
             `${this.getters.env.apiUrl}/auth-api/user`,
@@ -264,15 +268,18 @@ export const actions = {
     d.setFullYear(d.getFullYear() + 1);
     this.$cookies.set("lang", selectedLang, { expires: d });
   },
-  async fetchGuilds(vuexContext, { page, games, app }) {
+  async fetchGuilds(vuexContext, { page, games, search, app }) {
     await vuexContext.dispatch("fetchSiteSettings");
     vuexContext.dispatch("emptyGuilds");
 
     return new Promise(async (resolve, reject) => {
       try {
         let result = await this.$axios.get(
-          `${this.getters.env.apiUrl}/auth-api/guilds?${page &&
-            `&page=${page}`}${games && `&games=${games}`}`,
+          `${this.getters.env.apiUrl}/auth-api/guilds?${
+            page ? `&page=${page}` : ""
+          }${games ? `&games=${games}` : ""}${
+            search ? `&search=${search}` : ""
+          }`,
           {
             headers: {
               authorization: `Bearer ${vuexContext.getters.sessionToken}`
@@ -294,13 +301,17 @@ export const actions = {
             vuexContext.dispatch("setSelectedLang", authResult.user.lang);
           }
         } else if (result.data.status == "error") {
-          throw new Error(authResult);
+          throw new Error(JSON.stringify(authResult));
         }
         resolve(authResult);
       } catch (err) {
+        let authResult = err.message.startsWith("{")
+          ? JSON.parse(err.message)
+          : null;
+        if (authResult && authResult.reauthenticate) {
+          return reauthenticate(vuexContext, app, `/games/${page}`);
+        }
         aux.log("fetchGuilds", err && err.message);
-        if (err.reauthenticate)
-          reauthenticate(vuexContext, app, `/games/${page}`);
         reject(err && err.message);
       }
     });

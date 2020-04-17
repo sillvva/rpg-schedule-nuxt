@@ -1,5 +1,5 @@
 export default function({ store, redirect, route }) {
-  const isAccessible = /(^\/$)|login|help|games\/edit/.test(route.path);
+  const isAccessible = /(^\/$)|login|help/.test(route.path);
   // console.log('au', store.state.sessionToken)
   if (!store.state.sessionToken && !isAccessible) {
     return redirect(

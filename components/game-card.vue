@@ -2,10 +2,11 @@
   <v-dialog v-model="cardDialog" scrollable max-width="500px">
     <template v-slot:activator="{ on }">
       <v-card v-on="on" color="grey darken-3" max-width="100%" height="100%">
-        <v-card-title class="subtitle-1" style="position: relative;">
-          <div class="game-title">
-            {{game && game.adventure}}
-          </div>
+        <v-card-title class="subtitle-1">
+          <div class="game-title">{{game && game.adventure}}</div>
+        </v-card-title>
+        <v-divider></v-divider>
+        <v-card-text style="position: relative;">
           <v-btn
             @click.stop="rsvpGameId = game._id; rsvp();"
             v-if="!edit && game && account && game.dm.tag !== account.user.tag && game.method === 'automated' && game.slot === 0"
@@ -14,7 +15,7 @@
             fab
             x-small
             absolute
-            bottom
+            top
             right
           >
             <v-icon>mdi-thumb-up</v-icon>
@@ -27,7 +28,7 @@
             fab
             x-small
             absolute
-            bottom
+            top
             right
           >
             <v-icon>mdi-thumb-down</v-icon>
@@ -40,14 +41,11 @@
             fab
             x-small
             absolute
-            bottom
+            top
             right
           >
             <v-icon>mdi-pencil</v-icon>
           </v-btn>
-        </v-card-title>
-        <v-divider></v-divider>
-        <v-card-text>
           <v-row dense>
             <v-col
               v-for="(col, c) in columns"
@@ -81,7 +79,7 @@
     </template>
     <v-card>
       <v-card-title>
-        {{game && game.adventure}}
+        <span>{{game && game.adventure}}</span>
         <v-spacer></v-spacer>
         <v-btn fab small text @click="cardDialog = false">
           <v-icon>mdi-close</v-icon>
@@ -192,6 +190,16 @@ export default {
           label: this.lang.game.GM,
           value: game.dm.tag.split("#")[0]
         });
+        items.push({
+          id: "where",
+          label: this.lang.game.WHERE,
+          html: this.parseURL(game.where)
+        });
+        items.push({
+          id: "server",
+          label: this.lang.game.SERVER,
+          value: game.guildAccount.name
+        });
         if (game.hideDate) {
           items.push({
             id: "when",
@@ -203,7 +211,7 @@ export default {
           items.push({
             id: "when",
             label: this.lang.game.WHEN,
-            class: game.moment.state,
+            class: [game.moment.state, "nowrap"].filter(c => c).join(" "),
             value: `${game.moment.calendar} (${game.moment.from})`
           });
           items.push({
@@ -220,16 +228,6 @@ export default {
             value: this.lang.buttons.ADD_TO_GOOGLE_CALENDAR
           });
         }
-        items.push({
-          id: "where",
-          label: this.lang.game.WHERE,
-          html: this.parseURL(game.where)
-        });
-        items.push({
-          id: "server",
-          label: this.lang.game.SERVER,
-          value: game.guildAccount.name
-        });
         items.push({
           id: "reserved",
           label: this.lang.game.RESERVED,
@@ -304,10 +302,20 @@ export default {
 };
 </script>
 
-<style>
+<style scoped>
 .v-card__title .game-title {
   white-space: nowrap;
   text-overflow: ellipsis;
   overflow: hidden;
+}
+
+.nowrap {
+  white-space: nowrap;
+  text-overflow: ellipsis;
+  overflow: hidden;
+  max-width: 100%;
+  display: inline-block;
+  display: inline-flex;
+  margin-bottom: -7px;
 }
 </style>

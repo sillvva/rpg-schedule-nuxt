@@ -14,28 +14,21 @@
                 <v-col cols="12" lg="7" class="py-0">
                   <v-row dense>
                     <v-col cols="12" sm="6" class="py-0">
-                      <v-text-field
-                        id="guild"
-                        :label="lang.game.SERVER"
-                        readonly
-                        :value="game.guild"
-                        v-if="guildId || gameId"
-                      ></v-text-field>
                       <v-select
                         id="guild"
                         :label="lang.game.SERVER"
                         v-model="game.s"
-                        :items="guilds"
+                        :items="guilds.filter(c => !gameId || c.value === game.s)"
                         @change="selectGuild"
-                        v-if="!(guildId || gameId)"
                       ></v-select>
                     </v-col>
                     <v-col cols="12" sm="6" class="py-0">
                       <v-select
                         :label="lang.game.CHANNEL"
                         id="channel"
-                        v-model="game.channel"
-                        :items="game.channels ? game.channels.map(c => ({ text: c.name, value: c.name })) : []"
+                        v-model="game.c"
+                        required
+                        :items="channels.map(c => ({ text: c.name, value: c.id })).filter(c => !gameId || c.value === game.c)"
                       ></v-select>
                     </v-col>
                     <v-col cols="12" sm="5" md="4" lg="6" class="py-0">
@@ -191,7 +184,7 @@
                     </v-col>
                     <v-col
                       cols="12"
-                      :sm="['2','3','4'].includes(game.frequency) ? 6 : 12"
+                      :sm="['2','3','4'].includes(game.frequency) ? game.frequency == '3' ? 4 : 6 : 12"
                       class="py-0"
                     >
                       <v-select
@@ -202,7 +195,20 @@
                         @change="dateTimeLinks"
                       ></v-select>
                     </v-col>
-                    <v-col cols="12" sm="6" v-if="['2','3'].includes(game.frequency)" class="py-0">
+                    <v-col cols="12" sm="4" v-if="['3'].includes(game.frequency)" class="py-0">
+                      <v-select
+                        v-model="game.xWeeks"
+                        :items="[1,2,3,4]"
+                        :label="frequencyItems[3] && frequencyItems[3].text"
+                        @change="dateTimeLinks"
+                      ></v-select>
+                    </v-col>
+                    <v-col
+                      cols="12"
+                      :sm="game.frequency == '3' ? 4 : 6"
+                      v-if="['2','3'].includes(game.frequency)"
+                      class="py-0"
+                    >
                       <v-select
                         v-model="weekdays"
                         :items="weekdayItems"
@@ -331,7 +337,7 @@ import lang from "../../../components/lang/en.json";
 import { cloneDeep } from "lodash";
 
 export default {
-  middleware: ["free-auth"],
+  middleware: ["authenticated"],
   head: {
     title: "Edit Game"
   },
@@ -342,9 +348,12 @@ export default {
       enums: this.$store.getters.enums,
       gameId: this.$route.query.g,
       guildId: this.$route.query.s,
+      account: null,
       reservedList: "",
       guilds: [],
       game: {},
+      channel: "",
+      channels: [],
       copy: false,
       convertLink: "",
       monthlyWeekdayDesc: "",
@@ -369,6 +378,9 @@ export default {
   computed: {
     storeLang() {
       return this.$store.getters.lang;
+    },
+    storeAccount() {
+      return this.$store.getters.account;
     }
   },
   watch: {
@@ -394,143 +406,40 @@ export default {
         ];
       },
       immediate: true
+    },
+    storeAccount: {
+      handler: async function(newVal) {
+        this.account = newVal;
+        if (newVal) {
+          this.guilds = this.account.guilds
+            .filter(guild => guild.permission || guild.isAdmin)
+            .map(g => ({ text: g.name, value: g.id }));
+          if (this.guilds.length > 0) {
+            this.game.s = this.guilds[0].value;
+            await this.selectGuild();
+          }
+
+          const guild = this.account.guilds.find(g => g.id === this.game.s);
+          if (guild) {
+            this.channels = guild.announcementChannels;
+          }
+
+          this.modGame(this.game);
+        }
+      },
+      immediate: true
     }
   },
   async mounted() {
-    if (!this.gameId && !this.guildId && !this.$store.getters.account) {
-      return this.$router.replace(this.config.urls.game.dashboard.path);
-    }
-    if (this.gameId) this.fetchGame("g", this.gameId);
-    else if (this.guildId) this.fetchGame("s", this.guildId);
-    else if (this.$store.getters.account) {
-      await this.$store.dispatch("fetchGuilds", {
-        page: "my-games",
-        games: true,
-        app: this
-      });
-      const account = cloneDeep(this.$store.getters.account);
-      this.guilds = account.guilds
-        .filter(guild => guild.permission || guild.isAdmin)
-        .map(g => ({ text: g.name, value: g.id }));
-      if (this.guilds.length > 0) {
-        this.game.s = this.guilds[0].value;
-        await this.selectGuild();
-      }
-      this.game.dmTag = account.user.tag;
-    }
+    await this.$store.dispatch("fetchGuilds", {
+      page: "my-games",
+      app: this
+    });
 
-    this.reminderItems = [
-      {
-        text: this.lang.game.options.NO_REMINDER,
-        value: "0"
-      },
-      {
-        text: this.lang.game.options.MINUTES_15,
-        value: "15"
-      },
-      {
-        text: this.lang.game.options.MINUTES_30,
-        value: "30"
-      },
-      {
-        text: this.lang.game.options.MINUTES_60,
-        value: "60"
-      },
-      {
-        text: this.lang.game.options.HOURS_6,
-        value: "360"
-      },
-      {
-        text: this.lang.game.options.HOURS_12,
-        value: "720"
-      },
-      {
-        text: this.lang.game.options.HOURS_24,
-        value: "1440"
-      }
-    ];
-    this.weekdayItems = [
-      {
-        text: moment()
-          .day(0)
-          .format("ddd"),
-        value: 0
-      },
-      {
-        text: moment()
-          .day(1)
-          .format("ddd"),
-        value: 1
-      },
-      {
-        text: moment()
-          .day(2)
-          .format("ddd"),
-        value: 2
-      },
-      {
-        text: moment()
-          .day(3)
-          .format("ddd"),
-        value: 3
-      },
-      {
-        text: moment()
-          .day(4)
-          .format("ddd"),
-        value: 4
-      },
-      {
-        text: moment()
-          .day(5)
-          .format("ddd"),
-        value: 5
-      },
-      {
-        text: moment()
-          .day(6)
-          .format("ddd"),
-        value: 6
-      }
-    ];
-    this.frequencyItems = [
-      {
-        text: this.lang.game.options.NO_REPEAT,
-        value: this.enums.FrequencyType.NO_REPEAT
-      },
-      {
-        text: this.lang.game.options.DAILY,
-        value: this.enums.FrequencyType.DAILY
-      },
-      {
-        text: this.lang.game.options.WEEKLY,
-        value: this.enums.FrequencyType.WEEKLY
-      },
-      {
-        text: this.lang.game.options.BIWEEKLY,
-        value: this.enums.FrequencyType.BIWEEKLY
-      },
-      {
-        text: this.lang.game.options.MONTHLY,
-        value: this.enums.FrequencyType.MONTHLY
-      }
-    ];
-    this.repeatOptionItems = [
-      {
-        text: this.lang.game.CLEAR_RESERVED,
-        value: "clearReservedOnRepeat"
-      }
-    ];
-    this.monthlyTypeItems = [
-      {
-        text: this.lang.game.options.WEEKDAY,
-        value: this.enums.MonthlyType.WEEKDAY
-      },
-      {
-        text: this.lang.game.options.DATE,
-        value: this.enums.MonthlyType.DATE
-      }
-    ];
+    if (this.gameId) await this.fetchGame("g", this.gameId);
+    else if (this.guildId) await this.fetchGame("s", this.guildId);
+
+    this.updateSelectItems();
 
     setTimeout(() => {
       localStorage.removeItem("rescheduled");
@@ -587,51 +496,38 @@ export default {
           this.game.channel = game.channels[0].name;
         });
     },
-    fetchGame(param, value) {
-      return this.$store
+    async fetchGame(param, value) {
+      return await this.$store
         .dispatch("fetchGame", {
           param: param,
           value: value
         })
         .then(game => {
           this.modGame(cloneDeep(game));
+          if (this.game && this.game.guildConfig) {
+            if (
+              this.game.guildConfig.password &&
+              this.game.guildConfig.password.length > 0
+            ) {
+              const pass = prompt("Password?", "");
+              if (pass !== this.game.guildConfig.password) {
+                return this.$router.replace(
+                  this.config.urls.game.dashboard.path
+                );
+              }
+            }
+          }
         });
     },
     async modGame(game) {
       this.game = cloneDeep(game);
-      if (this.game && this.game.guildConfig) {
-        if (
-          this.game.guildConfig.password &&
-          this.game.guildConfig.password.length > 0
-        ) {
-          const pass = prompt("Password?", "");
-          if (pass !== this.game.guildConfig.password) {
-            return this.$router.replace(this.config.urls.game.dashboard.path);
-          }
-        }
-      }
+      this.weekdays = this.game.weekdays
+        .map((w, i) => (w ? i : false))
+        .filter(w => w !== false);
       this.game.dmTag = game.dm && game.dm.tag;
-      if (this.$store.getters.account) {
+      if (this.account) {
         if (!game.dm || this.game.dm.tag.trim().length === 0) {
-          this.game.dmTag = this.$store.getters.account.user.tag;
-        }
-      } else {
-        try {
-          const result = await this.$store.dispatch("fetchGuilds", {
-            page: "my-games",
-            games: true,
-            app: this
-          });
-          if (!this.gameId) {
-            this.game.dm = {
-              tag: result.account.user.tag,
-              id: result.account.user.id
-            };
-            this.game.dmTag = this.game.dm.tag;
-          }
-        }
-        catch(err) {
-          console.log(err);
+          this.game.dmTag = this.account.user.tag;
         }
       }
       if (!game.c) {
@@ -688,9 +584,9 @@ export default {
         if (updatedGame[d.id]) updatedGame[d.id] = d.value;
       });
       if (this.copy) updatedGame.copy = true;
-      updatedGame.c = updatedGame.channels.find(
-        c => c.name === updatedGame.channel
-      ).id;
+      updatedGame.channel = (
+        this.game.channels.find(c => c.id === updatedGame.c) || {}
+      ).name;
       let reservedList = (Array.isArray(this.game.reserved)
         ? this.game.reserved
         : []
@@ -714,6 +610,15 @@ export default {
       } else {
         updatedGame.dm = updatedGame.dmTag;
       }
+      updatedGame.weekdays = [
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false
+      ].map((w, i) => this.weekdays.includes(i));
       delete updatedGame.title;
       delete updatedGame.guildConfig;
       delete updatedGame.errors;
@@ -790,6 +695,7 @@ export default {
       const baseDate = this.game.date || "";
       const frequency = this.game.frequency || 0;
       const monthlyType = this.game.monthlyType || this.enums.MonthlyType.DATE;
+      const xWeeks = this.game.xWeeks || 2;
       if (frequency == 0) return moment(baseDate).format("YYYY-MM-DD");
 
       const repeatOptions = cloneDeep(this.repeatOptions);
@@ -829,7 +735,7 @@ export default {
             .every(validDays)
             .daysOfWeek();
           nextDate = dateGenerator.next(1)[0];
-          while (nextDate.week() - moment(baseDate).week() == 1) {
+          while (nextDate.week() - moment(baseDate).week() < xWeeks) {
             // if the next date is in the same week, diff = 0. if it is just next week, diff = 1, so keep going forward.
             dateGenerator = moment(nextDate)
               .recur()
@@ -870,6 +776,120 @@ export default {
       }
 
       this.nextDate = moment(nextDate).format("ll");
+    },
+    updateSelectItems() {
+      this.reminderItems = [
+        {
+          text: this.lang.game.options.NO_REMINDER,
+          value: "0"
+        },
+        {
+          text: this.lang.game.options.MINUTES_15,
+          value: "15"
+        },
+        {
+          text: this.lang.game.options.MINUTES_30,
+          value: "30"
+        },
+        {
+          text: this.lang.game.options.MINUTES_60,
+          value: "60"
+        },
+        {
+          text: this.lang.game.options.HOURS_6,
+          value: "360"
+        },
+        {
+          text: this.lang.game.options.HOURS_12,
+          value: "720"
+        },
+        {
+          text: this.lang.game.options.HOURS_24,
+          value: "1440"
+        }
+      ];
+      this.weekdayItems = [
+        {
+          text: moment()
+            .day(0)
+            .format("ddd"),
+          value: 0
+        },
+        {
+          text: moment()
+            .day(1)
+            .format("ddd"),
+          value: 1
+        },
+        {
+          text: moment()
+            .day(2)
+            .format("ddd"),
+          value: 2
+        },
+        {
+          text: moment()
+            .day(3)
+            .format("ddd"),
+          value: 3
+        },
+        {
+          text: moment()
+            .day(4)
+            .format("ddd"),
+          value: 4
+        },
+        {
+          text: moment()
+            .day(5)
+            .format("ddd"),
+          value: 5
+        },
+        {
+          text: moment()
+            .day(6)
+            .format("ddd"),
+          value: 6
+        }
+      ];
+      this.frequencyItems = [
+        {
+          text: this.lang.game.options.NO_REPEAT,
+          value: this.enums.FrequencyType.NO_REPEAT
+        },
+        {
+          text: this.lang.game.options.DAILY,
+          value: this.enums.FrequencyType.DAILY
+        },
+        {
+          text: this.lang.game.options.WEEKLY,
+          value: this.enums.FrequencyType.WEEKLY
+        },
+        {
+          text: this.lang.game.options.BIWEEKLY,
+          value: this.enums.FrequencyType.BIWEEKLY
+        },
+        {
+          text: this.lang.game.options.MONTHLY,
+          value: this.enums.FrequencyType.MONTHLY
+        }
+      ];
+      this.repeatOptionItems = [
+        {
+          text: this.lang.game.CLEAR_RESERVED,
+          value: "clearReservedOnRepeat"
+        }
+      ];
+      this.monthlyTypeItems = [
+        {
+          text: this.lang.game.options.WEEKDAY,
+          value: this.enums.MonthlyType.WEEKDAY
+        },
+        {
+          text: this.lang.game.options.DATE,
+          value: this.enums.MonthlyType.DATE
+        }
+      ];
     }
   }
 };

@@ -124,7 +124,7 @@
             :to="config.urls.game.create.path"
             :title="lang.buttons.NEW_GAME"
             class="hidden-md-and-down"
-            color="green"
+            color="discord"
             fab
             small
             absolute

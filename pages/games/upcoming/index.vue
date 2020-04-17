@@ -77,7 +77,7 @@
       fixed
       right
       bottom
-      color="green"
+      color="discord"
       :title="lang.buttons && lang.buttons.NEW_GAME"
       style="bottom: 15px;"
       class="hidden-lg-and-up"

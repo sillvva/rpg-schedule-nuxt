@@ -537,7 +537,7 @@ export default {
 </script>
 
 <style>
-.v-card .v-card__title span {
+.v-card .v-card__title > span {
   max-width: calc(100% - 50px);
   text-overflow: ellipsis;
   overflow: hidden;

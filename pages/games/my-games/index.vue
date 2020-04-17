@@ -3,24 +3,25 @@
     <v-app-bar dense class="mb-3">
       <v-text-field
         v-model="searchQuery"
-        @keyup="searchGuild"
-        dense
+        @keyup="search"
+        flat
+        solo
         prepend-inner-icon="mdi-magnify"
-        style="margin-bottom: -10px;"
+        style="height: 48px; margin-left: -16px;"
       ></v-text-field>
       <v-btn
         text
         small
         v-if="guilds.filter(g => g.collapsed).length > 0"
         @click="expandAll"
-        class="hidden-xs-only ml-3"
+        class="hidden-xs-only ml-4"
       >Expand All</v-btn>
       <v-btn
         text
         small
         v-if="guilds.filter(g => !g.collapsed).length > 0"
         @click="collapseAll"
-        class="hidden-xs-only ml-3"
+        class="hidden-xs-only ml-4"
       >Collapse All</v-btn>
     </v-app-bar>
     <v-card
@@ -113,7 +114,7 @@ export default {
       lang: {},
       config: this.$store.getters.config,
       account: this.$store.getters.account || {},
-      searchQuery: ""
+      searchQuery: this.$route.query.s
     };
   },
   computed: {
@@ -142,6 +143,7 @@ export default {
           ...g,
           collapsed: false
         }));
+        this.searchGuild();
       },
       immediate: true
     },
@@ -173,8 +175,19 @@ export default {
         return g;
       });
     },
+    search($event) {
+      if (!$event || $event.key != "Enter") return;
+      if (this.searchQuery.trim().length == 0) {
+        this.$router.push(this.$route.path);
+      } else {
+        this.$router.push(
+          `${this.$route.path}?s=${encodeURIComponent(this.searchQuery.trim())}`
+        );
+      }
+      this.searchGuild();
+    },
     searchGuild($event) {
-      if ($event.key != "Enter") return;
+      if (!$event || $event.key != "Enter") return;
       const regex = /((\w+):)?"([^"]+)"|((\w+):)?([^ ]+)/gm,
         matches = [];
       let m;
@@ -231,6 +244,7 @@ export default {
         else guild.filtered = true;
         return guild;
       });
+      this.expandAll();
     }
   }
 };

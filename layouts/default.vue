@@ -191,13 +191,14 @@
         <span>{{lang.other.MAINTENANCE.replace(":TIME", maintenanceTime.toLowerCase()).replace(":DURATION", `${settings.maintenanceDuration}`)}}</span>
         <v-spacer></v-spacer>
       </v-system-bar>
-      <nuxt :key="$route.fullPath" />
+      <nuxt :key="urlConfig.refreshOnParamsChange ? $route.fullPath : $route.path" />
     </v-content>
   </v-app>
 </template>
 
 <script>
 import lang from "../components/lang/en.json";
+import aux from "../components/appaux";
 import { cloneDeep } from "lodash";
 
 let lastGuildRefresh = new Date().getTime();
@@ -270,6 +271,10 @@ export default {
     },
     storeSiteSettings() {
       return this.$store.getters.siteSettings;
+    },
+    urlConfig() {
+      const parsedURLs = aux.parseConfigURLs(this.config.urls);
+      return parsedURLs.find(path => path.session && this.$route.path === path.path);
     }
   },
   watch: {

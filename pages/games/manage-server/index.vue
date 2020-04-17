@@ -3,24 +3,25 @@
     <v-app-bar dense class="mb-3">
       <v-text-field
         v-model="searchQuery"
-        @keyup="searchGuild"
-        dense
+        @keyup="search"
+        flat
+        solo
         prepend-inner-icon="mdi-magnify"
-        style="margin-bottom: -10px;"
+        style="height: 48px; margin-left: -16px;"
       ></v-text-field>
       <v-btn
         text
         small
         v-if="guilds.filter(g => g.collapsed).length > 0"
         @click="expandAll"
-        class="hidden-xs-only ml-3"
+        class="hidden-xs-only ml-4"
       >Expand All</v-btn>
       <v-btn
         text
         small
         v-if="guilds.filter(g => !g.collapsed).length > 0"
         @click="collapseAll"
-        class="hidden-xs-only ml-3"
+        class="hidden-xs-only ml-4"
       >Collapse All</v-btn>
     </v-app-bar>
     <v-card
@@ -292,7 +293,7 @@ export default {
       lang: {},
       langs: {},
       config: this.$store.getters.config,
-      searchQuery: "",
+      searchQuery: this.$route.query.s,
       emojiRule: value => {
         const splitter = new GraphemeSplitter();
         const rgx = /(?:[\u2700-\u27bf]|(?:\ud83c[\udde6-\uddff]){2}|[\ud800-\udbff][\udc00-\udfff]|[\u0023-\u0039]\ufe0f?\u20e3|\u3299|\u3297|\u303d|\u3030|\u24c2|\ud83c[\udd70-\udd71]|\ud83c[\udd7e-\udd7f]|\ud83c\udd8e|\ud83c[\udd91-\udd9a]|\ud83c[\udde6-\uddff]|\ud83c[\ude01-\ude02]|\ud83c\ude1a|\ud83c\ude2f|\ud83c[\ude32-\ude3a]|\ud83c[\ude50-\ude51]|\u203c|\u2049|[\u25aa-\u25ab]|\u25b6|\u25c0|[\u25fb-\u25fe]|\u00a9|\u00ae|\u2122|\u2139|\ud83c\udc04|[\u2600-\u26FF]|\u2b05|\u2b06|\u2b07|\u2b1b|\u2b1c|\u2b50|\u2b55|\u231a|\u231b|\u2328|\u23cf|[\u23e9-\u23f3]|[\u23f8-\u23fa]|\ud83c\udccf|\u2934|\u2935|[\u2190-\u21ff])/g;
@@ -327,6 +328,14 @@ export default {
           collapsed: false,
           filtered: false
         }));
+        if (
+          !(
+            this.$store.getters.account &&
+            this.$store.getters.account.user.tag === this.config.author
+          )
+        ) {
+          this.searchGuild();
+        }
       },
       immediate: true
     },
@@ -376,8 +385,18 @@ export default {
     cloneDeep(val) {
       return cloneDeep(val);
     },
-    searchGuild($event) {
-      if ($event.key != "Enter") return;
+    search($event) {
+      if (!$event || $event.key != "Enter") return;
+      if (this.searchQuery.trim().length == 0) {
+        this.$router.push(this.$route.path);
+      } else {
+        this.$router.push(
+          `${this.$route.path}?s=${encodeURIComponent(this.searchQuery.trim())}`
+        );
+      }
+      this.searchGuild();
+    },
+    searchGuild() {
       if (
         this.$store.getters.account &&
         this.$store.getters.account.user.tag === this.config.author
@@ -446,6 +465,7 @@ export default {
           else guild.filtered = true;
           return guild;
         });
+        this.expandAll();
       }
     },
     collapseAll() {

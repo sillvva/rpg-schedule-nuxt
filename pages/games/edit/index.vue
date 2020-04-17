@@ -638,7 +638,6 @@ export default {
       delete updatedGame.pm;
       delete updatedGame.sequence;
       this.prevSave = updatedGame;
-      return;
       this.$store
         .dispatch("saveGame", updatedGame)
         .then(result => {

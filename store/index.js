@@ -58,12 +58,12 @@ const baseState = {
 };
 
 const reauthenticate = async (vuexContext, app, redirect) => {
-  if (app.$cookies) {
+  if (app && app.$cookies) {
     app.$cookies.set("redirect", redirect);
     app.$cookies.remove("token");
   }
   vuexContext.commit("resetState", resetItems);
-  if (app.$router) {
+  if (app && app.$router) {
     app.$router.replace("/");
     // if (window) window.location.reload(true);
   }

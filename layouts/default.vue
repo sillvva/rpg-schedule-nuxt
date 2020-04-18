@@ -334,7 +334,6 @@ export default {
   },
   methods: {
     signOut() {
-      console.log("ui signout");
       this.$store.dispatch("signOut").then(() => {
         this.$cookies.remove("token");
         this.$router.push("/", () => {

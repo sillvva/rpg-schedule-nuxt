@@ -1,8 +1,8 @@
 import { cloneDeep } from "lodash";
 
-import aux from "../components/appaux";
-import config from "../components/config";
-import authAux from "../components/auth";
+import aux from "../components/auxjs/appaux";
+import config from "../components/auxjs/config";
+import authAux from "../components/auxjs/auth";
 import moment from "moment";
 
 const resetItems = {

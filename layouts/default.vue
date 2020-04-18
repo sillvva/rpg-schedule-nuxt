@@ -199,7 +199,7 @@
 
 <script>
 import lang from "../components/lang/en.json";
-import aux from "../components/appaux";
+import aux from "../components/auxjs/appaux";
 import SnackBars from "../components/snackbars";
 import { cloneDeep } from "lodash";
 

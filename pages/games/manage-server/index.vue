@@ -287,7 +287,7 @@
 </template>
 
 <script>
-import { updateToken } from "../../../components/auth";
+import { updateToken } from "../../../components/auxjs/auth";
 import GameCard from "../../../components/game-card";
 import { cloneDeep } from "lodash";
 import GraphemeSplitter from "grapheme-splitter";

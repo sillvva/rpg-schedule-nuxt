@@ -1,7 +1,7 @@
 <template></template>
 
 <script>
-import authAux from "../../components/auth";
+import authAux from "../../components/auxjs/auth";
 
 export default {
   layout: "loading",

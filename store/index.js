@@ -53,7 +53,8 @@ const baseState = {
     }
   },
   config: config,
-  settings: {}
+  settings: {},
+  snackBars: []
 };
 
 const reauthenticate = async (vuexContext, app, redirect) => {
@@ -138,6 +139,9 @@ export const mutations = {
   },
   setLastRefreshed(state, time) {
     state.lastRefreshed = time;
+  },
+  setSnackBars(state, snackBars) {
+    state.snackBars = snackBars;
   }
 };
 
@@ -596,6 +600,18 @@ export const actions = {
         reject();
       }
     });
+  },
+  addSnackBar(vuexContext, snackBar) {
+    let snackBars = cloneDeep(vuexContext.getters.snackBars);
+    if (!Array.isArray(snackBars)) snackBars = [];
+    snackBars.push(snackBar);
+    vuexContext.commit("setSnackBars", snackBars);
+  },
+  removeSnackBar(vuexContext, b) {
+    let snackBars = cloneDeep(vuexContext.getters.snackBars);
+    if (!Array.isArray(snackBars)) snackBars = [];
+    snackBars.splice(b, 1);
+    vuexContext.commit("setSnackBars", snackBars);
   }
 };
 
@@ -629,5 +645,8 @@ export const getters = {
   },
   siteSettings(state) {
     return state.settings;
+  },
+  snackBars(state) {
+    return state.snackBars;
   }
 };

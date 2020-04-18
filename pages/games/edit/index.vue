@@ -164,6 +164,7 @@
                             :label="lang.game.TIME"
                             v-model="game.time"
                             @change="dateTimeLinks"
+                            prepend-inner-icon="mdi-clock"
                             readonly
                             v-on="on"
                           ></v-text-field>
@@ -485,6 +486,7 @@ export default {
       if (data.gameId != this.gameId) return;
       if (data.action === "rescheduled") {
         localStorage.setItem("rescheduled", 1);
+        this.$store.dispatch("addSnackBar", { message: "The game has been rescheduled", color: "info" });
         this.$router.replace(
           `${this.$store.getters.config.urls.game.create.path}?g=${response.newGameId}`
         );
@@ -493,7 +495,7 @@ export default {
         !localStorage.getItem("rescheduled")
       ) {
         localStorage.setItem("rescheduled", 1);
-        alert("This game has been deleted");
+        this.$store.dispatch("addSnackBar", { message: "The game has been deleted", color: "error darken-1" });
         this.$router.replace(
           this.$store.getters.config.urls.game.dashboard.path
         );
@@ -702,8 +704,7 @@ export default {
         })
         .catch(err => {
           this.saveResult = "error";
-          console.log((err && err.message) || err);
-          alert((err && err.message) || err);
+          this.$store.dispatch("addSnackBar", { message: (err && err.message) || err, color: "error darken-1" });
         });
     },
     getTZUrls() {

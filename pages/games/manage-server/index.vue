@@ -133,9 +133,7 @@
                     <template v-slot:activator="{ on }">
                       <v-list-item class="px-4 mb-2">
                         <v-list-item-action>
-                          <v-btn fab small :color="guild.config.embedColor" v-on="on">
-                            &nbsp;
-                          </v-btn>
+                          <v-btn fab small :color="guild.config.embedColor" v-on="on">&nbsp;</v-btn>
                         </v-list-item-action>
                         <v-list-item-content>
                           <v-text-field
@@ -147,9 +145,7 @@
                         </v-list-item-content>
                       </v-list-item>
                     </template>
-                    <v-color-picker
-                      v-model="guild.config.embedColor"
-                    ></v-color-picker>
+                    <v-color-picker v-model="guild.config.embedColor"></v-color-picker>
                   </v-menu>
 
                   <v-list-item class="px-4 mb-2">
@@ -391,11 +387,11 @@ export default {
               route: this.$route
             })
             .then(result => {
-              alert("Configuration saved successfully");
+              this.$store.dispatch("addSnackBar", { message: "Configuration saved successfully" || err, color: "success darken-2" });
               guild.editing = false;
             })
             .catch(err => {
-              alert((err && err.message) || err);
+              this.$store.dispatch("addSnackBar", { message: (err && err.message) || err, color: "error" });
             });
         }
       }

@@ -193,18 +193,23 @@
       </v-system-bar>
       <nuxt :key="!urlConfig || urlConfig.refreshOnParamsChange ? $route.fullPath : $route.path" />
     </v-content>
+    <SnackBars></SnackBars>
   </v-app>
 </template>
 
 <script>
 import lang from "../components/lang/en.json";
 import aux from "../components/appaux";
+import SnackBars from "../components/snackbars";
 import { cloneDeep } from "lodash";
 
 let lastGuildRefresh = new Date().getTime();
 
 export default {
   middleware: ["check-auth"],
+  components: {
+    SnackBars: SnackBars
+  },
   head() {
     return {
       link: [
@@ -237,7 +242,6 @@ export default {
       settingMaintenanceDate: "",
       settingMaintenanceTime: "",
       settingMaintenanceDuration: 0,
-      windowWidth: 0,
       drawer: false,
       config: this.$store.getters.config,
       env: this.$store.getters.env,
@@ -246,6 +250,7 @@ export default {
       selectedLang: this.$store.getters.selectedLang,
       langOptions: [],
       selection: null,
+      windowWidth: 0,
       onResize: () => {
         this.windowWidth = window.innerWidth;
       },
@@ -373,7 +378,7 @@ export default {
           }
         })
         .catch(err => {
-          alert((err && err.message) || err);
+          this.$store.dispatch("addSnackBar", { message: (err && err.message) || err, color: "error" });
         });
     },
     setSelectedLang() {
@@ -441,8 +446,16 @@ export default {
     window.addEventListener("resize", this.onResize);
     this.onResize();
 
+    this.$store.commit("setSnackBars", []);
+
     await this.$store.dispatch("fetchLangs");
     this.setSelectedLang();
+
+    if (!this.$store.getters.account) {
+      this.$store.dispatch("fetchGuilds", {
+        page: "my-games"
+      }) 
+    }
 
     this.socket = io(this.$store.getters.env.apiUrl);
 
@@ -506,7 +519,7 @@ export default {
           this.$route.query &&
           this.$route.query.g == data.gameId
         ) {
-          alert("This game has been deleted");
+          this.$store.dispatch("addSnackBar", { message: "This game has been deleted" || err, color: "error" });
           this.$router.replace(this.$store.getters.config.urls.game.games.path);
         } else if (gameListingsPage) {
           guilds = guilds.map(guild => {

@@ -1,6 +1,6 @@
 <template>
-  <v-container d-flex flex-column align-center>
-    <v-img src="/images/logo.png" max-height="264px" max-width="300px" contain class="mb-3" />
+  <v-container d-flex flex-column align-center style="height: 100vh;">
+    <v-img src="/images/logo.png" :max-height="windowWidth < 600 || windowHeight < 600 ? windowHeight <= 568 ? 100 : 200 : 264" max-width="300px" contain class="mb-3" />
     <v-row justify="center">
       <v-col cols="6" class="text-right">
         <v-btn :href="$store.getters.env.inviteUrl" target="_blank">{{lang.nav.INVITE}}</v-btn>
@@ -9,12 +9,7 @@
         <v-btn :href="$store.getters.env.authUrl" class="bg-discord">{{lang.nav.LOGIN}}</v-btn>
       </v-col>
     </v-row>
-    <v-row class="hidden-xs-only">
-      <v-col cols="12" class="text-center">
-        <v-btn :href="$store.getters.env.donateUrl">{{lang.nav.DONATE}}</v-btn>
-      </v-col>
-    </v-row>
-    <v-carousel :show-arrows="false">
+    <v-carousel :show-arrows="false" cycle :height="windowWidth < 600 || windowHeight < 600 ? `calc(100vh - ${windowHeight <= 568 ? 204 : 284}px)` : 600">
       <v-carousel-item reverse-transition="fade-transition" transition="fade-transition">
         <v-sheet height="100%" style="background-color:rgba(0, 0, 0, 0.5);">
           <v-row class="fill-height" align="center" justify="center">
@@ -38,7 +33,7 @@
         </v-sheet>
       </v-carousel-item>
       <v-carousel-item
-        src="/images/screenshot3.jpg"
+        :src="windowWidth < 600 ? '' : '/images/screenshot3.jpg'"
         reverse-transition="fade-transition"
         transition="fade-transition"
       >
@@ -57,7 +52,7 @@
         </v-sheet>
       </v-carousel-item>
       <v-carousel-item
-        src="/images/screenshot.jpg"
+        :src="windowWidth < 600 ? '' : '/images/screenshot.jpg'"
         reverse-transition="fade-transition"
         transition="fade-transition"
       >
@@ -77,7 +72,7 @@
         </v-sheet>
       </v-carousel-item>
       <v-carousel-item
-        src="/images/screenshot2.jpg"
+        :src="windowWidth < 600 ? '' : '/images/screenshot2.jpg'"
         reverse-transition="fade-transition"
         transition="fade-transition"
       >
@@ -106,7 +101,13 @@ export default {
   middleware: ["authenticated"],
   data() {
     return {
-      lang: lang
+      lang: lang,
+      windowWidth: 0,
+      windowHeight: 0,
+      onResize: () => {
+        this.windowWidth = window.innerWidth;
+        this.windowHeight = window.innerHeight;
+      }
     };
   },
   computed: {
@@ -128,6 +129,14 @@ export default {
   },
   created() {
     this.lang = lang;
+  },
+  mounted() {
+    window.addEventListener("resize", this.onResize);
+    this.onResize();
+  },
+  beforeDestroy() {
+    window.removeEventListener("resize", this.onResize);
+    if (this.socket) this.socket.close();
   }
 };
 </script>

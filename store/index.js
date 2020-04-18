@@ -226,7 +226,8 @@ export const actions = {
             }
             break;
           } else if (result.data.status == "error") {
-            throw new Error(authResult && authResult.message);
+            // aux.log(tokenCookies[i]);
+            savedAuthResult = authResult;
           }
         }
       } catch (err) {

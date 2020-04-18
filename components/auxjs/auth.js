@@ -1,5 +1,5 @@
 const updateToken = (app) => {
-  if (app.$store.getters.sessionToken && app.$cookies.get('token') && app.$store.getters.sessionToken != app.$cookies.get('token')) {
+  if (process.client && app.$store.getters.sessionToken && app.$cookies.get('token') && app.$store.getters.sessionToken != app.$cookies.get('token')) {
     console.log('Refreshing token:', app.$store.getters.sessionToken, app.$cookies.get('token'))
     setToken(app, app.$store.getters.sessionToken);
   }

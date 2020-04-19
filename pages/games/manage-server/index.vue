@@ -387,11 +387,17 @@ export default {
               route: this.$route
             })
             .then(result => {
-              this.$store.dispatch("addSnackBar", { message: "Configuration saved successfully" || err, color: "success darken-2" });
+              this.$store.dispatch("addSnackBar", {
+                message: "Configuration saved successfully" || err,
+                color: "success darken-2"
+              });
               guild.editing = false;
             })
             .catch(err => {
-              this.$store.dispatch("addSnackBar", { message: (err && err.message) || err, color: "error" });
+              this.$store.dispatch("addSnackBar", {
+                message: (err && err.message) || err,
+                color: "error"
+              });
             });
         }
       }
@@ -441,12 +447,12 @@ export default {
           guild.games = guild.games.map(game => {
             if (matches.length > 0) {
               if (
-                !matches
+                matches
                   .map(match => ({
                     type: match.type,
                     regex: new RegExp(match.query, "gi")
                   }))
-                  .find(match => {
+                  .filter(match => {
                     return (
                       (match.type === "any" &&
                         (match.regex.test(game.adventure) ||
@@ -464,7 +470,7 @@ export default {
                           game[match.type]
                       )
                     );
-                  })
+                  }).length != matches.length
               ) {
                 game.filtered = true;
               } else {

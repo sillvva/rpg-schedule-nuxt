@@ -189,12 +189,12 @@ export default {
         guild.games = guild.games.map(game => {
           if (matches.length > 0) {
             if (
-              !matches
+              matches
                 .map(match => ({
                   type: match.type,
                   regex: new RegExp(match.query, "gi")
                 }))
-                .find(match => {
+                .filter(match => {
                   return (
                     (match.type === "any" &&
                       (match.regex.test(game.adventure) ||
@@ -212,7 +212,7 @@ export default {
                         game[match.type]
                     )
                   );
-                })
+                }).length != matches.length
             ) {
               game.filtered = true;
             } else {

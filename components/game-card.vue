@@ -184,12 +184,12 @@ export default {
       let items = [];
       if (game && game.adventure) {
         this.parseDates();
-
-        items.push({
-          id: "gm",
-          label: this.lang.game.GM,
-          value: game.dm.tag.split("#")[0]
-        });
+        if (game.dm.tag)
+          items.push({
+            id: "gm",
+            label: this.lang.game.GM,
+            value: game.dm.tag.split("#")[0]
+          });
         items.push({
           id: "where",
           label: this.lang.game.WHERE,
@@ -213,7 +213,12 @@ export default {
             id: "when",
             label: this.lang.game.WHEN,
             class: [game.moment.state, "nowrap"].filter(c => c).join(" "),
-            value: [game.moment.calendar, tdiff > 0 && tdiff / 86400000 >= 6.5 && `(${game.moment.from})`].filter(c => c).join(" ")
+            value: [
+              game.moment.calendar,
+              tdiff > 0 && tdiff / 86400000 >= 6.5 && `(${game.moment.from})`
+            ]
+              .filter(c => c)
+              .join(" ")
           });
           items.push({
             id: "calendar",

@@ -298,14 +298,17 @@ export const actions = {
         ) {
           vuexContext.commit("setToken", authResult.token);
           vuexContext.commit("setLastRefreshed", moment().unix());
+          // console.log(1, authResult);
           await authAux.setToken(app, authResult.token);
         }
         if (authResult.status == "success") {
+          // console.log(2, authResult);
           vuexContext.commit("setAccount", authResult.account);
           if (authResult.user) {
             vuexContext.dispatch("setSelectedLang", authResult.user.lang);
           }
         } else if (result.data.status == "error") {
+          // console.log(3, authResult);
           throw new Error(JSON.stringify(authResult));
         }
         resolve(authResult);

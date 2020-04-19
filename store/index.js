@@ -1,8 +1,8 @@
 import { cloneDeep } from "lodash";
 
-import aux from "../components/appaux";
-import config from "../components/config";
-import authAux from "../components/auth";
+import aux from "../components/auxjs/appaux";
+import config from "../components/auxjs/config";
+import authAux from "../components/auxjs/auth";
 import moment from "moment";
 
 const resetItems = {
@@ -53,16 +53,17 @@ const baseState = {
     }
   },
   config: config,
-  settings: {}
+  settings: {},
+  snackBars: []
 };
 
 const reauthenticate = async (vuexContext, app, redirect) => {
-  if (app.$cookies) {
+  if (app && app.$cookies) {
     app.$cookies.set("redirect", redirect);
     app.$cookies.remove("token");
   }
   vuexContext.commit("resetState", resetItems);
-  if (app.$router) {
+  if (app && app.$router) {
     app.$router.replace("/");
     // if (window) window.location.reload(true);
   }
@@ -138,6 +139,9 @@ export const mutations = {
   },
   setLastRefreshed(state, time) {
     state.lastRefreshed = time;
+  },
+  setSnackBars(state, snackBars) {
+    state.snackBars = snackBars;
   }
 };
 
@@ -222,7 +226,8 @@ export const actions = {
             }
             break;
           } else if (result.data.status == "error") {
-            throw new Error(authResult && authResult.message);
+            // aux.log(tokenCookies[i]);
+            savedAuthResult = authResult;
           }
         }
       } catch (err) {
@@ -293,14 +298,17 @@ export const actions = {
         ) {
           vuexContext.commit("setToken", authResult.token);
           vuexContext.commit("setLastRefreshed", moment().unix());
+          // console.log(1, authResult);
           await authAux.setToken(app, authResult.token);
         }
         if (authResult.status == "success") {
+          // console.log(2, authResult);
           vuexContext.commit("setAccount", authResult.account);
           if (authResult.user) {
             vuexContext.dispatch("setSelectedLang", authResult.user.lang);
           }
         } else if (result.data.status == "error") {
+          // console.log(3, authResult);
           throw new Error(JSON.stringify(authResult));
         }
         resolve(authResult);
@@ -596,6 +604,18 @@ export const actions = {
         reject();
       }
     });
+  },
+  addSnackBar(vuexContext, snackBar) {
+    let snackBars = cloneDeep(vuexContext.getters.snackBars);
+    if (!Array.isArray(snackBars)) snackBars = [];
+    snackBars.push(snackBar);
+    vuexContext.commit("setSnackBars", snackBars);
+  },
+  removeSnackBar(vuexContext, b) {
+    let snackBars = cloneDeep(vuexContext.getters.snackBars);
+    if (!Array.isArray(snackBars)) snackBars = [];
+    snackBars.splice(b, 1);
+    vuexContext.commit("setSnackBars", snackBars);
   }
 };
 
@@ -629,5 +649,8 @@ export const getters = {
   },
   siteSettings(state) {
     return state.settings;
+  },
+  snackBars(state) {
+    return state.snackBars;
   }
 };

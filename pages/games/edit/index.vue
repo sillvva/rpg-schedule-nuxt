@@ -22,7 +22,7 @@
                         @change="selectGuild"
                       ></v-select>
                     </v-col>
-                    <v-col cols="12" sm="6" class="py-0">
+                    <v-col cols="12" sm="6" class="py-0" v-if="channels">
                       <v-select
                         :label="lang.game.CHANNEL"
                         id="channel"
@@ -116,16 +116,33 @@
                       v-if="game.when === enums.GameWhen.DATETIME"
                       class="py-0"
                     >
-                      <v-text-field
-                        id="date"
-                        type="date"
-                        :label="lang.game.DATE"
-                        v-model="game.date"
-                        @change="dateTimeLinks"
-                        @keyup="dateTimeLinks"
-                        :hint="nextDate && `Next: ${nextDate}`"
-                        persistent-hint
-                      ></v-text-field>
+                      <v-menu
+                        v-model="dateMenu"
+                        :close-on-content-click="false"
+                        transition="scale-transition"
+                        offset-y
+                        min-width="290px"
+                      >
+                        <template v-slot:activator="{ on }">
+                          <v-text-field
+                            id="date"
+                            type="date"
+                            :label="lang.game.DATE"
+                            v-model="game.date"
+                            @change="dateTimeLinks"
+                            :hint="nextDate && `Next: ${nextDate}`"
+                            prepend-inner-icon="mdi-calendar"
+                            persistent-hint
+                            readonly
+                            v-on="on"
+                          ></v-text-field>
+                        </template>
+                        <v-date-picker
+                          v-model="game.date"
+                          @input="dateMenu = false;"
+                          :locale="lang.code"
+                        ></v-date-picker>
+                      </v-menu>
                     </v-col>
                     <v-col
                       cols="6"
@@ -133,14 +150,32 @@
                       v-if="game.when === enums.GameWhen.DATETIME"
                       class="py-0"
                     >
-                      <v-text-field
-                        id="time"
-                        type="time"
-                        :label="lang.game.TIME"
-                        v-model="game.time"
-                        @change="dateTimeLinks"
-                        @keyup="dateTimeLinks"
-                      ></v-text-field>
+                      <v-menu
+                        v-model="timeMenu"
+                        :close-on-content-click="false"
+                        transition="scale-transition"
+                        offset-y
+                        min-width="290px"
+                      >
+                        <template v-slot:activator="{ on }">
+                          <v-text-field
+                            id="time"
+                            type="time"
+                            :label="lang.game.TIME"
+                            v-model="game.time"
+                            @change="dateTimeLinks"
+                            prepend-inner-icon="mdi-clock"
+                            readonly
+                            v-on="on"
+                          ></v-text-field>
+                        </template>
+                        <v-time-picker
+                          ampm-in-title
+                          v-model="game.time"
+                          @input="timeMenu = false;"
+                          :format="/ (AM|PM)/i.test(new Date().toLocaleString()) ? 'ampm' : '24hr'"
+                        ></v-time-picker>
+                      </v-menu>
                     </v-col>
                     <v-col
                       cols="6"
@@ -357,6 +392,8 @@ export default {
       copy: false,
       convertLink: "",
       monthlyWeekdayDesc: "",
+      dateMenu: false,
+      timeMenu: false,
       nextDate: "",
       weekdays: [],
       repeatOptions: [],
@@ -412,16 +449,15 @@ export default {
         this.account = newVal;
         if (newVal) {
           this.guilds = this.account.guilds
-            .filter(guild => guild.permission || guild.isAdmin)
+            .filter(
+              guild =>
+                (guild.permission || guild.isAdmin) &&
+                guild.announcementChannels.length > 0
+            )
             .map(g => ({ text: g.name, value: g.id }));
           if (this.guilds.length > 0) {
             this.game.s = this.guilds[0].value;
             await this.selectGuild();
-          }
-
-          const guild = this.account.guilds.find(g => g.id === this.game.s);
-          if (guild) {
-            this.channels = guild.announcementChannels;
           }
 
           this.modGame(this.game);
@@ -450,6 +486,7 @@ export default {
       if (data.gameId != this.gameId) return;
       if (data.action === "rescheduled") {
         localStorage.setItem("rescheduled", 1);
+        this.$store.dispatch("addSnackBar", { message: "The game has been rescheduled", color: "info" });
         this.$router.replace(
           `${this.$store.getters.config.urls.game.create.path}?g=${response.newGameId}`
         );
@@ -458,7 +495,7 @@ export default {
         !localStorage.getItem("rescheduled")
       ) {
         localStorage.setItem("rescheduled", 1);
-        alert("This game has been deleted");
+        this.$store.dispatch("addSnackBar", { message: "The game has been deleted", color: "error darken-1" });
         this.$router.replace(
           this.$store.getters.config.urls.game.dashboard.path
         );
@@ -477,6 +514,7 @@ export default {
   },
   methods: {
     async selectGuild() {
+      this.modGame(this.game);
       if (this.guilds.length > 0) {
         if (this.game.c) {
           await this.fetchGameChannels("s", this.game.s);
@@ -521,20 +559,35 @@ export default {
     },
     async modGame(game) {
       this.game = cloneDeep(game);
-      this.weekdays = this.game.weekdays
-        .map((w, i) => (w ? i : false))
-        .filter(w => w !== false);
-      this.game.dmTag = game.dm && game.dm.tag;
+      if (this.game.weekdays) {
+        if (!Array.isArray(this.game.weekdays)) {
+          this.game.weekdays = Array(7).fill(false).map((w, i) => this.game.weekdays[i]);
+        }
+        this.weekdays = this.game.weekdays
+          .map((w, i) => (w ? i : false))
+          .filter(w => w !== false);
+      }
+      if (this.game.dm) {
+        this.game.dmTag = this.game.dm.tag;
+      }
       if (this.account) {
+        const guild = this.account.guilds.find(g => g.id === this.game.s);
+        if (guild) {
+          this.channels = guild.announcementChannels;
+        }
         if (!game.dm || this.game.dm.tag.trim().length === 0) {
           this.game.dmTag = this.account.user.tag;
         }
       }
-      if (!game.c) {
-        this.game.c = game.channels[0].id;
-        this.game.channel = game.channels[0].name;
-      } else {
-        this.game.channel = game.channels.find(c => c.id === game.c).name;
+      if (this.game.channels) {
+        if (!game.c) {
+          this.game.c = this.game.channels[0].id;
+          this.game.channel = this.game.channels[0].name;
+        } else {
+          this.game.channel = this.game.channels.find(
+            c => c.id === game.c
+          ).name;
+        }
       }
       this.reservedList = Array.isArray(this.game.reserved)
         ? this.game.reserved.map(r => r.tag).join(`\n`)
@@ -651,8 +704,7 @@ export default {
         })
         .catch(err => {
           this.saveResult = "error";
-          console.log((err && err.message) || err);
-          alert((err && err.message) || err);
+          this.$store.dispatch("addSnackBar", { message: (err && err.message) || err, color: "error darken-1" });
         });
     },
     getTZUrls() {

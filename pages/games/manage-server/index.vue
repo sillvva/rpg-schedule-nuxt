@@ -1,6 +1,14 @@
 <template>
   <v-container fluid>
-    <v-app-bar dense class="mb-3">
+    <v-text-field
+      v-model="searchQuery"
+      @keyup="search"
+      flat
+      solo
+      prepend-inner-icon="mdi-magnify"
+      class="hidden-sm-and-up mb-n4"
+    ></v-text-field>
+    <v-app-bar dense class="mb-3 hidden-xs-only">
       <v-text-field
         v-model="searchQuery"
         @keyup="search"
@@ -14,14 +22,14 @@
         small
         v-if="guilds.filter(g => g.collapsed).length > 0"
         @click="expandAll"
-        class="hidden-xs-only ml-4"
+        class="ml-4"
       >Expand All</v-btn>
       <v-btn
         text
         small
         v-if="guilds.filter(g => !g.collapsed).length > 0"
         @click="collapseAll"
-        class="hidden-xs-only ml-4"
+        class="ml-4"
       >Collapse All</v-btn>
     </v-app-bar>
     <v-card
@@ -116,24 +124,29 @@
                     </v-list-item-content>
                   </v-list-item>
 
-                  <v-list-item class="px-4 mb-2">
-                    <v-list-item-action>
-                      <v-text-field
-                        type="color"
-                        solo
-                        v-model="guild.config.embedColor"
-                        style="padding: 0;"
-                      ></v-text-field>
-                    </v-list-item-action>
-                    <v-list-item-content>
-                      <v-text-field
-                        label="Embed Color"
-                        v-model="guild.config.embedColor"
-                        :hint="lang.config.desc.EMBED_COLOR"
-                        persistent-hint
-                      ></v-text-field>
-                    </v-list-item-content>
-                  </v-list-item>
+                  <v-menu
+                    v-model="colorMenu"
+                    transition="scale-transition"
+                    offset-y
+                    min-width="290px"
+                  >
+                    <template v-slot:activator="{ on }">
+                      <v-list-item class="px-4 mb-2">
+                        <v-list-item-action>
+                          <v-btn fab small :color="guild.config.embedColor" v-on="on">&nbsp;</v-btn>
+                        </v-list-item-action>
+                        <v-list-item-content>
+                          <v-text-field
+                            label="Embed Color"
+                            v-model="guild.config.embedColor"
+                            :hint="lang.config.desc.EMBED_COLOR"
+                            persistent-hint
+                          ></v-text-field>
+                        </v-list-item-content>
+                      </v-list-item>
+                    </template>
+                    <v-color-picker v-model="guild.config.embedColor"></v-color-picker>
+                  </v-menu>
 
                   <v-list-item class="px-4 mb-2">
                     <v-text-field
@@ -274,7 +287,7 @@
 </template>
 
 <script>
-import { updateToken } from "../../../components/auth";
+import { updateToken } from "../../../components/auxjs/auth";
 import GameCard from "../../../components/game-card";
 import { cloneDeep } from "lodash";
 import GraphemeSplitter from "grapheme-splitter";
@@ -294,6 +307,7 @@ export default {
       langs: {},
       config: this.$store.getters.config,
       searchQuery: this.$route.query.s,
+      colorMenu: false,
       emojiRule: value => {
         const splitter = new GraphemeSplitter();
         const rgx = /(?:[\u2700-\u27bf]|(?:\ud83c[\udde6-\uddff]){2}|[\ud800-\udbff][\udc00-\udfff]|[\u0023-\u0039]\ufe0f?\u20e3|\u3299|\u3297|\u303d|\u3030|\u24c2|\ud83c[\udd70-\udd71]|\ud83c[\udd7e-\udd7f]|\ud83c\udd8e|\ud83c[\udd91-\udd9a]|\ud83c[\udde6-\uddff]|\ud83c[\ude01-\ude02]|\ud83c\ude1a|\ud83c\ude2f|\ud83c[\ude32-\ude3a]|\ud83c[\ude50-\ude51]|\u203c|\u2049|[\u25aa-\u25ab]|\u25b6|\u25c0|[\u25fb-\u25fe]|\u00a9|\u00ae|\u2122|\u2139|\ud83c\udc04|[\u2600-\u26FF]|\u2b05|\u2b06|\u2b07|\u2b1b|\u2b1c|\u2b50|\u2b55|\u231a|\u231b|\u2328|\u23cf|[\u23e9-\u23f3]|[\u23f8-\u23fa]|\ud83c\udccf|\u2934|\u2935|[\u2190-\u21ff])/g;
@@ -373,11 +387,17 @@ export default {
               route: this.$route
             })
             .then(result => {
-              alert("Configuration saved successfully");
+              this.$store.dispatch("addSnackBar", {
+                message: "Configuration saved successfully" || err,
+                color: "success darken-2"
+              });
               guild.editing = false;
             })
             .catch(err => {
-              alert((err && err.message) || err);
+              this.$store.dispatch("addSnackBar", {
+                message: (err && err.message) || err,
+                color: "error"
+              });
             });
         }
       }
@@ -427,12 +447,12 @@ export default {
           guild.games = guild.games.map(game => {
             if (matches.length > 0) {
               if (
-                !matches
+                matches
                   .map(match => ({
                     type: match.type,
                     regex: new RegExp(match.query, "gi")
                   }))
-                  .find(match => {
+                  .filter(match => {
                     return (
                       (match.type === "any" &&
                         (match.regex.test(game.adventure) ||
@@ -450,7 +470,7 @@ export default {
                           game[match.type]
                       )
                     );
-                  })
+                  }).length != matches.length
               ) {
                 game.filtered = true;
               } else {

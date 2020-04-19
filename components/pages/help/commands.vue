@@ -1,6 +1,8 @@
 <template>
   <v-container class="px-0">
-    <p class="px-4">All bot commands must be sent in the server being configured. The bot will not respond to direct messages.</p>
+    <p
+      class="px-4"
+    >All bot commands must be sent in the server being configured. The bot will not respond to direct messages.</p>
     <v-simple-table class="command-list" dense fixed-header>
       <template>
         <thead>
@@ -128,9 +130,10 @@
             <td>
               Include user tags in announcement embeds (
               <a
-                href="https://cdn.discordapp.com/attachments/532565396746928149/682786099679985665/unknown.png"
+                href="/images/glitch1.png"
                 target="_blank"
-              >Can occasionally glitch</a>)
+              >Can occasionally glitch</a>;
+              <a href="https://github.com/discordjs/discord.js/issues/3527" target="_blank">cause</a> )
             </td>
           </tr>
           <tr>
@@ -240,7 +243,5 @@
 </template>
 
 <script>
-export default {
-  
-}
+export default {};
 </script>

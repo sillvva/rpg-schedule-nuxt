@@ -712,27 +712,55 @@ export default {
       const date = this.game.date || "";
       const time = this.game.time || "";
       const gmtOffset = this.game.timezone || 0;
-      const d = new Date(
-        `${date.replace(/-/g, "/").replace(/UTC\//, "UTC-")} ${time} UTC${
-          gmtOffset < 0 ? "-" : "+"
-        }${Math.abs(gmtOffset)}`
-      )
-        .toISOString()
-        .replace(/[^0-9T]/gi, "")
-        .slice(0, 13);
+      const runtime = this.game.runtime || 0;
+      const frequency = this.game.frequency || 0;
+      const xWeeks = this.game.xWeeks || 2;
+      const monthlyType = this.game.monthlyType || "weekday";
       const name = this.game.adventure;
       const server = this.game.guild;
       const where = this.game.where;
       const description = this.game.description;
 
-      return {
-        convert: `https://timee.io/${d}`,
-        gcal: `http://www.google.com/calendar/render?action=TEMPLATE&text=${escape(
-          name
-        )}&dates=${d}00Z/${d}00Z&location=${escape(server)}%20-%20${escape(
-          where
-        )}&trp=false&sprop=&details=${escape(description)}`
-      };
+      const d1raw = new Date(`${date.replace(/-/g, "/").replace(/UTC\//, "UTC-")} ${time} UTC${gmtOffset < 0 ? '-' : '+'}${Math.abs(gmtOffset)}`);
+        const d1 = d1raw.toISOString().replace(/[^0-9T]/gi,"").slice(0,13);
+        const d2raw = new Date(`${date.replace(/-/g, "/").replace(/UTC\//, "UTC-")} ${time} UTC${gmtOffset < 0 ? '-' : '+'}${Math.abs(gmtOffset)}`);
+        d2raw.setHours(parseFloat(runtime));
+        const d2 = d2raw.toISOString().replace(/[^0-9T]/gi,"").slice(0,13);
+
+        const googleCalExtras = [];
+        const days = ["SU", "MO", "TU", "WE", "TH", "FR", "SA"];
+        const weekdays = this.game.weekdays.map((w, i) => w && days[i]).filter(w => w);
+
+        if (weekdays.length == 0) {
+            const wd = moment(date).weekday();
+            this.game.weekdays[wd] = true;
+        }
+
+        if (frequency == 1) {
+            googleCalExtras.push(`&recur=RRULE:FREQ=DAILY`);
+        }
+        if (frequency == 2) {
+            googleCalExtras.push(`&recur=RRULE:FREQ=WEEKLY;BYDAY=${weekdays.join(",")}`);
+        }
+        if (frequency == 3) {
+            googleCalExtras.push(`&recur=RRULE:FREQ=WEEKLY;INTERVAL=${xWeeks || 2};BYDAY=${weekdays.join(",")}`);
+        }
+        if (frequency == 4) {
+            if (monthlyType == "date") {
+                googleCalExtras.push(`&recur=RRULE:FREQ=MONTHLY`);
+            } else if (monthlyType == "weekday") {
+                googleCalExtras.push(`&recur=RRULE:FREQ=MONTHLY;BYDAY=${moment(date).monthWeekByDay() + 1}${days[d1raw.getDay()]}`);
+            }
+        }
+
+        if (name) googleCalExtras.push(`&text=${escape(name)}`);
+        if (where) googleCalExtras.push(`&location=${escape(`${server} - ${where}`)}`);
+        if (description) googleCalExtras.push(`&details=${escape(description)}`);
+
+        return {
+            convert: `https://timee.io/${d1}`,
+            gcal: `http://www.google.com/calendar/render?action=TEMPLATE&dates=${d1}/${d2}&trp=true${googleCalExtras.join("")}`
+        };
     },
     dateTimeLinks() {
       const link = this.getTZUrls();

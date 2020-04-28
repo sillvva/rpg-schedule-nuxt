@@ -222,13 +222,7 @@ export default {
           });
           items.push({
             id: "calendar",
-            href: `http://www.google.com/calendar/render?action=TEMPLATE&text=${encodeURI(
-              game.adventure
-            )}&dates=${game.moment.isoutc}/${
-              game.moment.isoutc
-            }&location=${encodeURI(
-              `${game.guildAccount.name} - ${game.where}`
-            )}&trp=false&sprop=&details=${encodeURI(game.description)}`,
+            href: game.moment.googleCal,
             target: "_blank",
             class: "discord--text hidden-xs-only",
             value: this.lang.buttons.ADD_TO_GOOGLE_CALENDAR

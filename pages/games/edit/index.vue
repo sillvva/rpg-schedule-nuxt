@@ -717,7 +717,6 @@ export default {
       delete updatedGame.reminderMessageId;
       delete updatedGame.pm;
       delete updatedGame.sequence;
-      console.log(updatedGame);
       this.prevSave = updatedGame;
       this.$store
         .dispatch("saveGame", {

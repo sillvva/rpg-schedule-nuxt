@@ -222,7 +222,6 @@ export default {
                   regex: new RegExp(match.query, "gi")
                 }))
                 .filter(match => {
-                  console.log(match);
                   return (
                     (match.type === "any" &&
                       (match.regex.test(game.adventure) ||

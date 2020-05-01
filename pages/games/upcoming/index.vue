@@ -140,6 +140,7 @@ export default {
   },
   mounted() {
     updateToken(this);
+    this.$store.dispatch("emptyGuilds");
     this.$store.dispatch("fetchGuilds", {
       page: "upcoming",
       games: true,
@@ -174,15 +175,17 @@ export default {
       const regex = /((\w+):)?"([^"]+)"|((\w+):)?([^ ]+)/gm,
         matches = [];
       let m;
-      while ((m = regex.exec(this.searchQuery)) !== null) {
-        if (m.index === regex.lastIndex) {
-          regex.lastIndex++;
-        }
-        if (m[3] && m[3].length > 0) {
-          matches.push({ type: m[2] || "any", query: m[3] });
-        }
-        if (m[6] && m[6].length > 0) {
-          matches.push({ type: m[5] || "any", query: m[6] });
+      if (this.searchQuery) {
+        while ((m = regex.exec(this.searchQuery)) !== null) {
+          if (m.index === regex.lastIndex) {
+            regex.lastIndex++;
+          }
+          if (m[3] && m[3].length > 0) {
+            matches.push({ type: m[2] || "any", query: m[3] });
+          }
+          if (m[6] && m[6].length > 0) {
+            matches.push({ type: m[5] || "any", query: m[6] });
+          }
         }
       }
       this.guilds = this.guilds.map(guild => {
@@ -198,10 +201,12 @@ export default {
                   return (
                     (match.type === "any" &&
                       (match.regex.test(game.adventure) ||
-                        match.regex.test(game.dm.tag) ||
+                        match.regex.test(game.dm.tag || game.dm) ||
+                        match.regex.test(game.author && game.author.tag) ||
                         match.regex.test(guild.name))) ||
                     match.regex.test(
-                      (match.type === "gm" && game.dm.tag) ||
+                      (match.type === "gm" && (game.dm.tag || game.dm)) ||
+                        (match.type === "author" && game.author && game.author.tag) ||
                         (match.type === "name" && game.adventure) ||
                         (match.type === "server" && guild.name) ||
                         (match.type === "reserved" &&

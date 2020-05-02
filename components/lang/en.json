@@ -10,7 +10,7 @@
     "SAVE_COPY": "Save As Copy",
     "SIGN_UP": "Sign Up",
     "DROP_OUT": "Drop Out",
-    "ADD_TO_GOOGLE_CALENDAR": "Agregar a Google Calendar"
+    "ADD_TO_GOOGLE_CALENDAR": "Add to Google Calendar"
   },
   "nav": {
     "GAMES": "Games",
@@ -68,7 +68,7 @@
     "COUNTDOWN": "Countdown",
     "MONTHLY_TYPE": "Monthly Type",
     "HIDE_DATE": "Hide Date",
-    "SLOT": "Espacio",
+    "SLOT": "Slot",
     "options": {
       "AUTOMATED_SIGNUP": "Automated Signup",
       "CUSTOM_SIGNUP_INSTRUCTIONS": "Custom Signup Instructions",

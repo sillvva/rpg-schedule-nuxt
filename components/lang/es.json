@@ -10,7 +10,7 @@
     "SAVE_COPY": "Guardar Copia",
     "SIGN_UP": "Unirse a la partida",
     "DROP_OUT": "Salir de la partida",
-    "ADD_TO_GOOGLE_CALENDAR": "Add to Google Calendar"
+    "ADD_TO_GOOGLE_CALENDAR": "Agregar a Google Calendar"
   },
   "nav": {
     "GAMES": "Juegos",
@@ -68,7 +68,7 @@
     "COUNTDOWN": "Cuenta atras",
     "MONTHLY_TYPE": "Tipo del mes",
     "HIDE_DATE": "Ocultar Fecha",
-    "SLOT": "Slot",
+    "SLOT": "Espacio",
     "options": {
       "AUTOMATED_SIGNUP": "Registrarse Automaticamente",
       "CUSTOM_SIGNUP_INSTRUCTIONS": "Instrucciones para unirse al evento",

@@ -275,7 +275,6 @@ export const actions = {
   },
   async fetchGuilds(vuexContext, { page, games, search, app }) {
     await vuexContext.dispatch("fetchSiteSettings");
-    vuexContext.dispatch("emptyGuilds");
 
     return new Promise(async (resolve, reject) => {
       try {
@@ -407,26 +406,61 @@ export const actions = {
         aux.log(err);
       });
   },
-  async saveGame({ dispatch }, gameData) {
-    await dispatch("fetchSiteSettings");
+  async saveGame(vuexContext, { gameData, app }) {
+    const cookies = [];
+    const hCookies = app.$cookies.getAll();
+    for (const name in hCookies) {
+      cookies.push({ name: name, value: hCookies[name] });
+    }
 
-    return this.$axios
-      .post(
-        `${this.getters.env.apiUrl}/api/game?${
-          gameData._id ? `g=${gameData._id}` : `s=${gameData.s}`
-        }`,
-        gameData,
-        {
-          headers: {
-            "Content-Type": "application/json"
+    const tokenCookies = [];
+    for (const cookie of cookies) {
+      if (cookie.name == "token") tokenCookies.push(cookie.value);
+    }
+
+    aux.log("saveGame", tokenCookies);
+
+    return new Promise(async (resolve, reject) => {
+      let savedResult,
+        successes = 0,
+        reauthenticated = 0;
+      for (let i = 0; i < tokenCookies.length; i++) {
+        try {
+          const result = await this.$axios.post(
+            `${this.getters.env.apiUrl}/auth-api/game?${
+              gameData._id ? `g=${gameData._id}` : `s=${gameData.s}`
+            }`,
+            gameData,
+            {
+              headers: {
+                Authorization: `Bearer ${tokenCookies[i]}`,
+                "Content-Type": "application/json"
+              }
+            }
+          );
+
+          const authResult = result.data;
+          if (authResult.token && authResult.token != tokenCookies[i]) {
+            // aux.log(1, authResult.token, tokenCookies[i]);
+            await authAux.setToken(app, authResult.token);
           }
+          if (authResult.status == "success") {
+            successes++;
+            savedResult = authResult;
+          } else if (authResult.status == "error") {
+            if (authResult.reauthenticate) reauthenticated++;
+            throw new Error(authResult && authResult.message);
+          }
+        } catch (err) {
+          aux.log(3, err);
         }
-      )
-      .then(result => {
-        if (result.data.status == "error")
-          throw new Error(result.data && result.data.message);
-        return result.data;
-      });
+      }
+      if (successes > 0) resolve(savedResult);
+      else {
+        if (reauthenticated > 0) reauthenticate(commit, this, route.path);
+        reject();
+      }
+    });
   },
   deleteGame({ commit }, gameId) {
     return this.$axios

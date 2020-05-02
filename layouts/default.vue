@@ -450,11 +450,9 @@ export default {
     await this.$store.dispatch("fetchLangs");
     this.setSelectedLang();
 
-    if (!this.$store.getters.account) {
-      this.$store.dispatch("fetchGuilds", {
-        page: "my-games"
-      }) 
-    }
+    // if (!this.$store.getters.account) {
+    //   this.$store.dispatch("fetchGuilds") 
+    // }
 
     this.socket = io(this.$store.getters.env.apiUrl);
 

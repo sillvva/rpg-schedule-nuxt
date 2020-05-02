@@ -368,6 +368,7 @@
 </template>
 
 <script>
+import { updateToken } from "../../../components/auxjs/auth";
 import lang from "../../../components/lang/en.json";
 import { cloneDeep } from "lodash";
 
@@ -467,6 +468,7 @@ export default {
     }
   },
   async mounted() {
+    updateToken(this);
     await this.$store.dispatch("fetchGuilds", {
       page: "my-games",
       app: this
@@ -486,7 +488,10 @@ export default {
       if (data.gameId != this.gameId) return;
       if (data.action === "rescheduled") {
         localStorage.setItem("rescheduled", 1);
-        this.$store.dispatch("addSnackBar", { message: "The game has been rescheduled", color: "info" });
+        this.$store.dispatch("addSnackBar", {
+          message: "The game has been rescheduled",
+          color: "info"
+        });
         this.$router.replace(
           `${this.$store.getters.config.urls.game.create.path}?g=${response.newGameId}`
         );
@@ -495,7 +500,10 @@ export default {
         !localStorage.getItem("rescheduled")
       ) {
         localStorage.setItem("rescheduled", 1);
-        this.$store.dispatch("addSnackBar", { message: "The game has been deleted", color: "error darken-1" });
+        this.$store.dispatch("addSnackBar", {
+          message: "The game has been deleted",
+          color: "error darken-1"
+        });
         this.$router.replace(
           this.$store.getters.config.urls.game.dashboard.path
         );
@@ -561,7 +569,9 @@ export default {
       this.game = cloneDeep(game);
       if (this.game.weekdays) {
         if (!Array.isArray(this.game.weekdays)) {
-          this.game.weekdays = Array(7).fill(false).map((w, i) => this.game.weekdays[i]);
+          this.game.weekdays = Array(7)
+            .fill(false)
+            .map((w, i) => this.game.weekdays[i]);
         }
         this.weekdays = this.game.weekdays
           .map((w, i) => (w ? i : false))
@@ -636,22 +646,38 @@ export default {
       data.forEach(d => {
         if (updatedGame[d.id]) updatedGame[d.id] = d.value;
       });
+
       if (this.copy) updatedGame.copy = true;
+
       updatedGame.channel = (
         this.game.channels.find(c => c.id === updatedGame.c) || {}
       ).name;
+
       let reservedList = (Array.isArray(this.game.reserved)
         ? this.game.reserved
-        : []
+        : this.game.reserved
+            .split(/\r?\n/)
+            .filter(r => r.trim().length > 0)
+            .map(r => ({ tag: r.trim() }))
       )
-        .map(r => r.tag)
-        .join(`\n`);
-      if (reservedList !== this.reservedList) {
+        .map(r => r.tag);
+
+      if (reservedList.join(`\n`) !== this.reservedList.split(/\r?\n/).join(`\n`)) {
         updatedGame.reserved = this.reservedList
           .split(/\r?\n/)
           .filter(r => r.trim().length > 0)
           .map(r => ({ tag: r.trim() }));
       }
+
+      if (reservedList.length === 0) updatedGame.reserved = [];
+
+      if (this.$store.getters.account && !this.$route.query.g) {
+        updatedGame.author = {
+          tag: this.$store.getters.account.user.tag,
+          id: this.$store.getters.account.user.id
+        };
+      }
+
       if (
         this.$store.getters.account &&
         updatedGame.dmTag === this.$store.getters.account.user.tag
@@ -663,6 +689,7 @@ export default {
       } else {
         updatedGame.dm = updatedGame.dmTag;
       }
+
       updatedGame.weekdays = [
         false,
         false,
@@ -692,7 +719,10 @@ export default {
       delete updatedGame.sequence;
       this.prevSave = updatedGame;
       this.$store
-        .dispatch("saveGame", updatedGame)
+        .dispatch("saveGame", {
+          gameData: updatedGame,
+          app: this
+        })
         .then(result => {
           if (!this.gameId) {
             return this.$router.replace(
@@ -704,7 +734,11 @@ export default {
         })
         .catch(err => {
           this.saveResult = "error";
-          this.$store.dispatch("addSnackBar", { message: (err && err.message) || err, color: "error darken-1" });
+          console.log(err);
+          this.$store.dispatch("addSnackBar", {
+            message: (err && err.message) || err,
+            color: "error darken-1"
+          });
         });
     },
     getTZUrls() {
@@ -721,46 +755,74 @@ export default {
       const where = this.game.where;
       const description = this.game.description;
 
-      const d1raw = new Date(`${date.replace(/-/g, "/").replace(/UTC\//, "UTC-")} ${time} UTC${gmtOffset < 0 ? '-' : '+'}${Math.abs(gmtOffset)}`);
-        const d1 = d1raw.toISOString().replace(/[^0-9T]/gi,"").slice(0,13);
-        const d2raw = new Date(`${date.replace(/-/g, "/").replace(/UTC\//, "UTC-")} ${time} UTC${gmtOffset < 0 ? '-' : '+'}${Math.abs(gmtOffset)}`);
-        d2raw.setHours(parseFloat(runtime));
-        const d2 = d2raw.toISOString().replace(/[^0-9T]/gi,"").slice(0,13);
+      const d1raw = new Date(
+        `${date.replace(/-/g, "/").replace(/UTC\//, "UTC-")} ${time} UTC${
+          gmtOffset < 0 ? "-" : "+"
+        }${Math.abs(gmtOffset)}`
+      );
+      const d1 = d1raw
+        .toISOString()
+        .replace(/[^0-9T]/gi, "")
+        .slice(0, 13);
+      const d2raw = new Date(
+        `${date.replace(/-/g, "/").replace(/UTC\//, "UTC-")} ${time} UTC${
+          gmtOffset < 0 ? "-" : "+"
+        }${Math.abs(gmtOffset)}`
+      );
+      d2raw.setHours(parseFloat(runtime));
+      const d2 = d2raw
+        .toISOString()
+        .replace(/[^0-9T]/gi, "")
+        .slice(0, 13);
 
-        const googleCalExtras = [];
-        const days = ["SU", "MO", "TU", "WE", "TH", "FR", "SA"];
-        const weekdays = this.game.weekdays.map((w, i) => w && days[i]).filter(w => w);
+      const googleCalExtras = [];
+      const days = ["SU", "MO", "TU", "WE", "TH", "FR", "SA"];
+      if (!this.game.weekdays) this.game.weekdays = Array(7).fill(false);
+      const weekdays = this.game.weekdays
+        .map((w, i) => w && days[i])
+        .filter(w => w);
 
-        if (weekdays.length == 0) {
-            const wd = moment(date).weekday();
-            this.game.weekdays[wd] = true;
-        }
+      if (weekdays.length == 0) {
+        const wd = moment(date).weekday();
+        this.game.weekdays[wd] = true;
+      }
 
-        if (frequency == 1) {
-            googleCalExtras.push(`&recur=RRULE:FREQ=DAILY`);
+      if (frequency == 1) {
+        googleCalExtras.push(`&recur=RRULE:FREQ=DAILY`);
+      }
+      if (frequency == 2) {
+        googleCalExtras.push(
+          `&recur=RRULE:FREQ=WEEKLY;BYDAY=${weekdays.join(",")}`
+        );
+      }
+      if (frequency == 3) {
+        googleCalExtras.push(
+          `&recur=RRULE:FREQ=WEEKLY;INTERVAL=${xWeeks ||
+            2};BYDAY=${weekdays.join(",")}`
+        );
+      }
+      if (frequency == 4) {
+        if (monthlyType == "date") {
+          googleCalExtras.push(`&recur=RRULE:FREQ=MONTHLY`);
+        } else if (monthlyType == "weekday") {
+          googleCalExtras.push(
+            `&recur=RRULE:FREQ=MONTHLY;BYDAY=${moment(date).monthWeekByDay() +
+              1}${days[d1raw.getDay()]}`
+          );
         }
-        if (frequency == 2) {
-            googleCalExtras.push(`&recur=RRULE:FREQ=WEEKLY;BYDAY=${weekdays.join(",")}`);
-        }
-        if (frequency == 3) {
-            googleCalExtras.push(`&recur=RRULE:FREQ=WEEKLY;INTERVAL=${xWeeks || 2};BYDAY=${weekdays.join(",")}`);
-        }
-        if (frequency == 4) {
-            if (monthlyType == "date") {
-                googleCalExtras.push(`&recur=RRULE:FREQ=MONTHLY`);
-            } else if (monthlyType == "weekday") {
-                googleCalExtras.push(`&recur=RRULE:FREQ=MONTHLY;BYDAY=${moment(date).monthWeekByDay() + 1}${days[d1raw.getDay()]}`);
-            }
-        }
+      }
 
-        if (name) googleCalExtras.push(`&text=${escape(name)}`);
-        if (where) googleCalExtras.push(`&location=${escape(`${server} - ${where}`)}`);
-        if (description) googleCalExtras.push(`&details=${escape(description)}`);
+      if (name) googleCalExtras.push(`&text=${escape(name)}`);
+      if (where)
+        googleCalExtras.push(`&location=${escape(`${server} - ${where}`)}`);
+      if (description) googleCalExtras.push(`&details=${escape(description)}`);
 
-        return {
-            convert: `https://timee.io/${d1}`,
-            gcal: `http://www.google.com/calendar/render?action=TEMPLATE&dates=${d1}/${d2}&trp=true${googleCalExtras.join("")}`
-        };
+      return {
+        convert: `https://timee.io/${d1}`,
+        gcal: `http://www.google.com/calendar/render?action=TEMPLATE&dates=${d1}/${d2}&trp=true${googleCalExtras.join(
+          ""
+        )}`
+      };
     },
     dateTimeLinks() {
       const link = this.getTZUrls();

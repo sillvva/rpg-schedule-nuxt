@@ -10,9 +10,10 @@ const setToken = async (app, token) => {
   const d = new Date();
   d.setDate(d.getDate() + 14);
   if (!app) return;
-  await app.$cookies.remove('redirect');
-  await app.$cookies.remove('token');
-  await app.$cookies.set('token', token, { expires: d });
+  await app.$cookies.remove('redirect', { path: "/" });
+  await app.$cookies.remove('token', { path: "/" });
+  await app.$cookies.remove('token', { path: "/games" });
+  await app.$cookies.set('token', token, { expires: d, path: "/" });
   if (app.$store || app.store) (app.$store || app.store).commit('setToken', token);
 };
 

@@ -22,7 +22,12 @@
                         @change="selectGuild"
                       ></v-select>
                     </v-col>
-                    <v-col cols="12" sm="6" class="py-0" v-if="channels">
+                    <v-col
+                      cols="12"
+                      sm="6"
+                      class="py-0"
+                      v-if="channels && guilds.filter(c => !gameId || c.value === game.s)"
+                    >
                       <v-select
                         :label="lang.game.CHANNEL"
                         id="channel"
@@ -483,39 +488,43 @@ export default {
       localStorage.removeItem("rescheduled");
     }, 5000);
 
-    this.socket = io(this.$store.getters.env.apiUrl);
-    this.socket.on("game", data => {
-      if (data.gameId != this.gameId) return;
-      if (data.action === "rescheduled") {
-        localStorage.setItem("rescheduled", 1);
-        this.$store.dispatch("addSnackBar", {
-          message: "The game has been rescheduled",
-          color: "info"
-        });
-        this.$router.replace(
-          `${this.$store.getters.config.urls.game.create.path}?g=${response.newGameId}`
-        );
-      } else if (
-        data.action === "deleted" &&
-        !localStorage.getItem("rescheduled")
-      ) {
-        localStorage.setItem("rescheduled", 1);
-        this.$store.dispatch("addSnackBar", {
-          message: "The game has been deleted",
-          color: "error darken-1"
-        });
-        this.$router.replace(
-          this.$store.getters.config.urls.game.dashboard.path
-        );
-      } else if (data.action === "updated") {
-        for (const prop in data.game) {
-          this.game[prop] = data.game[prop];
-          if (prop === "reserved") {
-            this.reservedList = this.game.reserved.map(r => r.tag).join(`\n`);
+    let isMobile = await this.$store.dispatch("isMobile");
+
+    if (!isMobile) {
+      this.socket = io(this.$store.getters.env.apiUrl);
+      this.socket.on("game", data => {
+        if (data.gameId != this.gameId) return;
+        if (data.action === "rescheduled") {
+          localStorage.setItem("rescheduled", 1);
+          this.$store.dispatch("addSnackBar", {
+            message: "The game has been rescheduled",
+            color: "info"
+          });
+          this.$router.replace(
+            `${this.$store.getters.config.urls.game.create.path}?g=${response.newGameId}`
+          );
+        } else if (
+          data.action === "deleted" &&
+          !localStorage.getItem("rescheduled")
+        ) {
+          localStorage.setItem("rescheduled", 1);
+          this.$store.dispatch("addSnackBar", {
+            message: "The game has been deleted",
+            color: "error darken-1"
+          });
+          this.$router.replace(
+            this.$store.getters.config.urls.game.dashboard.path
+          );
+        } else if (data.action === "updated") {
+          for (const prop in data.game) {
+            this.game[prop] = data.game[prop];
+            if (prop === "reserved") {
+              this.reservedList = this.game.reserved.map(r => r.tag).join(`\n`);
+            }
           }
         }
-      }
-    });
+      });
+    }
   },
   beforeDestroy() {
     if (this.socket) this.socket.close();
@@ -659,10 +668,11 @@ export default {
             .split(/\r?\n/)
             .filter(r => r.trim().length > 0)
             .map(r => ({ tag: r.trim() }))
-      )
-        .map(r => r.tag);
+      ).map(r => r.tag);
 
-      if (reservedList.join(`\n`) !== this.reservedList.split(/\r?\n/).join(`\n`)) {
+      if (
+        reservedList.join(`\n`) !== this.reservedList.split(/\r?\n/).join(`\n`)
+      ) {
         updatedGame.reserved = this.reservedList
           .split(/\r?\n/)
           .filter(r => r.trim().length > 0)
@@ -734,9 +744,8 @@ export default {
         })
         .catch(err => {
           this.saveResult = "error";
-          console.log(err);
           this.$store.dispatch("addSnackBar", {
-            message: (err && err.message) || err,
+            message: (err && err.message) || err || "An error occured!",
             color: "error darken-1"
           });
         });

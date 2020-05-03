@@ -279,7 +279,9 @@ export default {
     },
     urlConfig() {
       const parsedURLs = aux.parseConfigURLs(this.config.urls);
-      return parsedURLs.find(path => path.session && this.$route.path === path.path);
+      return parsedURLs.find(
+        path => path.session && this.$route.path === path.path
+      );
     }
   },
   watch: {
@@ -335,7 +337,8 @@ export default {
   methods: {
     signOut() {
       this.$store.dispatch("signOut").then(() => {
-        this.$cookies.remove("token");
+        this.$cookies.remove("token", { path: "/" });
+        this.$cookies.remove("token", { path: "/games" });
         this.$router.push("/", () => {
           // window.location.reload(true);
         });
@@ -377,7 +380,10 @@ export default {
           }
         })
         .catch(err => {
-          this.$store.dispatch("addSnackBar", { message: (err && err.message) || err, color: "error" });
+          this.$store.dispatch("addSnackBar", {
+            message: (err && err.message) || err || "An error occured!",
+            color: "error darken-1"
+          });
         });
     },
     setSelectedLang() {
@@ -450,94 +456,102 @@ export default {
     await this.$store.dispatch("fetchLangs");
     this.setSelectedLang();
 
-    // if (!this.$store.getters.account) {
-    //   this.$store.dispatch("fetchGuilds") 
-    // }
+    let isMobile = await this.$store.dispatch("isMobile");
 
-    this.socket = io(this.$store.getters.env.apiUrl);
+    if (!isMobile) {
+      this.socket = io(this.$store.getters.env.apiUrl);
 
-    this.socket.on("game", data => {
-      let guildRefresh = new Date().getTime();
-      const account = this.$store.getters.account;
-      if (!account) return;
-      let guilds = cloneDeep(account.guilds);
-      const path = this.$route.path;
-      const gamesPage = /^\/games\//.test(path);
-      const gamesEditPage = /^\/games\/edit/.test(path);
-      const gameListingsPage = /^\/games\/(upcoming|my-games|calendar|server)/.test(
-        path
-      );
+      this.socket.on("game", data => {
+        let guildRefresh = new Date().getTime();
+        const account = this.$store.getters.account;
+        if (!account) return;
+        let guilds = cloneDeep(account.guilds);
+        const path = this.$route.path;
+        const gamesPage = /^\/games\//.test(path);
+        const gamesEditPage = /^\/games\/edit/.test(path);
+        const gameListingsPage = /^\/games\/(upcoming|my-games|calendar|server)/.test(
+          path
+        );
 
-      if (
-        guildRefresh - lastGuildRefresh >= 10 * 1000 &&
-        gameListingsPage &&
-        ["new", "rescheduled"].includes(data.action)
-      ) {
-        // A new game has been created or an existing game has been rescheduled
-        lastGuildRefresh = guildRefresh;
-        this.$store.dispatch("fetchGuilds", {
-          page: path.replace("/games/", ""),
-          games: true,
-          app: this
-        });
-      } else if (
-        data.action == "updated" &&
-        gamesPage &&
-        guilds.find(g => g.id == data.guildId)
-      ) {
-        // An existing game has been updated, update the store if it belongs to one of current user's guilds
-        let updated = false;
-        guilds = guilds.map(guild => {
-          const index = guild.games.findIndex(game => game._id == data.gameId);
-          if (index < 0) {
-            lastGuildRefresh = guildRefresh;
-            this.$store.dispatch("fetchGuilds", {
-              page: path.replace("/games/", ""),
-              games: true,
-              app: this
-            });
-          } else {
-            for (const prop in data.game) {
-              updated = true;
-              guild.games[index][prop] = data.game[prop];
-            }
-          }
-          return guild;
-        });
-        if (updated) this.$store.commit("setGuilds", guilds);
-      } else if (
-        data.action == "deleted" &&
-        gamesPage &&
-        guilds.find(g => g.id == data.guildId)
-      ) {
-        // An existing game has been deleted, update the store if it belongs to one of current user's guilds
         if (
-          gamesEditPage &&
-          this.$route.query &&
-          this.$route.query.g == data.gameId
+          guildRefresh - lastGuildRefresh >= 10 * 1000 &&
+          gameListingsPage &&
+          ["new", "rescheduled"].includes(data.action)
         ) {
-          this.$store.dispatch("addSnackBar", { message: "This game has been deleted" || err, color: "error" });
-          this.$router.replace(this.$store.getters.config.urls.game.games.path);
-        } else if (gameListingsPage) {
+          // A new game has been created or an existing game has been rescheduled
+          lastGuildRefresh = guildRefresh;
+          this.$store.dispatch("fetchGuilds", {
+            page: path.replace("/games/", ""),
+            games: true,
+            app: this
+          });
+        } else if (
+          data.action == "updated" &&
+          gamesPage &&
+          guilds.find(g => g.id == data.guildId)
+        ) {
+          // An existing game has been updated, update the store if it belongs to one of current user's guilds
+          let updated = false;
           guilds = guilds.map(guild => {
-            if (guild.games.find(game => game._id == data.gameId)) {
-              guild.games.splice(
-                guild.games.findIndex(game => game._id == data.gameId),
-                1
-              );
+            const index = guild.games.findIndex(
+              game => game._id == data.gameId
+            );
+            if (index < 0) {
+              lastGuildRefresh = guildRefresh;
+              this.$store.dispatch("fetchGuilds", {
+                page: path.replace("/games/", ""),
+                games: true,
+                app: this
+              });
+            } else {
+              for (const prop in data.game) {
+                updated = true;
+                guild.games[index][prop] = data.game[prop];
+              }
             }
             return guild;
           });
-          this.$store.commit("setGuilds", guilds);
+          if (updated) this.$store.commit("setGuilds", guilds);
+        } else if (
+          data.action == "deleted" &&
+          gamesPage &&
+          guilds.find(g => g.id == data.guildId)
+        ) {
+          // An existing game has been deleted, update the store if it belongs to one of current user's guilds
+          if (
+            gamesEditPage &&
+            this.$route.query &&
+            this.$route.query.g == data.gameId
+          ) {
+            this.$store.dispatch("addSnackBar", {
+              message:
+                "This game has been deleted" || err || "An error occured!",
+              color: "error darken-1"
+            });
+            this.$router.replace(
+              this.$store.getters.config.urls.game.games.path
+            );
+          } else if (gameListingsPage) {
+            guilds = guilds.map(guild => {
+              if (guild.games.find(game => game._id == data.gameId)) {
+                guild.games.splice(
+                  guild.games.findIndex(game => game._id == data.gameId),
+                  1
+                );
+              }
+              return guild;
+            });
+            this.$store.commit("setGuilds", guilds);
+          }
         }
-      }
-    });
+      });
 
-    this.socket.on("site", data => {
-      if (data.action == "settings") {
-        this.$store.commit("setSiteSettings", data);
-      }
-    });
+      this.socket.on("site", data => {
+        if (data.action == "settings") {
+          this.$store.commit("setSiteSettings", data);
+        }
+      });
+    }
   },
   beforeDestroy() {
     window.removeEventListener("resize", this.onResize);

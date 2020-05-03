@@ -578,7 +578,7 @@ export default {
     },
     async modGame(game) {
       this.game = cloneDeep(game);
-      this.$refs.game.resetValidation();
+      if (this.$refs.game) this.$refs.game.resetValidation();
       if (this.game.weekdays) {
         if (!Array.isArray(this.game.weekdays)) {
           this.game.weekdays = Array(7)

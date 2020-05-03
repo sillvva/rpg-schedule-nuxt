@@ -196,6 +196,8 @@ export default {
       this.searchGuild();
     },
     searchGuild() {
+      // Regex Example: https://regex101.com/r/LFEUgY/2
+      // Removed lookback for lack of Firefox support
       const regex = /((\w+):)?"([^"]+)"|((\w+):)?([^ ]+)/gm,
         matches = [];
       let m;

@@ -396,7 +396,7 @@ export default {
             })
             .catch(err => {
               this.$store.dispatch("addSnackBar", {
-                message: (err && err.message) || err,
+                message: (err && err.message) || err || "An error occured!",
                 color: "error"
               });
             });
@@ -430,6 +430,8 @@ export default {
           search: this.searchQuery.trim().length > 0 ? this.searchQuery : null
         });
       } else {
+        // Regex Example: https://regex101.com/r/LFEUgY/2
+        // Removed lookback for lack of Firefox support
         const regex = /((\w+):)?"([^"]+)"|((\w+):)?([^ ]+)/gm,
           matches = [];
         let m;

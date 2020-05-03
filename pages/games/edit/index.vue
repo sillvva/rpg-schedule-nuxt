@@ -3,7 +3,7 @@
     <v-row dense>
       <v-spacer></v-spacer>
       <v-col cols="12" xl="8" class="py-0">
-        <v-form v-if="game" ref="game">
+        <v-form v-if="game" ref="game" v-model="valid">
           <v-card>
             <v-toolbar color="discord">
               <v-toolbar-title v-if="guildId || !gameId">{{lang.buttons.NEW_GAME}}</v-toolbar-title>
@@ -41,7 +41,7 @@
                         id="adventure"
                         :label="lang.game.GAME_NAME"
                         v-model="game.adventure"
-                        required
+                        :rules="[v => !!v]"
                       ></v-text-field>
                     </v-col>
                     <v-col cols="12" sm="7" md="8" lg="6" class="py-0">
@@ -83,7 +83,7 @@
                       ></v-text-field>
                     </v-col>
                     <v-col cols="12" :sm="guildId || !gameId ? 6 : 12" class="py-0">
-                      <v-text-field id="where" :label="lang.game.WHERE" v-model="game.where"></v-text-field>
+                      <v-text-field id="where" :label="lang.game.WHERE" v-model="game.where" :rules="[v => !!v]"></v-text-field>
                     </v-col>
                     <v-col cols="12" sm="3" v-if="guildId || !gameId" class="py-0">
                       <v-select
@@ -317,7 +317,7 @@
                         @click="save"
                         width="100%"
                         :color="saveResult && saveResult != 'saving' ? saveResult : 'discord'"
-                        :disabled="saveResult == 'saving' || saveResult == 'success'"
+                        :disabled="saveResult == 'saving' || saveResult == 'success' || !valid"
                       >
                         <v-progress-circular
                           indeterminate
@@ -335,7 +335,7 @@
                         @click="save"
                         width="100%"
                         :color="saveResult && saveResult != 'saving' ? saveResult : 'discord'"
-                        :disabled="saveResult == 'saving'"
+                        :disabled="saveResult == 'saving' || !valid"
                       >
                         <v-progress-circular
                           indeterminate
@@ -348,6 +348,7 @@
                     <v-col cols="12" class="py-md-0 col-md">
                       <v-btn
                         @click="saveCopy"
+                        :disabled="saveResult == 'saving' || !valid"
                         width="100%"
                         color="white"
                         light
@@ -415,7 +416,8 @@ export default {
         "color: rgba(255,255,255,0.7); font-size: 12px; min-height: 14px; position: absolute; bottom: 0;",
       socket: null,
       saveResult: null,
-      prevSave: null
+      prevSave: null,
+      valid: true
     };
   },
   computed: {
@@ -576,6 +578,7 @@ export default {
     },
     async modGame(game) {
       this.game = cloneDeep(game);
+      if (this.$refs.game) this.$refs.game.resetValidation();
       if (this.game.weekdays) {
         if (!Array.isArray(this.game.weekdays)) {
           this.game.weekdays = Array(7)
@@ -656,7 +659,11 @@ export default {
         if (updatedGame[d.id]) updatedGame[d.id] = d.value;
       });
 
-      if (!(channels && channels.length > 0 && guilds.filter(c => !gameId || c.value === game.s).length > 0) || !updatedGame.s || !updatedGame.c) {
+      if (!this.$refs.game.validate()) {
+        return;
+      }
+
+      if (!(this.channels && this.channels.length > 0 && this.guilds.filter(c => !this.gameId || c.value === this.game.s).length > 0) || !updatedGame.s || !updatedGame.c) {
         this.saveResult = "error";
         this.$store.dispatch("addSnackBar", {
           message: "Invalid guild/channel selection",

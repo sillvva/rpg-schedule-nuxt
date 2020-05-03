@@ -26,7 +26,7 @@
                       cols="12"
                       sm="6"
                       class="py-0"
-                      v-if="channels && guilds.filter(c => !gameId || c.value === game.s)"
+                      v-if="channels && channels.length > 0 && guilds.filter(c => !gameId || c.value === game.s).length > 0"
                     >
                       <v-select
                         :label="lang.game.CHANNEL"
@@ -655,6 +655,15 @@ export default {
       data.forEach(d => {
         if (updatedGame[d.id]) updatedGame[d.id] = d.value;
       });
+
+      if (!(channels && channels.length > 0 && guilds.filter(c => !gameId || c.value === game.s).length > 0) || !updatedGame.s || !updatedGame.c) {
+        this.saveResult = "error";
+        this.$store.dispatch("addSnackBar", {
+          message: "Invalid guild/channel selection",
+          color: "error darken-1"
+        });
+        return;
+      }
 
       if (this.copy) updatedGame.copy = true;
 

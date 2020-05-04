@@ -336,9 +336,7 @@ export const actions = {
       );
     }
   },
-  async rsvpGame({ commit, dispatch }, { gameId, route, app }) {
-    await dispatch("fetchSiteSettings");
-
+  async rsvpGame({ commit }, { gameId, route, app }) {
     const cookies = [];
     const hCookies = this.$cookies.getAll();
     for (const name in hCookies) {
@@ -393,9 +391,7 @@ export const actions = {
       }
     });
   },
-  async fetchGame({ dispatch }, { param, value }) {
-    await dispatch("fetchSiteSettings");
-
+  async fetchGame(vuexContext, { param, value }) {
     return this.$axios
       .get(`${this.getters.env.apiUrl}/api/game?${param}=${value}`)
       .then(result => {
@@ -463,7 +459,7 @@ export const actions = {
       }
     });
   },
-  deleteGame({ commit }, gameId) {
+  deleteGame(vuexContext, gameId) {
     return this.$axios
       .get(`${this.getters.env.apiUrl}/api/delete-game?g=${gameId}`)
       .then(result => {

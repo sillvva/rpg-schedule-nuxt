@@ -469,7 +469,7 @@ export default {
         const path = this.$route.path;
         const gamesPage = /^\/games\//.test(path);
         const gamesEditPage = /^\/games\/edit/.test(path);
-        const gameListingsPage = /^\/games\/(upcoming|my-games|calendar|server)/.test(
+        const gameListingsPage = /^\/games\/(upcoming|my-games|calendar|manage-server)/.test(
           path
         );
 
@@ -480,8 +480,13 @@ export default {
         ) {
           // A new game has been created or an existing game has been rescheduled
           lastGuildRefresh = guildRefresh;
+          const pages = {};
+          pages[this.config.urls.game.games] = "upcoming";
+          pages[this.config.urls.game.dashboard] = "my-games";
+          pages[this.config.urls.game.calendar] = "calendar";
+          pages[this.config.urls.game.server] = "server";
           this.$store.dispatch("fetchGuilds", {
-            page: path.replace("/games/", ""),
+            page: pages[path],
             games: true,
             app: this
           });
@@ -518,20 +523,7 @@ export default {
           guilds.find(g => g.id == data.guildId)
         ) {
           // An existing game has been deleted, update the store if it belongs to one of current user's guilds
-          if (
-            gamesEditPage &&
-            this.$route.query &&
-            this.$route.query.g == data.gameId
-          ) {
-            this.$store.dispatch("addSnackBar", {
-              message:
-                "This game has been deleted" || err || "An error occured!",
-              color: "error darken-1"
-            });
-            this.$router.replace(
-              this.$store.getters.config.urls.game.games.path
-            );
-          } else if (gameListingsPage) {
+          if (gameListingsPage) {
             guilds = guilds.map(guild => {
               if (guild.games.find(game => game._id == data.gameId)) {
                 guild.games.splice(

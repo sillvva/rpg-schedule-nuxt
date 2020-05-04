@@ -589,7 +589,6 @@ export default {
           .map((w, i) => (w ? i : false))
           .filter(w => w !== false);
       }
-      console.log(this.game.dm);
       if (this.game.dm) {
         this.game.dmTag = this.game.dm.tag;
       }
@@ -598,7 +597,6 @@ export default {
         if (guild) {
           this.channels = guild.announcementChannels;
         }
-        console.log(this.game.dm);
         if (!game.dm || (this.game.dm.tag || "").trim().length === 0) {
           this.game.dmTag = this.account.user.tag;
         }
@@ -716,7 +714,9 @@ export default {
           id: this.$store.getters.account.user.id
         };
       } else {
-        updatedGame.dm = updatedGame.dmTag;
+        updatedGame.dm = {
+          tag: this.game.dmTag
+        };
       }
 
       updatedGame.weekdays = [

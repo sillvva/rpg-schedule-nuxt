@@ -578,6 +578,7 @@ export default {
     },
     async modGame(game) {
       this.game = cloneDeep(game);
+      if (!this.game) return;
       if (this.$refs.game) this.$refs.game.resetValidation();
       if (this.game.weekdays) {
         if (!Array.isArray(this.game.weekdays)) {
@@ -1071,5 +1072,8 @@ export default {
 }
 .v-chip.v-size--default {
   height: 24px !important;
+}
+.v-application .accent--text {
+  color: white !important;
 }
 </style>

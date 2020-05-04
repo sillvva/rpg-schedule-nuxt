@@ -694,8 +694,9 @@ export default {
           .filter(r => r.trim().length > 0)
           .map(r => ({ tag: r.trim() }));
       }
-
-      if (reservedList.length === 0) updatedGame.reserved = [];
+      else if (reservedList.length === 0) {
+        updatedGame.reserved = [];
+      }
 
       if (this.$store.getters.account && !this.$route.query.g) {
         updatedGame.author = {

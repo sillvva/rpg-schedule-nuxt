@@ -376,6 +376,7 @@
 <script>
 import { updateToken } from "../../../components/auxjs/auth";
 import lang from "../../../components/lang/en.json";
+import ws from "../../../store/socket";
 import { cloneDeep } from "lodash";
 
 export default {
@@ -493,7 +494,8 @@ export default {
     let isMobile = await this.$store.dispatch("isMobile");
 
     if (!isMobile) {
-      this.socket = io(this.$store.getters.env.apiUrl);
+      this.socket = ws.socket(this.$store.getters.env.apiUrl);
+
       this.socket.on("game", data => {
         if (data.gameId != this.gameId) return;
         if (data.action === "rescheduled") {
@@ -527,9 +529,6 @@ export default {
         }
       });
     }
-  },
-  beforeDestroy() {
-    if (this.socket) this.socket.close();
   },
   methods: {
     async selectGuild() {

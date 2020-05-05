@@ -491,7 +491,8 @@ export default {
               app: this
             });
           }
-        } else if (gamesPage) {
+        }
+        if (gamesPage) {
           if (
             data.action == "updated" &&
             guilds.find(g => g.id == data.guildId)

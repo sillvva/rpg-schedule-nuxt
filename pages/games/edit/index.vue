@@ -76,7 +76,7 @@
                         type="number"
                         min="1"
                         :max="game.players"
-                        :rules="[v => parseInt(v) <= game.players]"
+                        :rules="[v => parseInt(v) >= 1 && parseInt(v) <= game.players]"
                       ></v-text-field>
                     </v-col>
                     <v-col cols="6" sm="3" class="py-0">

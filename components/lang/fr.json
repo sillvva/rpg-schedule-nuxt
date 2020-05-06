@@ -112,6 +112,7 @@
     "GENERAL_CONFIGURATION": "Configuration générale",
     "BOT_CONFIGURATION": "Bot Configuration",
     "GAME_CONFIGURATION": "Configuration du jeu",
+    "GAME_DEFAULTS": "Paramètres par défaut du jeu",
     "USAGE": "Utilisation",
     "GUILD": "Guilde",
     "CHANNELS": "Channels",

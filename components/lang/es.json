@@ -112,6 +112,7 @@
     "GENERAL_CONFIGURATION": "Configuracion General",
     "BOT_CONFIGURATION": "Configuracion del Bot",
     "GAME_CONFIGURATION": "Configuracion del Juego",
+    "GAME_DEFAULTS": "Valores predeterminados del juego",
     "USAGE": "Usado",
     "GUILD": "Asociacion",
     "CHANNELS": "Canales",

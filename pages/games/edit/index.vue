@@ -71,6 +71,7 @@
                         type="number"
                         min="1"
                         :max="game.players"
+                        :rules="[v => parseInt(v) <= game.maxPlayers]"
                       ></v-text-field>
                     </v-col>
                     <v-col cols="6" sm="3" class="py-0">
@@ -80,12 +81,13 @@
                         v-model="game.players"
                         type="number"
                         :min="game.minPlayers"
+                        :rules="[v => parseInt(v) >= game.minPlayers]"
                       ></v-text-field>
                     </v-col>
-                    <v-col cols="12" :sm="guildId || !gameId ? 6 : 12" class="py-0">
+                    <v-col cols="12" sm="6" class="py-0">
                       <v-text-field id="where" :label="lang.game.WHERE" v-model="game.where" :rules="[v => !!v]"></v-text-field>
                     </v-col>
-                    <v-col cols="12" sm="3" v-if="guildId || !gameId" class="py-0">
+                    <v-col cols="12" :sm="guildId || !gameId ? 3 : 6" class="py-0">
                       <v-select
                         id="when"
                         :label="lang.game.WHEN"
@@ -226,6 +228,7 @@
                       cols="12"
                       :sm="['2','3','4'].includes(game.frequency) ? game.frequency == '3' ? 4 : 6 : 12"
                       class="py-0"
+                      v-if="game.when === enums.GameWhen.DATETIME" 
                     >
                       <v-select
                         id="frequency"
@@ -235,7 +238,7 @@
                         @change="dateTimeLinks"
                       ></v-select>
                     </v-col>
-                    <v-col cols="12" sm="4" v-if="['3'].includes(game.frequency)" class="py-0">
+                    <v-col cols="12" sm="4" v-if="['3'].includes(game.frequency) && game.when === enums.GameWhen.DATETIME" class="py-0">
                       <v-select
                         v-model="game.xWeeks"
                         :items="[1,2,3,4]"
@@ -246,7 +249,7 @@
                     <v-col
                       cols="12"
                       :sm="game.frequency == '3' ? 4 : 6"
-                      v-if="['2','3'].includes(game.frequency)"
+                      v-if="['2','3'].includes(game.frequency) && game.when === enums.GameWhen.DATETIME"
                       class="py-0"
                     >
                       <v-select
@@ -259,7 +262,7 @@
                         @change="dateTimeLinks"
                       ></v-select>
                     </v-col>
-                    <v-col cols="12" sm="6" v-if="['4'].includes(game.frequency)" class="py-0">
+                    <v-col cols="12" sm="6" v-if="['4'].includes(game.frequency) && game.when === enums.GameWhen.DATETIME" class="py-0">
                       <v-select
                         id="monthlyType"
                         v-model="game.monthlyType"
@@ -270,7 +273,7 @@
                         persistent-hint
                       ></v-select>
                     </v-col>
-                    <v-col cols="12" v-if="game.frequency != 0" class="py-0">
+                    <v-col cols="12" v-if="game.frequency != 0 && game.when === enums.GameWhen.DATETIME" class="py-0">
                       <v-select
                         v-model="repeatOptions"
                         :items="repeatOptionItems"
@@ -342,7 +345,7 @@
                           color="white"
                           v-if="saveResult == 'saving'"
                         ></v-progress-circular>
-                        <span v-if="saveResult != 'saving'">{{lang.buttons.SAVE}}</span>
+                        <span v-if="saveResult != 'saving'">{{lang.buttons.SAVE}} {{valid}}</span>
                       </v-btn>
                     </v-col>
                     <v-col cols="12" class="py-md-0 col-md">
@@ -505,7 +508,7 @@ export default {
             color: "info"
           });
           this.$router.replace(
-            `${this.$store.getters.config.urls.game.create.path}?g=${response.newGameId}`
+            `${this.$store.getters.config.urls.game.create.path}?g=${data.newGameId}`
           );
         } else if (
           data.action === "deleted" &&
@@ -577,6 +580,7 @@ export default {
     },
     async modGame(game) {
       this.game = cloneDeep(game);
+      console.log(this.$refs.game)
       if (!this.game) return;
       if (this.$refs.game) this.$refs.game.resetValidation();
       if (this.game.weekdays) {

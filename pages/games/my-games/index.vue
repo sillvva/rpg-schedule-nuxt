@@ -75,7 +75,7 @@
             xl="2"
           >
             <GameCard
-              v-if="game.dm.tag === account.user.tag || game.author.tag === account.user.tag"
+              v-if="game.dm.tag === account.user.tag || (game.author && game.author.tag === account.user.tag)"
               :gameData="game"
               :numColumns="1"
               :exclude="['gm', 'server']"

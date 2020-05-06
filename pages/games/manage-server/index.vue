@@ -148,25 +148,30 @@
                     <v-color-picker v-model="guild.config.embedColor"></v-color-picker>
                   </v-menu>
 
-                  <v-list-item class="px-4 mb-2">
-                    <v-text-field
-                      :label="lang.config.EMOJI_JOIN"
-                      v-model="guild.config.emojiAdd"
-                      :hint="lang.config.desc.EMOJI"
-                      :rules="[emojiRule]"
-                      persistent-hint
-                    ></v-text-field>
-                  </v-list-item>
-
-                  <v-list-item class="px-4 mb-2">
-                    <v-text-field
-                      :label="lang.config.EMOJI_LEAVE"
-                      v-model="guild.config.emojiRemove"
-                      :hint="lang.config.desc.EMOJI"
-                      :rules="[emojiRule]"
-                      persistent-hint
-                    ></v-text-field>
-                  </v-list-item>
+                  <v-row no-gutters>
+                    <v-col cols="12" sm="6">
+                      <v-list-item class="px-4 mb-2">
+                        <v-text-field
+                          :label="lang.config.EMOJI_JOIN"
+                          v-model="guild.config.emojiAdd"
+                          :hint="lang.config.desc.EMOJI"
+                          :rules="[emojiRule]"
+                          persistent-hint
+                        ></v-text-field>
+                      </v-list-item>
+                    </v-col>
+                    <v-col cols="12" sm="6">
+                      <v-list-item class="px-4 mb-2">
+                        <v-text-field
+                          :label="lang.config.EMOJI_LEAVE"
+                          v-model="guild.config.emojiRemove"
+                          :hint="lang.config.desc.EMOJI"
+                          :rules="[emojiRule]"
+                          persistent-hint
+                        ></v-text-field>
+                      </v-list-item>
+                    </v-col>
+                  </v-row>
 
                   <v-list-item @click="guild.config.dropOut = !guild.config.dropOut">
                     <v-list-item-action>
@@ -250,6 +255,50 @@
                       :items="[{text: 'Repost', value: 'repost'},{text: 'Update', value: 'update'}]"
                     ></v-select>
                   </v-list-item>
+
+                  <v-subheader class="px-4">{{lang.config.GAME_DEFAULTS}}</v-subheader>
+                  <v-row no-gutters>
+                    <v-col cols="12" sm="4">
+                      <v-list-item>
+                        <v-text-field
+                          :label="lang.game.MIN_PLAYERS"
+                          v-model="guild.config.gameDefaults.minPlayers"
+                          type="number"
+                          min="1"
+                          :max="isNaN(guild.config.gameDefaults.maxPlayers) ? 1 : parseInt(guild.config.gameDefaults.maxPlayers)"
+                          maxlength="3"
+                        ></v-text-field>
+                      </v-list-item>
+                    </v-col>
+                    <v-col cols="12" sm="4">
+                      <v-list-item>
+                        <v-text-field
+                          :label="lang.game.MAX_PLAYERS"
+                          v-model="guild.config.gameDefaults.maxPlayers"
+                          type="number"
+                          :min="isNaN(guild.config.gameDefaults.minPlayers) ? 1 : parseInt(guild.config.gameDefaults.minPlayers)"
+                          maxlength="3"
+                        ></v-text-field>
+                      </v-list-item>
+                    </v-col>
+                    <v-col cols="12" sm="4">
+                      <v-list-item>
+                        <v-select
+                          :label="lang.game.REMINDER"
+                          v-model="guild.config.gameDefaults.reminder"
+                          :items="[
+                            { text: lang.game.options.NO_REMINDER, value: '0' },
+                            { text: lang.game.options.MINUTES_15, value: '15' },
+                            { text: lang.game.options.MINUTES_30, value: '30' },
+                            { text: lang.game.options.MINUTES_60, value: '60' },
+                            { text: lang.game.options.HOURS_6, value: '360' },
+                            { text: lang.game.options.HOURS_12, value: '720' },
+                            { text: lang.game.options.HOURS_24, value: '1440' }
+                          ]"
+                        ></v-select>
+                      </v-list-item>
+                    </v-col>
+                  </v-row>
                 </v-list>
               </v-form>
             </v-card-text>

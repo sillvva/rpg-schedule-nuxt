@@ -98,6 +98,7 @@
 import lang from "../components/lang/en.json";
 
 export default {
+  layout: "noframe",
   middleware: ["authenticated"],
   data() {
     return {

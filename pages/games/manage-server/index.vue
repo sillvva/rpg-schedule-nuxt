@@ -267,6 +267,7 @@
                           min="1"
                           :max="isNaN(guild.config.gameDefaults.maxPlayers) ? 1 : parseInt(guild.config.gameDefaults.maxPlayers)"
                           maxlength="3"
+                          :rules="[v => parseInt(v) <= guild.config.gameDefaults.maxPlayers]"
                         ></v-text-field>
                       </v-list-item>
                     </v-col>
@@ -278,6 +279,7 @@
                           type="number"
                           :min="isNaN(guild.config.gameDefaults.minPlayers) ? 1 : parseInt(guild.config.gameDefaults.minPlayers)"
                           maxlength="3"
+                          :rules="[v => parseInt(v) >= guild.config.gameDefaults.minPlayers]"
                         ></v-text-field>
                       </v-list-item>
                     </v-col>
@@ -332,6 +334,21 @@
         </v-row>
       </v-container>
     </v-card>
+
+    <v-btn
+      fab
+      :to="config.urls.game.create.path"
+      fixed
+      right
+      bottom
+      color="discord"
+      :title="lang.buttons && lang.buttons.NEW_GAME"
+      style="bottom: 15px;"
+      class="hidden-lg-and-up"
+      v-if="guilds.find(guild => (guild.permission || guild.isAdmin) && guild.announcementChannels.length > 0)"
+    >
+      <v-icon>mdi-plus</v-icon>
+    </v-btn>
   </v-container>
 </template>
 

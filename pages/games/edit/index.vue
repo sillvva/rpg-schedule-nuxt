@@ -52,7 +52,12 @@
                       ></v-text-field>
                     </v-col>
                     <v-col cols="12" sm="3" class="py-0">
-                      <v-text-field id="dm" :label="lang.game.GM" v-model="game.dmTag"></v-text-field>
+                      <v-text-field
+                        id="dm"
+                        :label="lang.game.GM"
+                        v-model="game.dmTag"
+                        :rules="[v => !!v]"
+                      ></v-text-field>
                     </v-col>
                     <v-col cols="12" sm="3" class="py-0">
                       <v-text-field
@@ -71,7 +76,7 @@
                         type="number"
                         min="1"
                         :max="game.players"
-                        :rules="[v => parseInt(v) <= game.maxPlayers]"
+                        :rules="[v => parseInt(v) <= game.players]"
                       ></v-text-field>
                     </v-col>
                     <v-col cols="6" sm="3" class="py-0">
@@ -85,7 +90,12 @@
                       ></v-text-field>
                     </v-col>
                     <v-col cols="12" sm="6" class="py-0">
-                      <v-text-field id="where" :label="lang.game.WHERE" v-model="game.where" :rules="[v => !!v]"></v-text-field>
+                      <v-text-field
+                        id="where"
+                        :label="lang.game.WHERE"
+                        v-model="game.where"
+                        :rules="[v => !!v]"
+                      ></v-text-field>
                     </v-col>
                     <v-col cols="12" :sm="guildId || !gameId ? 3 : 6" class="py-0">
                       <v-select
@@ -228,7 +238,7 @@
                       cols="12"
                       :sm="['2','3','4'].includes(game.frequency) ? game.frequency == '3' ? 4 : 6 : 12"
                       class="py-0"
-                      v-if="game.when === enums.GameWhen.DATETIME" 
+                      v-if="game.when === enums.GameWhen.DATETIME"
                     >
                       <v-select
                         id="frequency"
@@ -238,7 +248,12 @@
                         @change="dateTimeLinks"
                       ></v-select>
                     </v-col>
-                    <v-col cols="12" sm="4" v-if="['3'].includes(game.frequency) && game.when === enums.GameWhen.DATETIME" class="py-0">
+                    <v-col
+                      cols="12"
+                      sm="4"
+                      v-if="['3'].includes(game.frequency) && game.when === enums.GameWhen.DATETIME"
+                      class="py-0"
+                    >
                       <v-select
                         v-model="game.xWeeks"
                         :items="[1,2,3,4]"
@@ -262,7 +277,12 @@
                         @change="dateTimeLinks"
                       ></v-select>
                     </v-col>
-                    <v-col cols="12" sm="6" v-if="['4'].includes(game.frequency) && game.when === enums.GameWhen.DATETIME" class="py-0">
+                    <v-col
+                      cols="12"
+                      sm="6"
+                      v-if="['4'].includes(game.frequency) && game.when === enums.GameWhen.DATETIME"
+                      class="py-0"
+                    >
                       <v-select
                         id="monthlyType"
                         v-model="game.monthlyType"
@@ -273,7 +293,11 @@
                         persistent-hint
                       ></v-select>
                     </v-col>
-                    <v-col cols="12" v-if="game.frequency != 0 && game.when === enums.GameWhen.DATETIME" class="py-0">
+                    <v-col
+                      cols="12"
+                      v-if="game.frequency != 0 && game.when === enums.GameWhen.DATETIME"
+                      class="py-0"
+                    >
                       <v-select
                         v-model="repeatOptions"
                         :items="repeatOptionItems"
@@ -580,7 +604,6 @@ export default {
     },
     async modGame(game) {
       this.game = cloneDeep(game);
-      console.log(this.$refs.game)
       if (!this.game) return;
       if (this.$refs.game) this.$refs.game.resetValidation();
       if (this.game.weekdays) {
@@ -667,7 +690,16 @@ export default {
         return;
       }
 
-      if (!(this.channels && this.channels.length > 0 && this.guilds.filter(c => !this.gameId || c.value === this.game.s).length > 0) || !updatedGame.s || !updatedGame.c) {
+      if (
+        !(
+          this.channels &&
+          this.channels.length > 0 &&
+          this.guilds.filter(c => !this.gameId || c.value === this.game.s)
+            .length > 0
+        ) ||
+        !updatedGame.s ||
+        !updatedGame.c
+      ) {
         this.saveResult = "error";
         this.$store.dispatch("addSnackBar", {
           message: "Invalid guild/channel selection",
@@ -697,8 +729,7 @@ export default {
           .split(/\r?\n/)
           .filter(r => r.trim().length > 0)
           .map(r => ({ tag: r.trim() }));
-      }
-      else if (reservedList.length === 0) {
+      } else if (reservedList.length === 0) {
         updatedGame.reserved = [];
       }
 

@@ -34,6 +34,7 @@
                         v-model="game.c"
                         required
                         :items="channels.map(c => ({ text: c.name, value: c.id })).filter(c => !gameId || c.value === game.c)"
+                        @change="changed"
                       ></v-select>
                     </v-col>
                     <v-col cols="12" sm="5" md="4" lg="6" class="py-0">
@@ -42,6 +43,7 @@
                         :label="lang.game.GAME_NAME"
                         v-model="game.adventure"
                         :rules="[v => !!v]"
+                        @change="changed"
                       ></v-text-field>
                     </v-col>
                     <v-col cols="12" sm="7" md="8" lg="6" class="py-0">
@@ -49,6 +51,7 @@
                         id="gameImage"
                         :label="lang.game.GAME_IMAGE"
                         v-model="game.gameImage"
+                        @change="changed"
                       ></v-text-field>
                     </v-col>
                     <v-col cols="12" sm="3" class="py-0">
@@ -57,6 +60,7 @@
                         :label="lang.game.GM"
                         v-model="game.dmTag"
                         :rules="[v => !!v]"
+                        @change="changed"
                       ></v-text-field>
                     </v-col>
                     <v-col cols="12" sm="3" class="py-0">
@@ -66,6 +70,7 @@
                         v-model="game.runtime"
                         type="number"
                         :suffix="lang.game.labels.HOURS"
+                        @change="changed"
                       ></v-text-field>
                     </v-col>
                     <v-col cols="6" sm="3" class="py-0">
@@ -77,6 +82,7 @@
                         min="1"
                         :max="game.players"
                         :rules="[v => parseInt(v) >= 1 && parseInt(v) <= game.players]"
+                        @change="changed"
                       ></v-text-field>
                     </v-col>
                     <v-col cols="6" sm="3" class="py-0">
@@ -87,6 +93,7 @@
                         type="number"
                         :min="game.minPlayers"
                         :rules="[v => parseInt(v) >= game.minPlayers]"
+                        @change="changed"
                       ></v-text-field>
                     </v-col>
                     <v-col cols="12" sm="6" class="py-0">
@@ -95,6 +102,7 @@
                         :label="lang.game.WHERE"
                         v-model="game.where"
                         :rules="[v => !!v]"
+                        @change="changed"
                       ></v-text-field>
                     </v-col>
                     <v-col cols="12" :sm="guildId || !gameId ? 3 : 6" class="py-0">
@@ -103,6 +111,7 @@
                         :label="lang.game.WHEN"
                         v-model="game.when"
                         :items="whenItems"
+                        @change="changed"
                       ></v-select>
                     </v-col>
                     <v-col cols="12" sm="3" v-if="guildId || !gameId" class="py-0">
@@ -111,6 +120,7 @@
                         :label="lang.game.SIGN_UP_METHOD"
                         v-model="game.method"
                         :items="methodItems"
+                        @change="changed"
                       ></v-select>
                     </v-col>
                     <v-col cols="12" sm="12" class="py-0">
@@ -125,6 +135,7 @@
                         no-resize
                         maxlength="1500"
                         counter="1500"
+                        @change="changed"
                       ></v-textarea>
                     </v-col>
                     <v-col
@@ -328,6 +339,7 @@
                         :maxlength="1500 - (game.method === enums.GameMethod.CUSTOM ? game.customSignup.length : 0)"
                         auto-grow
                         :counter="1500 - (game.method === enums.GameMethod.CUSTOM ? game.customSignup.length : 0)"
+                        @change="changed"
                       ></v-textarea>
                     </v-col>
                   </v-row>
@@ -369,7 +381,7 @@
                           color="white"
                           v-if="saveResult == 'saving'"
                         ></v-progress-circular>
-                        <span v-if="saveResult != 'saving'">{{lang.buttons.SAVE}} {{valid}}</span>
+                        <span v-if="saveResult != 'saving'">{{lang.buttons.SAVE}}</span>
                       </v-btn>
                     </v-col>
                     <v-col cols="12" class="py-md-0 col-md">
@@ -445,7 +457,8 @@ export default {
       socket: null,
       saveResult: null,
       prevSave: null,
-      valid: true
+      valid: true,
+      isChanged: false
     };
   },
   computed: {
@@ -518,6 +531,12 @@ export default {
       localStorage.removeItem("rescheduled");
     }, 5000);
 
+    window.onbeforeunload = () => {
+      if (!confirm(this.lang.game.UNSAVED)) {
+        return false;
+      }
+    };
+
     let isMobile = await this.$store.dispatch("isMobile");
 
     if (!isMobile) {
@@ -557,9 +576,20 @@ export default {
       });
     }
   },
+  beforeRouteLeave(to, from, next) {
+    if (this.isChanged) {
+      if (confirm(this.lang.game.UNSAVED)) {
+        next();
+      }
+    }
+    else {
+      next();
+    }
+  },
   methods: {
     async selectGuild() {
       this.modGame(this.game);
+      this.changed();
       if (this.guilds.length > 0) {
         if (this.game.c) {
           await this.fetchGameChannels("s", this.game.s);
@@ -567,6 +597,9 @@ export default {
           await this.fetchGame("s", this.game.s);
         }
       }
+    },
+    changed() {
+      this.isChanged = true;
     },
     fetchGameChannels(param, value) {
       return this.$store
@@ -587,6 +620,7 @@ export default {
         })
         .then(game => {
           this.modGame(cloneDeep(game));
+          this.isChanged = false;
           if (this.game && this.game.guildConfig) {
             if (
               this.game.guildConfig.password &&
@@ -894,6 +928,7 @@ export default {
       //   `<a href="${link.gcal}" target="_blank" rel="nofollow"><%= lang.game.ADD_TO_CALENDAR %></a>`
       // );
       this.getRecurrenceDate();
+      this.changed();
     },
     getRecurrenceDate() {
       if (!this.game) return "";

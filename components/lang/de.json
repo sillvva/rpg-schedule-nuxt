@@ -69,11 +69,12 @@
     "MONTHLY_TYPE": "Monatlicher Typ",
     "HIDE_DATE": "Datum ausblenden",
     "SLOT": "Slot",
+    "UNSAVED": "Du hast nicht gespeicherte Änderungen. Möchten Sie fortfahren?",
     "options": {
       "AUTOMATED_SIGNUP": "Automatisches Eintragen",
       "CUSTOM_SIGNUP_INSTRUCTIONS": "Benutzerdefinierter Befehl zum Eintragen",
       "DATE_TIME": "Datum/Zeit",
-      "NOW": "Jetzt",
+      "NOW": "Jetzt (Zeit der Post)",
       "NO_REMINDER": "Keine Erinnerung",
       "MINUTES_15": "15 Minuten",
       "MINUTES_30": "30 Minuten",

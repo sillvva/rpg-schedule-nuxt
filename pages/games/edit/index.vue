@@ -467,6 +467,9 @@ export default {
     },
     storeAccount() {
       return this.$store.getters.account;
+    },
+    storeSocketData() {
+      return this.$store.getters.socketData;
     }
   },
   watch: {
@@ -513,6 +516,47 @@ export default {
         }
       },
       immediate: true
+    },
+    storeSocketData: {
+      handler: function(socket) {
+        const data = socket.data;
+        if (socket.type === "game") {
+          if (data.gameId != this.gameId) return;
+          if (data.action === "rescheduled") {
+            this.isChanged = false;
+            localStorage.setItem("rescheduled", 1);
+            this.$store.dispatch("addSnackBar", {
+              message: "The game has been rescheduled",
+              color: "info"
+            });
+            this.$router.replace(
+              `${this.$store.getters.config.urls.game.create.path}?g=${data.newGameId}`
+            );
+          } else if (
+            data.action === "deleted" &&
+            !localStorage.getItem("rescheduled")
+          ) {
+            this.isChanged = false;
+            localStorage.setItem("rescheduled", 1);
+            this.$store.dispatch("addSnackBar", {
+              message: "The game has been deleted",
+              color: "error darken-1"
+            });
+            this.$router.replace(
+              this.$store.getters.config.urls.game.dashboard.path
+            );
+          } else if (data.action === "updated") {
+            for (const prop in data.game) {
+              this.game[prop] = data.game[prop];
+              if (prop === "reserved") {
+                this.reservedList = this.game.reserved
+                  .map(r => r.tag)
+                  .join(`\n`);
+              }
+            }
+          }
+        }
+      }
     }
   },
   async mounted() {
@@ -532,57 +576,15 @@ export default {
     }, 5000);
 
     window.onbeforeunload = () => {
-      if (!confirm(this.lang.game.UNSAVED)) {
+      if (this.isChanged && !confirm(this.lang.game.UNSAVED)) {
         return false;
       }
     };
-
-    let isMobile = await this.$store.dispatch("isMobile");
-
-    if (!isMobile) {
-      this.socket = ws.socket(this.$store.getters.env.apiUrl);
-
-      this.socket.on("game", data => {
-        if (data.gameId != this.gameId) return;
-        if (data.action === "rescheduled") {
-          localStorage.setItem("rescheduled", 1);
-          this.$store.dispatch("addSnackBar", {
-            message: "The game has been rescheduled",
-            color: "info"
-          });
-          this.$router.replace(
-            `${this.$store.getters.config.urls.game.create.path}?g=${data.newGameId}`
-          );
-        } else if (
-          data.action === "deleted" &&
-          !localStorage.getItem("rescheduled")
-        ) {
-          localStorage.setItem("rescheduled", 1);
-          this.$store.dispatch("addSnackBar", {
-            message: "The game has been deleted",
-            color: "error darken-1"
-          });
-          this.$router.replace(
-            this.$store.getters.config.urls.game.dashboard.path
-          );
-        } else if (data.action === "updated") {
-          for (const prop in data.game) {
-            this.game[prop] = data.game[prop];
-            if (prop === "reserved") {
-              this.reservedList = this.game.reserved.map(r => r.tag).join(`\n`);
-            }
-          }
-        }
-      });
-    }
   },
   beforeRouteLeave(to, from, next) {
-    if (this.isChanged) {
-      if (confirm(this.lang.game.UNSAVED)) {
-        next();
-      }
-    }
-    else {
+    if (this.isChanged && confirm(this.lang.game.UNSAVED)) {
+      next();
+    } else {
       next();
     }
   },
@@ -679,6 +681,7 @@ export default {
         this.setDefaultDates();
       }
       this.dateTimeLinks();
+      this.isChanged = false;
     },
     setDefaultDates() {
       this.game.date = moment().format("YYYY-MM-DD");
@@ -741,6 +744,14 @@ export default {
         });
         return;
       }
+
+      if (updatedGame.when === this.enums.GameWhen.DATETIME) {
+        updatedGame.frequency = "0";
+      }
+
+      updatedGame.runtime = Math.abs(updatedGame.runtime).toString();
+      updatedGame.minPlayers = Math.abs(updatedGame.minPlayers).toString();
+      updatedGame.players = Math.abs(updatedGame.players).toString();
 
       if (this.copy) updatedGame.copy = true;
 
@@ -821,14 +832,15 @@ export default {
           gameData: updatedGame,
           app: this
         })
-        .then(result => {
+        .then(async result => {
           if (!this.gameId) {
             return this.$router.replace(
               `${this.config.urls.game.create.path}?g=${result._id}`
             );
           }
-          this.modGame(cloneDeep(result.game));
+          await this.modGame(cloneDeep(result.game));
           this.saveResult = "success";
+          this.isChanged = false;
         })
         .catch(err => {
           this.saveResult = "error";

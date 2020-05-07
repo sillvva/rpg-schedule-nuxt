@@ -54,7 +54,8 @@ const baseState = {
   },
   config: config,
   settings: {},
-  snackBars: []
+  snackBars: [],
+  socketData: {}
 };
 
 const reauthenticate = async (vuexContext, app, redirect) => {
@@ -143,6 +144,9 @@ export const mutations = {
   },
   setSnackBars(state, snackBars) {
     state.snackBars = snackBars;
+  },
+  setSocketData(state, data) {
+    state.socketData = data;
   }
 };
 
@@ -709,5 +713,8 @@ export const getters = {
   },
   snackBars(state) {
     return state.snackBars;
+  },
+  socketData(state) {
+    return state.socketData;
   }
 };

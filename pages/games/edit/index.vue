@@ -144,12 +144,12 @@
                       v-if="game.when === enums.GameWhen.DATETIME"
                       class="py-0"
                     >
-                      <v-menu
+                      <v-dialog
+                        ref="dateDialog"
                         v-model="dateMenu"
-                        :close-on-content-click="false"
-                        transition="scale-transition"
-                        offset-y
-                        min-width="290px"
+                        :return-value.sync="game.date"
+                        persistent
+                        width="290px"
                       >
                         <template v-slot:activator="{ on }">
                           <v-text-field
@@ -161,16 +161,19 @@
                             :hint="nextDate && `Next: ${nextDate}`"
                             prepend-inner-icon="mdi-calendar"
                             persistent-hint
-                            readonly
-                            v-on="on"
+                            @click:prepend-inner="dateMenu = true"
                           ></v-text-field>
                         </template>
                         <v-date-picker
                           v-model="game.date"
                           @input="dateMenu = false;"
                           :locale="lang.code"
-                        ></v-date-picker>
-                      </v-menu>
+                        >
+                          <v-spacer></v-spacer>
+                          <v-btn text color="primary" @click="dateMenu = false">Cancel</v-btn>
+                          <v-btn text color="primary" @click="$refs.dateDialog.save(game.date)">OK</v-btn>
+                        </v-date-picker>
+                      </v-dialog>
                     </v-col>
                     <v-col
                       cols="6"
@@ -178,12 +181,12 @@
                       v-if="game.when === enums.GameWhen.DATETIME"
                       class="py-0"
                     >
-                      <v-menu
+                      <v-dialog
+                        ref="timeDialog"
                         v-model="timeMenu"
-                        :close-on-content-click="false"
-                        transition="scale-transition"
-                        offset-y
-                        min-width="290px"
+                        :return-value.sync="game.time"
+                        persistent
+                        width="290px"
                       >
                         <template v-slot:activator="{ on }">
                           <v-text-field
@@ -193,17 +196,20 @@
                             v-model="game.time"
                             @change="dateTimeLinks"
                             prepend-inner-icon="mdi-clock"
-                            readonly
-                            v-on="on"
+                            @click:prepend-inner="timeMenu = true"
                           ></v-text-field>
                         </template>
                         <v-time-picker
                           ampm-in-title
                           v-model="game.time"
-                          @input="timeMenu = false;"
+                          scrollable
                           :format="/ (AM|PM)/i.test(new Date().toLocaleString()) ? 'ampm' : '24hr'"
-                        ></v-time-picker>
-                      </v-menu>
+                        >
+                          <v-spacer></v-spacer>
+                          <v-btn text color="primary" @click="timeMenu = false">Cancel</v-btn>
+                          <v-btn text color="primary" @click="$refs.timeDialog.save(game.time)">OK</v-btn>
+                        </v-time-picker>
+                      </v-dialog>
                     </v-col>
                     <v-col
                       cols="6"

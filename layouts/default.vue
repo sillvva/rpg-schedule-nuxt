@@ -571,4 +571,14 @@ export default {
   overflow: hidden;
   white-space: nowrap;
 }
+
+.v-time-picker-title__time .v-picker__title__btn, .v-time-picker-title__time span {
+    height: 100%;
+    font-size: 4em;
+    padding-left: 6px;
+}
+
+.v-time-picker-title__ampm > .v-picker__title__btn {
+    font-size: 1.7em !important;
+}
 </style>

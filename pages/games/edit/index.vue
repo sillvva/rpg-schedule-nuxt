@@ -166,12 +166,11 @@
                         </template>
                         <v-date-picker
                           v-model="game.date"
-                          @input="dateMenu = false;"
                           :locale="lang.code"
                         >
                           <v-spacer></v-spacer>
                           <v-btn text color="primary" @click="dateMenu = false">Cancel</v-btn>
-                          <v-btn text color="primary" @click="$refs.dateDialog.save(game.date)">OK</v-btn>
+                          <v-btn text color="primary" @click="$refs.dateDialog.save(game.date); isChanged = true;">OK</v-btn>
                         </v-date-picker>
                       </v-dialog>
                     </v-col>
@@ -207,7 +206,7 @@
                         >
                           <v-spacer></v-spacer>
                           <v-btn text color="primary" @click="timeMenu = false">Cancel</v-btn>
-                          <v-btn text color="primary" @click="$refs.timeDialog.save(game.time)">OK</v-btn>
+                          <v-btn text color="primary" @click="$refs.timeDialog.save(game.time); isChanged = true;">OK</v-btn>
                         </v-time-picker>
                       </v-dialog>
                     </v-col>

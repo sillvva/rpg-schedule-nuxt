@@ -19,7 +19,12 @@ const parseConfigURLs = (paths) => {
   return urls;
 };
 
+const checkRSVP  = (rsvp, user) => {
+  return rsvp && user && (typeof rsvp === "string" ? rsvp.trim() === user.tag : (rsvp.tag || "").trim() === user.tag || rsvp.id === user.id);
+}
+
 module.exports = {
   log: log,
-  parseConfigURLs: parseConfigURLs
+  parseConfigURLs: parseConfigURLs,
+  checkRSVP: checkRSVP
 };

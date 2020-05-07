@@ -87,7 +87,7 @@ export const mutations = {
         game.guildAccount = guild;
         game.slot = Array.isArray(reserved)
           ? reserved.findIndex(
-              r => r.tag === account.user.tag || r.id === account.user.id
+              r => aux.checkRSVP(r, account.user)
             ) + 1
           : 0;
         game.waitlisted = false;
@@ -122,7 +122,7 @@ export const mutations = {
         game.guildAccount = guild;
         game.slot = Array.isArray(reserved)
           ? reserved.findIndex(
-              r => r.tag === account.user.tag || r.id === account.user.id
+              r => aux.checkRSVP(r, account.user)
             ) + 1
           : 0;
         game.waitlisted = false;

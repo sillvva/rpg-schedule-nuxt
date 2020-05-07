@@ -89,6 +89,7 @@
 
 <script>
 import { updateToken } from "../../../components/auxjs/auth";
+import { checkRSVP } from "../../../components/auxjs/appaux";
 import GameCard from "../../../components/game-card";
 import { cloneDeep } from "lodash";
 import moment from "moment";
@@ -211,8 +212,8 @@ export default {
               .filter(g => g.date === dx)
               .find(
                 g =>
-                  g.dm.tag === this.account.user.tag ||
-                  g.reserved.indexOf(this.account.user.tag) >= 0
+                  checkRSVP(g.dm, this.account.user) ||
+                  g.reserved.find(r => checkRSVP(r, this.account.user))
               )
           });
           if (md === this.daysInMonth(this.selMonth + 1, this.selYear))

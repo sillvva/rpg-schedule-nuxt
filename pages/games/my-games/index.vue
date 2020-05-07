@@ -75,11 +75,11 @@
             xl="2"
           >
             <GameCard
-              v-if="game.dm.tag === account.user.tag || (game.author && game.author.tag === account.user.tag)"
+              v-if="checkRSVP(game.dm, account.user) || (game.author && checkRSVP(game.author, account.user))"
               :gameData="game"
               :numColumns="1"
               :exclude="['gm', 'server']"
-              :edit="game.dm.tag === account.user.tag"
+              :edit="checkRSVP(game.dm, account.user)"
             ></GameCard>
           </v-col>
         </v-row>
@@ -105,6 +105,7 @@
 
 <script>
 import { updateToken } from "../../../components/auxjs/auth";
+import { checkRSVP } from "../../../components/auxjs/appaux";
 import GameCard from "../../../components/game-card";
 import { cloneDeep } from "lodash";
 
@@ -261,6 +262,9 @@ export default {
         return guild;
       });
       this.expandAll();
+    },
+    checkRSVP(rsvp, user) {
+      return checkRSVP(rsvp, user);
     }
   }
 };

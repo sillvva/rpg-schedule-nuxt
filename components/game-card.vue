@@ -9,7 +9,7 @@
         <v-card-text style="position: relative;">
           <v-btn
             @click.stop="rsvpGameId = game._id; rsvp();"
-            v-if="!edit && game && account && game.dm.tag !== account.user.tag && game.method === 'automated' && game.slot === 0"
+            v-if="!edit && game && account && !checkRSVP(game.dm, account.user) && game.method === 'automated' && game.slot === 0"
             :title="lang.buttons.SIGN_UP"
             color="green"
             fab
@@ -22,7 +22,7 @@
           </v-btn>
           <v-btn
             @click.stop="rsvpGameId = game._id; rsvp();"
-            v-if="!edit && game && account && game.dm.tag !== account.user.tag && game.method === 'automated' && game.slot > 0"
+            v-if="!edit && game && account && !checkRSVP(game.dm, account.user) && game.method === 'automated' && game.slot > 0"
             :title="lang.buttons.DROP_OUT"
             color="red"
             fab
@@ -35,7 +35,7 @@
           </v-btn>
           <v-btn
             :to="`${config.urls.game.create.path}?g=${game._id}`"
-            v-if="edit || (game && account && game.dm.tag === account.user.tag)"
+            v-if="edit || (game && account && checkRSVP(game.dm, account.user))"
             color="info"
             @click.stop
             fab
@@ -105,6 +105,7 @@
 <script>
 import { Remarkable } from "remarkable";
 import { cloneDeep } from "lodash";
+import { checkRSVP } from "../components/auxjs/appaux";
 
 export default {
   props: ["gameData", "numColumns", "filter", "exclude", "edit"],
@@ -297,6 +298,9 @@ export default {
         .split("\n")
         .map(line => this.md.render(line.trim()));
       return parsedString.join("\n");
+    },
+    checkRSVP(rsvp, user) {
+      return checkRSVP(rsvp, user);
     }
   }
 };

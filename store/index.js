@@ -602,7 +602,7 @@ export const actions = {
       if (cookie.name == "token") tokenCookies.push(cookie.value);
     }
 
-    aux.log("saveUserSettings", tokenCookies, settings);
+    aux.log("saveUserSettings", tokenCookies);
 
     return new Promise(async (resolve, reject) => {
       let savedAuthResult,

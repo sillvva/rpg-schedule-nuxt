@@ -68,7 +68,7 @@
                 <v-select v-model="selectedUserSettings.lang" :items="langOptions" label="Language"></v-select>
               </v-col>
               <v-col class="pb-0" cols="12">
-                <v-select v-model="selectedUserSettings.notification" :items="notificationOptions" label="Notification" @change="playNotification"></v-select>
+                <v-select v-model="selectedUserSettings.notification" :items="notificationOptions" label="Notification" @change="playSelectedNotification"></v-select>
               </v-col>
               <v-col class="py-0" cols="6" v-if="account && account.user.tag === config.author">
                 <v-text-field label="Maintenance Date" type="date" v-model="settingMaintenanceDate"></v-text-field>
@@ -254,11 +254,12 @@ export default {
       selectedUserSettings: cloneDeep(this.$store.getters.userSettings),
       userSettings: cloneDeep(this.$store.getters.userSettings),
       langOptions: [],
+      notification: null,
       notificationOptions: [
         { text: "None", value: "" },
         { text: "Game Bubble", value: "Ambient_Game_Bubble_UI_1.wav" },
-        { text: "Game Bell", value: "Modern Button 04.wav" },
-        { text: "Modern Button", value: "Vibrant_Game__Bell_Twinkle_Positive_Touch_1.wav" }
+        { text: "Game Bell", value: "Vibrant_Game__Bell_Twinkle_Positive_Touch_1.wav" },
+        { text: "Modern Button", value: "Modern Button 04.wav" }
       ],
       selection: null,
       windowWidth: 0,
@@ -498,6 +499,7 @@ export default {
     },
     setSettings() {
       if (process.server) return;
+      if (!this.userSettings || !this.userSettings.lang) return;
       if (this.lang.code) {
         if (document.getElementById("moment-lang"))
           document.getElementById("moment-lang").remove();
@@ -508,6 +510,9 @@ export default {
         el.type = "text/javascript";
         el.src = `/locale/${this.userSettings.lang}.js`;
         document.body.appendChild(el);
+      }
+      if (this.userSettings.notification != "") {
+        this.notification = new Audio(`/sounds/${this.userSettings.notification}`);
       }
     },
     maintenance() {
@@ -554,15 +559,14 @@ export default {
         console.log((err && err.message) || err);
       }
     },
-    playSetNotification() {
-      this.playNotification(this.userSettings.notification);
+    playNotification() {
+      if (this.notification) {
+        this.notification.play();
+      }
     },
     playSelectedNotification() {
-      this.playNotification(this.selectedUserSettings.notification);
-    },
-    playNotification(notification) {
-      if (notification != "") {
-        const audio = new Audio(`/sounds/${notification}`);
+      if (this.selectedUserSettings.notification != "") {
+        const audio = new Audio(`/sounds/${this.selectedUserSettings.notification}`);
         audio.play();
       }
     }

@@ -65,7 +65,10 @@
           <v-card-text style="height: 90vh; max-height: 400px;">
             <v-row dense>
               <v-col class="pb-0" cols="12">
-                <v-select v-model="selectedLang" :items="langOptions" label="Language"></v-select>
+                <v-select v-model="selectedUserSettings.lang" :items="langOptions" label="Language"></v-select>
+              </v-col>
+              <v-col class="pb-0" cols="12">
+                <v-select v-model="selectedUserSettings.notification" :items="notificationOptions" label="Notification" @change="playNotification"></v-select>
               </v-col>
               <v-col class="py-0" cols="6" v-if="account && account.user.tag === config.author">
                 <v-text-field label="Maintenance Date" type="date" v-model="settingMaintenanceDate"></v-text-field>
@@ -248,8 +251,15 @@ export default {
       env: this.$store.getters.env,
       settingsDialog: false,
       lang: lang,
-      selectedLang: this.$store.getters.selectedLang,
+      selectedUserSettings: cloneDeep(this.$store.getters.userSettings),
+      userSettings: cloneDeep(this.$store.getters.userSettings),
       langOptions: [],
+      notificationOptions: [
+        { text: "None", value: "" },
+        { text: "Game Bubble", value: "Ambient_Game_Bubble_UI_1.wav" },
+        { text: "Game Bell", value: "Modern Button 04.wav" },
+        { text: "Modern Button", value: "Vibrant_Game__Bell_Twinkle_Positive_Touch_1.wav" }
+      ],
       selection: null,
       windowWidth: 0,
       onResize: () => {
@@ -268,15 +278,15 @@ export default {
     storeLangs() {
       return this.$store.getters.langs;
     },
-    storeSelectedLang() {
-      return this.$store.getters.selectedLang;
-    },
     routePath() {
       this.maintenance();
       return this.$route.path;
     },
     storeSiteSettings() {
       return this.$store.getters.siteSettings;
+    },
+    storeUserSettings() {
+      return this.$store.getters.userSettings;
     },
     urlConfig() {
       const parsedURLs = aux.parseConfigURLs(this.config.urls);
@@ -307,14 +317,22 @@ export default {
       handler: function(newVal) {
         if (newVal && newVal.nav) {
           this.lang = newVal;
-          this.setSelectedLang();
+          this.setSettings();
         }
       },
       immediate: true
     },
-    storeSelectedLang: {
+    storeUserSettings: {
       handler: function(newVal) {
-        this.selectedLang = newVal;
+        this.selectedUserSettings = cloneDeep(newVal);
+        this.userSettings = cloneDeep(newVal);
+        this.setSettings();
+      },
+      immediate: true
+    },
+    selectedNotification: {
+      handler: function(newVal) {
+        this.selectedNotification = newVal;
       },
       immediate: true
     },
@@ -357,6 +375,10 @@ export default {
                 games: true,
                 app: this
               });
+
+              if (data.action === "new") {
+                this.playNotification();
+              }
             }
           }
           if (gamesPage) {
@@ -452,14 +474,16 @@ export default {
       this.$store
         .dispatch("saveUserSettings", {
           settings: {
-            lang: this.selectedLang
+            lang: this.selectedUserSettings.lang,
+            notification: this.selectedUserSettings.notification
           },
           app: this,
           route: this.$route
         })
         .then(result => {
           if (result.status == "success") {
-            this.setSelectedLang();
+            this.userSettings = cloneDeep(this.selectedUserSettings);
+            this.setSettings();
             this.settingsDialog = false;
           } else {
             throw new Error(result.message);
@@ -472,21 +496,19 @@ export default {
           });
         });
     },
-    setSelectedLang() {
+    setSettings() {
       if (process.server) return;
-      if (!this.lang.code) return;
-      if (document.getElementById("moment-lang"))
-        document.getElementById("moment-lang").remove();
-      if (document.getElementById("moment-lang-load"))
-        document.getElementById("moment-lang-load").remove();
-      const el = document.createElement("script");
-      el.id = "moment-lang";
-      el.type = "text/javascript";
-      el.src = `/locale/${this.selectedLang}.js`;
-      el.onload = () => {
-        this.$store.dispatch("setSelectedLang", this.selectedLang);
-      };
-      document.body.appendChild(el);
+      if (this.lang.code) {
+        if (document.getElementById("moment-lang"))
+          document.getElementById("moment-lang").remove();
+        if (document.getElementById("moment-lang-load"))
+          document.getElementById("moment-lang-load").remove();
+        const el = document.createElement("script");
+        el.id = "moment-lang";
+        el.type = "text/javascript";
+        el.src = `/locale/${this.userSettings.lang}.js`;
+        document.body.appendChild(el);
+      }
     },
     maintenance() {
       try {
@@ -531,6 +553,18 @@ export default {
       } catch (err) {
         console.log((err && err.message) || err);
       }
+    },
+    playSetNotification() {
+      this.playNotification(this.userSettings.notification);
+    },
+    playSelectedNotification() {
+      this.playNotification(this.selectedUserSettings.notification);
+    },
+    playNotification(notification) {
+      if (notification != "") {
+        const audio = new Audio(`/sounds/${notification}`);
+        audio.play();
+      }
     }
   },
   async mounted() {
@@ -540,7 +574,7 @@ export default {
     this.$store.commit("setSnackBars", []);
 
     await this.$store.dispatch("fetchLangs");
-    this.setSelectedLang();
+    this.setSettings();
 
     let isMobile = await this.$store.dispatch("isMobile");
 

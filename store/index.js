@@ -13,7 +13,6 @@ const resetItems = {
 
 const baseState = {
   ...resetItems,
-  selectedLang: "en",
   langs: [],
   lang: {},
   env: {
@@ -54,6 +53,7 @@ const baseState = {
   },
   config: config,
   settings: {},
+  userSettings: {},
   snackBars: [],
   socketData: {}
 };
@@ -104,9 +104,6 @@ export const mutations = {
   setToken(state, sessionToken) {
     state.sessionToken = sessionToken;
   },
-  setSelectedLang(state, selectedLang) {
-    state.selectedLang = selectedLang;
-  },
   setLangs(state, langs) {
     state.langs = langs;
   },
@@ -138,6 +135,9 @@ export const mutations = {
   },
   setSiteSettings(state, settings) {
     state.settings = settings;
+  },
+  setUserSettings(state, settings) {
+    state.userSettings = settings;
   },
   setLastRefreshed(state, time) {
     state.lastRefreshed = time;
@@ -227,6 +227,7 @@ export const actions = {
             vuexContext.commit("setToken", authResult.token || tokenCookies[i]);
             vuexContext.commit("setLastRefreshed", moment().unix());
             if (authResult.user) {
+              vuexContext.commit("setUserSettings", authResult.user);
               vuexContext.dispatch("setSelectedLang", authResult.user.lang);
             }
             break;
@@ -266,12 +267,15 @@ export const actions = {
       aux.log("actions.fetchLangs", (err && err.message) || err);
     }
   },
-  setSelectedLang({ commit }, selectedLang) {
+  setSelectedLang(vuexContext, selectedLang) {
     const langCookie = this.$cookies.get("lang", { path: "/" });
     const lang = require(`../components/lang/${selectedLang}.json`);
 
-    commit("setLang", lang);
-    commit("setSelectedLang", selectedLang);
+    vuexContext.commit("setLang", lang);
+
+    const userSettings = cloneDeep(vuexContext.getters.userSettings);
+    userSettings.lang = selectedLang;
+    vuexContext.commit("setUserSettings", userSettings);
 
     if (langCookie) this.$cookies.remove("lang", { path: "/" });
     const d = new Date();
@@ -309,6 +313,7 @@ export const actions = {
           // console.log(2, authResult);
           vuexContext.commit("setAccount", authResult.account);
           if (authResult.user) {
+            vuexContext.commit("setUserSettings", authResult.user);
             vuexContext.dispatch("setSelectedLang", authResult.user.lang);
           }
         } else if (result.data.status == "error") {
@@ -597,7 +602,7 @@ export const actions = {
       if (cookie.name == "token") tokenCookies.push(cookie.value);
     }
 
-    aux.log("saveUserSettings", tokenCookies, settings);
+    aux.log("saveUserSettings", tokenCookies);
 
     return new Promise(async (resolve, reject) => {
       let savedAuthResult,
@@ -690,11 +695,11 @@ export const getters = {
   langs(state) {
     return state.langs;
   },
-  selectedLang(state) {
-    return state.selectedLang;
-  },
   lang(state) {
     return state.lang;
+  },
+  userSettings(state) {
+    return state.userSettings;
   },
   account(state) {
     return state.account;

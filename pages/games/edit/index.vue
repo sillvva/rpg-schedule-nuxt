@@ -1018,6 +1018,16 @@ export default {
               .weeksOfMonthByDay();
             nextDate = dateGenerator.next(1)[0];
 
+            if (weekOfMonth == 4 && moment(nextDate).month() != moment(baseDate).month() + 1) {
+              dateGenerator = moment(baseDate)
+                .recur()
+                .every(validDay)
+                .daysOfWeek()
+                .every(3)
+                .weeksOfMonthByDay();
+              nextDate = dateGenerator.next(1)[0];
+            }
+
             // describe weekday option
             const description = this.lang.game.labels.MONTHLY_WEEKDAY;
             const weekday = moment(baseDate).format("dddd");

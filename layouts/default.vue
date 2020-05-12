@@ -68,7 +68,14 @@
                 <v-select v-model="selectedUserSettings.lang" :items="langOptions" label="Language"></v-select>
               </v-col>
               <v-col class="pb-0" cols="12">
-                <v-select v-model="selectedUserSettings.notification" :items="notificationOptions" label="Notification" @change="playSelectedNotification"></v-select>
+                <v-select
+                  v-model="selectedUserSettings.notification"
+                  :items="notificationOptions"
+                  label="Notification"
+                  @change="playSelectedNotification"
+                  append-outer-icon="mdi-play"
+                  @click:append-outer="playSelectedNotification"
+                ></v-select>
               </v-col>
               <v-col class="py-0" cols="6" v-if="account && account.user.tag === config.author">
                 <v-text-field label="Maintenance Date" type="date" v-model="settingMaintenanceDate"></v-text-field>
@@ -258,7 +265,10 @@ export default {
       notificationOptions: [
         { text: "None", value: "" },
         { text: "Game Bubble", value: "Ambient_Game_Bubble_UI_1.wav" },
-        { text: "Game Bell", value: "Vibrant_Game__Bell_Twinkle_Positive_Touch_1.wav" },
+        {
+          text: "Game Bell",
+          value: "Vibrant_Game__Bell_Twinkle_Positive_Touch_1.wav"
+        },
         { text: "Modern Button", value: "Modern Button 04.wav" }
       ],
       selection: null,
@@ -512,7 +522,9 @@ export default {
         document.body.appendChild(el);
       }
       if (this.userSettings.notification != "") {
-        this.notification = new Audio(`/sounds/${this.userSettings.notification}`);
+        this.notification = new Audio(
+          `/sounds/${this.userSettings.notification}`
+        );
       }
     },
     maintenance() {
@@ -566,7 +578,9 @@ export default {
     },
     playSelectedNotification() {
       if (this.selectedUserSettings.notification != "") {
-        const audio = new Audio(`/sounds/${this.selectedUserSettings.notification}`);
+        const audio = new Audio(
+          `/sounds/${this.selectedUserSettings.notification}`
+        );
         audio.play();
       }
     }
@@ -610,13 +624,14 @@ export default {
   white-space: nowrap;
 }
 
-.v-time-picker-title__time .v-picker__title__btn, .v-time-picker-title__time span {
-    height: 100%;
-    font-size: 4em;
-    padding-left: 6px;
+.v-time-picker-title__time .v-picker__title__btn,
+.v-time-picker-title__time span {
+  height: 100%;
+  font-size: 4em;
+  padding-left: 6px;
 }
 
 .v-time-picker-title__ampm > .v-picker__title__btn {
-    font-size: 1.7em !important;
+  font-size: 1.7em !important;
 }
 </style>

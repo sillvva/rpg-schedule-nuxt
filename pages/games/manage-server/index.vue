@@ -705,4 +705,8 @@ input[type="color"] {
   padding: 0;
   width: 20px;
 }
+
+.v-tabs-slider {
+  background-color: white !important;
+}
 </style>

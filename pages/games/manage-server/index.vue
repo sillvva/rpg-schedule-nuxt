@@ -55,253 +55,323 @@
             </v-btn>
           </template>
           <v-card>
-            <v-card-title>{{lang.config.CONFIGURATION}}</v-card-title>
-            <v-divider></v-divider>
+            <v-card-title class="discord">
+              <v-icon dark class="mr-2">mdi-cog</v-icon>
+              {{lang.config.CONFIGURATION}}
+            </v-card-title>
+            <v-tabs v-model="tab" background-color="discord" dark center-active show-arrows centered>
+              <v-tab active-class="white--text">{{lang.config.GUILD}}</v-tab>
+              <v-tab active-class="white--text">{{lang.config.BOT_CONFIGURATION}}</v-tab>
+              <v-tab active-class="white--text">{{lang.config.CHANNEL_CONFIGURATION}}</v-tab>
+              <v-tab active-class="white--text">{{lang.config.GAME_CONFIGURATION}}</v-tab>
+            </v-tabs>
             <v-card-text class="px-0" style="height: 90vh; max-height: 600px;" v-if="guild.config">
               <v-form :ref="`config${guild.id}`">
-                <v-list subheader dense>
-                  <v-subheader class="px-4">{{lang.config.GENERAL_CONFIGURATION}}</v-subheader>
 
-                  <v-list-item class="px-4 mb-2">
-                    <v-text-field
-                      label="Role"
-                      v-model="guild.config.role"
-                      :hint="lang.config.desc.ROLE"
-                      persistent-hint
-                    ></v-text-field>
-                  </v-list-item>
-
-                  <v-list-item class="px-4 mb-2">
-                    <v-text-field
-                      label="Password"
-                      type="password"
-                      v-model="guild.config.password"
-                      :hint="lang.config.desc.PASSWORD_SET"
-                      persistent-hint
-                    ></v-text-field>
-                  </v-list-item>
-
-                  <v-list-item class="px-4 mb-2">
-                    <v-select
-                      label="Language"
-                      v-model="guild.config.lang"
-                      :items="langs.map(lang => ({ text: lang.name, value: lang.code }))"
-                      :hint="`${lang.config.desc.LANG.split('.')[0]}`"
-                      persistent-hint
-                    ></v-select>
-                  </v-list-item>
-
-                  <v-divider></v-divider>
-                  <v-subheader class="px-4">{{lang.config.BOT_CONFIGURATION}}</v-subheader>
-
-                  <v-list-item @click="guild.config.embeds = !guild.config.embeds">
-                    <v-list-item-action>
-                      <v-checkbox
-                        v-model="guild.config.embeds"
-                        color="discord"
-                        @click.stop="guild.config.embeds = !guild.config.embeds"
-                      ></v-checkbox>
-                    </v-list-item-action>
-
-                    <v-list-item-content>
-                      <v-list-item-title>{{lang.config.EMBEDS}}</v-list-item-title>
-                      <v-list-item-subtitle>{{lang.config.desc.EMBEDS}}</v-list-item-subtitle>
-                    </v-list-item-content>
-                  </v-list-item>
-
-                  <v-list-item @click="guild.config.embedMentions = !guild.config.embedMentions">
-                    <v-list-item-action>
-                      <v-checkbox
-                        v-model="guild.config.embedMentions"
-                        color="discord"
-                        @click.stop="guild.config.embedMentions = !guild.config.embedMentions"
-                      ></v-checkbox>
-                    </v-list-item-action>
-
-                    <v-list-item-content>
-                      <v-list-item-title>{{lang.config.EMBED_USER_TAGS}}</v-list-item-title>
-                      <v-list-item-subtitle>{{lang.config.desc.EMBED_USER_TAGS}}</v-list-item-subtitle>
-                    </v-list-item-content>
-                  </v-list-item>
-
-                  <v-menu
-                    v-model="colorMenu"
-                    transition="scale-transition"
-                    offset-y
-                    min-width="290px"
-                  >
-                    <template v-slot:activator="{ on }">
+                <v-tabs-items v-model="tab">
+                  <v-tab-item>
+                    <v-list dense>
                       <v-list-item class="px-4 mb-2">
-                        <v-list-item-action>
-                          <v-btn fab small :color="guild.config.embedColor" v-on="on">&nbsp;</v-btn>
-                        </v-list-item-action>
-                        <v-list-item-content>
-                          <v-text-field
-                            label="Embed Color"
-                            v-model="guild.config.embedColor"
-                            :hint="lang.config.desc.EMBED_COLOR"
-                            persistent-hint
-                          ></v-text-field>
-                        </v-list-item-content>
-                      </v-list-item>
-                    </template>
-                    <v-color-picker v-model="guild.config.embedColor"></v-color-picker>
-                  </v-menu>
-
-                  <v-row no-gutters>
-                    <v-col cols="12" sm="6">
-                      <v-list-item class="px-4 mb-2">
-                        <v-text-field
-                          :label="lang.config.EMOJI_JOIN"
-                          v-model="guild.config.emojiAdd"
-                          :hint="lang.config.desc.EMOJI"
-                          :rules="[emojiRule]"
-                          persistent-hint
-                        ></v-text-field>
-                      </v-list-item>
-                    </v-col>
-                    <v-col cols="12" sm="6">
-                      <v-list-item class="px-4 mb-2">
-                        <v-text-field
-                          :label="lang.config.EMOJI_LEAVE"
-                          v-model="guild.config.emojiRemove"
-                          :hint="lang.config.desc.EMOJI"
-                          :rules="[emojiRule]"
-                          persistent-hint
-                        ></v-text-field>
-                      </v-list-item>
-                    </v-col>
-                  </v-row>
-
-                  <v-list-item @click="guild.config.dropOut = !guild.config.dropOut">
-                    <v-list-item-action>
-                      <v-checkbox
-                        v-model="guild.config.dropOut"
-                        color="discord"
-                        @click.stop="guild.config.dropOut = !guild.config.dropOut"
-                      ></v-checkbox>
-                    </v-list-item-action>
-
-                    <v-list-item-content>
-                      <v-list-item-title>{{lang.config.DROP_OUTS}}</v-list-item-title>
-                      <v-list-item-subtitle>{{lang.config.desc.TOGGLE_DROP_OUT}}</v-list-item-subtitle>
-                    </v-list-item-content>
-                  </v-list-item>
-
-                  <v-list-item class="px-4 mb-2">
-                    <v-text-field
-                      :label="lang.config.PREFIX_CHAR"
-                      v-model="guild.config.escape"
-                      :hint="lang.config.desc.PREFIX.replace(':CHAR', cloneDeep(guild.currentConfig.escape))"
-                      persistent-hint
-                      maxlength="3"
-                    ></v-text-field>
-                  </v-list-item>
-
-                  <v-divider></v-divider>
-                  <v-subheader class="px-4">{{lang.config.GAME_CONFIGURATION}}</v-subheader>
-
-                  <v-list-item>
-                    <v-select
-                      :label="lang.config.CHANNELS"
-                      v-model="guild.config.channel"
-                      :items="guild.channels.filter(channel => channel.type === 'text').map(channel => {
-                        return { text: channel.name, value: channel.id };
-                      })"
-                      :hint="lang.config.desc.ADD_CHANNEL"
-                      persistent-hint
-                      attach
-                      chips
-                      multiple
-                    ></v-select>
-                  </v-list-item>
-
-                  <v-list-item @click="guild.config.pruning = !guild.config.pruning">
-                    <v-list-item-action>
-                      <v-checkbox
-                        v-model="guild.config.pruning"
-                        color="discord"
-                        @click.stop="guild.config.pruning = !guild.config.pruning"
-                      ></v-checkbox>
-                    </v-list-item-action>
-
-                    <v-list-item-content>
-                      <v-list-item-title>{{lang.config.PRUNING}}</v-list-item-title>
-                      <v-list-item-subtitle>{{lang.config.desc.PRUNING}}</v-list-item-subtitle>
-                    </v-list-item-content>
-                  </v-list-item>
-
-                  <v-list-item
-                    @click="guild.config.privateReminders = !guild.config.privateReminders"
-                  >
-                    <v-list-item-action>
-                      <v-checkbox
-                        v-model="guild.config.privateReminders"
-                        color="discord"
-                        @click.stop="guild.config.privateReminders = !guild.config.privateReminders"
-                      ></v-checkbox>
-                    </v-list-item-action>
-
-                    <v-list-item-content>
-                      <v-list-item-title>{{lang.config.PRIVATE_REMINDERS}}</v-list-item-title>
-                      <v-list-item-subtitle>{{lang.config.desc.PRIVATE_REMINDERS.split('.')[0]}}</v-list-item-subtitle>
-                    </v-list-item-content>
-                  </v-list-item>
-
-                  <v-list-item>
-                    <v-select
-                      :label="lang.config.RESCHEDULE_MODE"
-                      v-model="guild.config.rescheduleMode"
-                      :items="[{text: 'Repost', value: 'repost'},{text: 'Update', value: 'update'}]"
-                    ></v-select>
-                  </v-list-item>
-
-                  <v-subheader class="px-4">{{lang.config.GAME_DEFAULTS}}</v-subheader>
-                  <v-row no-gutters>
-                    <v-col cols="12" sm="4">
-                      <v-list-item>
-                        <v-text-field
-                          :label="lang.game.MIN_PLAYERS"
-                          v-model="guild.config.gameDefaults.minPlayers"
-                          type="number"
-                          min="1"
-                          :max="isNaN(guild.config.gameDefaults.maxPlayers) ? 1 : parseInt(guild.config.gameDefaults.maxPlayers)"
-                          maxlength="3"
-                          :rules="[v => parseInt(v) <= guild.config.gameDefaults.maxPlayers]"
-                        ></v-text-field>
-                      </v-list-item>
-                    </v-col>
-                    <v-col cols="12" sm="4">
-                      <v-list-item>
-                        <v-text-field
-                          :label="lang.game.MAX_PLAYERS"
-                          v-model="guild.config.gameDefaults.maxPlayers"
-                          type="number"
-                          :min="isNaN(guild.config.gameDefaults.minPlayers) ? 1 : parseInt(guild.config.gameDefaults.minPlayers)"
-                          maxlength="3"
-                          :rules="[v => parseInt(v) >= guild.config.gameDefaults.minPlayers]"
-                        ></v-text-field>
-                      </v-list-item>
-                    </v-col>
-                    <v-col cols="12" sm="4">
-                      <v-list-item>
                         <v-select
-                          :label="lang.game.REMINDER"
-                          v-model="guild.config.gameDefaults.reminder"
-                          :items="[
-                            { text: lang.game.options.NO_REMINDER, value: '0' },
-                            { text: lang.game.options.MINUTES_15, value: '15' },
-                            { text: lang.game.options.MINUTES_30, value: '30' },
-                            { text: lang.game.options.MINUTES_60, value: '60' },
-                            { text: lang.game.options.HOURS_6, value: '360' },
-                            { text: lang.game.options.HOURS_12, value: '720' },
-                            { text: lang.game.options.HOURS_24, value: '1440' }
-                          ]"
+                          :label="lang.config.ROLE"
+                          v-model="guild.config.role"
+                          :hint="lang.config.desc.ROLE"
+                          persistent-hint
+                          :items="guild.roleValues"
                         ></v-select>
                       </v-list-item>
-                    </v-col>
-                  </v-row>
-                </v-list>
+
+                      <v-list-item class="px-4 mb-2">
+                        <v-text-field
+                          label="Password"
+                          type="password"
+                          v-model="guild.config.password"
+                          :hint="lang.config.desc.PASSWORD_SET"
+                          persistent-hint
+                        ></v-text-field>
+                      </v-list-item>
+
+                      <v-list-item class="px-4 mb-2">
+                        <v-select
+                          label="Language"
+                          v-model="guild.config.lang"
+                          :items="langs.map(lang => ({ text: lang.name, value: lang.code }))"
+                          :hint="`${lang.config.desc.LANG.split('.')[0]}`"
+                          persistent-hint
+                        ></v-select>
+                      </v-list-item>
+                    </v-list>
+                  </v-tab-item>
+
+                  <v-tab-item>
+                    <v-list dense>
+                      <v-list-item @click="guild.config.embeds = !guild.config.embeds">
+                        <v-list-item-action>
+                          <v-checkbox
+                            v-model="guild.config.embeds"
+                            color="discord"
+                            @click.stop="guild.config.embeds = !guild.config.embeds"
+                          ></v-checkbox>
+                        </v-list-item-action>
+
+                        <v-list-item-content>
+                          <v-list-item-title>{{lang.config.EMBEDS}}</v-list-item-title>
+                          <v-list-item-subtitle>{{lang.config.desc.EMBEDS}}</v-list-item-subtitle>
+                        </v-list-item-content>
+                      </v-list-item>
+
+                      <v-list-item @click="guild.config.embedMentions = !guild.config.embedMentions">
+                        <v-list-item-action>
+                          <v-checkbox
+                            v-model="guild.config.embedMentions"
+                            color="discord"
+                            @click.stop="guild.config.embedMentions = !guild.config.embedMentions"
+                          ></v-checkbox>
+                        </v-list-item-action>
+
+                        <v-list-item-content>
+                          <v-list-item-title>{{lang.config.EMBED_USER_TAGS}}</v-list-item-title>
+                          <v-list-item-subtitle>{{lang.config.desc.EMBED_USER_TAGS}}</v-list-item-subtitle>
+                        </v-list-item-content>
+                      </v-list-item>
+
+                      <v-menu
+                        v-model="colorMenu"
+                        transition="scale-transition"
+                        offset-y
+                        min-width="290px"
+                      >
+                        <template v-slot:activator="{ on }">
+                          <v-list-item class="px-4 mb-2">
+                            <v-list-item-action>
+                              <v-btn fab small :color="guild.config.embedColor" v-on="on">&nbsp;</v-btn>
+                            </v-list-item-action>
+                            <v-list-item-content class="pt-0">
+                              <v-text-field
+                                :label="lang.config.EMBED_COLOR"
+                                v-model="guild.config.embedColor"
+                                :hint="lang.config.desc.EMBED_COLOR"
+                                persistent-hint
+                              ></v-text-field>
+                            </v-list-item-content>
+                          </v-list-item>
+                        </template>
+                        <v-color-picker v-model="guild.config.embedColor"></v-color-picker>
+                      </v-menu>
+
+                      <v-row no-gutters>
+                        <v-col cols="12" sm="6">
+                          <v-list-item class="px-4 mb-2">
+                            <v-text-field
+                              :label="lang.config.EMOJI_JOIN"
+                              v-model="guild.config.emojiAdd"
+                              :hint="lang.config.desc.EMOJI"
+                              :rules="[emojiRule]"
+                              persistent-hint
+                            ></v-text-field>
+                          </v-list-item>
+                        </v-col>
+                        <v-col cols="12" sm="6">
+                          <v-list-item class="px-4 mb-2">
+                            <v-text-field
+                              :label="lang.config.EMOJI_LEAVE"
+                              v-model="guild.config.emojiRemove"
+                              :hint="lang.config.desc.EMOJI"
+                              :rules="[emojiRule]"
+                              persistent-hint
+                            ></v-text-field>
+                          </v-list-item>
+                        </v-col>
+                      </v-row>
+
+                      <v-list-item @click="guild.config.dropOut = !guild.config.dropOut">
+                        <v-list-item-action>
+                          <v-checkbox
+                            v-model="guild.config.dropOut"
+                            color="discord"
+                            @click.stop="guild.config.dropOut = !guild.config.dropOut"
+                          ></v-checkbox>
+                        </v-list-item-action>
+
+                        <v-list-item-content>
+                          <v-list-item-title>{{lang.config.DROP_OUTS}}</v-list-item-title>
+                          <v-list-item-subtitle>{{lang.config.desc.TOGGLE_DROP_OUT}}</v-list-item-subtitle>
+                        </v-list-item-content>
+                      </v-list-item>
+
+                      <v-list-item class="px-4 mb-2">
+                        <v-text-field
+                          :label="lang.config.PREFIX"
+                          v-model="guild.config.escape"
+                          :hint="lang.config.desc.PREFIX.replace(':CHAR', guild.config.escape || '!')"
+                          persistent-hint
+                          maxlength="3"
+                        ></v-text-field>
+                      </v-list-item>
+                    </v-list>
+                  </v-tab-item>
+
+                  <v-tab-item>
+                    <v-list dense>
+                      <div v-for="(channel, c) in guild.config.channel.filter(c => guild.channels.find(ch => ch.id === c.channelId))" :key="c">
+                        <h4 class="mx-4 mt-4 mb-0">
+                          <span v-html="guild.channels.find(ch => ch.type === 'text' && ch.id === channel.channelId).parentID ? guild.channelCategories.find(gc => gc.id === guild.channels.find(ch => ch.type === 'text' && ch.id === channel.channelId).parentID).name + '<br />' : ''"></span>
+                          #{{guild.channels.find(ch => ch.type === 'text' && ch.id === channel.channelId).name}}
+                        </h4>
+
+                        <v-row dense class="mx-0">
+                          <v-col class="pr-0">
+                            <v-list-item class="px-4 mb-2">
+                              <v-select
+                                :label="lang.config.ROLE"
+                                v-model="channel.role"
+                                :placeholder="lang.config.DEFAULT_SERVER"
+                                :hint="lang.config.desc.ROLE"
+                                persistent-hint
+                                :items="guild.channelRoleValues"
+                              ></v-select>
+                            </v-list-item>
+                          </v-col>
+                          <v-col class="pl-0" style="max-width: 80px;">
+                            <v-btn fab icon @click="removeChannel(guild.config, c)">
+                              <v-icon>
+                                mdi-trash-can-outline
+                              </v-icon>
+                            </v-btn>
+                          </v-col>
+                        </v-row>
+
+                        <v-menu
+                          v-model="colorMenus[channel.channelId]"
+                          transition="scale-transition"
+                          offset-y
+                          min-width="290px"
+                        >
+                          <template v-slot:activator="{ on }">
+                            <v-list-item class="px-4 mb-2">
+                              <v-list-item-action>
+                                <v-btn fab small :color="channel.embedColor" v-on="on">&nbsp;</v-btn>
+                              </v-list-item-action>
+                              <v-list-item-content class="pt-0">
+                                <v-text-field
+                                  :label="lang.config.EMBED_COLOR"
+                                  v-model="channel.embedColor"
+                                  :placeholder="lang.config.DEFAULT_SERVER"
+                                  :hint="lang.config.desc.EMBED_COLOR"
+                                  persistent-hint
+                                ></v-text-field>
+                              </v-list-item-content>
+                            </v-list-item>
+                          </template>
+                          <v-color-picker v-model="channel.embedColor" @update:color="updateColors"></v-color-picker>
+                        </v-menu>
+
+                        <v-subheader class="px-4" v-if="channel.gameDefaults">{{lang.config.GAME_DEFAULTS}}</v-subheader>
+                        <v-row no-gutters v-if="channel.gameDefaults">
+                          <v-col cols="12" sm="4">
+                            <v-list-item>
+                              <v-text-field
+                                :label="lang.game.MIN_PLAYERS"
+                                v-model="channel.gameDefaults.minPlayers"
+                                type="number"
+                                min="1"
+                                :max="!channel.gameDefaults || isNaN(channel.gameDefaults.maxPlayers) ? 1 : parseInt(channel.gameDefaults.maxPlayers)"
+                                maxlength="3"
+                                :rules="[v => parseInt(v) <= channel.gameDefaults.maxPlayers]"
+                              ></v-text-field>
+                            </v-list-item>
+                          </v-col>
+                          <v-col cols="12" sm="4">
+                            <v-list-item>
+                              <v-text-field
+                                :label="lang.game.MAX_PLAYERS"
+                                v-model="channel.gameDefaults.maxPlayers"
+                                type="number"
+                                :min="isNaN(channel.gameDefaults.minPlayers) ? 1 : parseInt(channel.gameDefaults.minPlayers)"
+                                maxlength="3"
+                                :rules="[v => parseInt(v) >= channel.gameDefaults.minPlayers]"
+                              ></v-text-field>
+                            </v-list-item>
+                          </v-col>
+                          <v-col cols="12" sm="4">
+                            <v-list-item>
+                              <v-select
+                                :label="lang.game.REMINDER"
+                                v-model="channel.gameDefaults.reminder"
+                                :items="[
+                                  { text: lang.game.options.NO_REMINDER, value: '0' },
+                                  { text: lang.game.options.MINUTES_15, value: '15' },
+                                  { text: lang.game.options.MINUTES_30, value: '30' },
+                                  { text: lang.game.options.MINUTES_60, value: '60' },
+                                  { text: lang.game.options.HOURS_6, value: '360' },
+                                  { text: lang.game.options.HOURS_12, value: '720' },
+                                  { text: lang.game.options.HOURS_24, value: '1440' }
+                                ]"
+                              ></v-select>
+                            </v-list-item>
+                          </v-col>
+                        </v-row>
+                      </div>
+
+                      <v-list-item class="mb-6">
+                        <v-select
+                          :label="lang.config.CHANNELS"
+                          v-model="selectedChannel"
+                          :items="guild.channels.filter(channel => channel.type === 'text' && !guild.config.channel.find(c => c.channelId === channel.id)).map(channel => {
+                            return { text: channel.name, value: channel.id };
+                          })"
+                          :hint="lang.config.desc.ADD_CHANNEL"
+                          persistent-hint
+                          @change="addChannel"
+                        ></v-select>
+                      </v-list-item>
+                    </v-list>
+                  </v-tab-item>
+
+                  <v-tab-item>
+                    <v-list dense>
+                      <v-list-item @click="guild.config.pruning = !guild.config.pruning">
+                        <v-list-item-action>
+                          <v-checkbox
+                            v-model="guild.config.pruning"
+                            color="discord"
+                            @click.stop="guild.config.pruning = !guild.config.pruning"
+                          ></v-checkbox>
+                        </v-list-item-action>
+
+                        <v-list-item-content>
+                          <v-list-item-title>{{lang.config.PRUNING}}</v-list-item-title>
+                          <v-list-item-subtitle>{{lang.config.desc.PRUNING}}</v-list-item-subtitle>
+                        </v-list-item-content>
+                      </v-list-item>
+
+                      <v-list-item
+                        @click="guild.config.privateReminders = !guild.config.privateReminders"
+                      >
+                        <v-list-item-action>
+                          <v-checkbox
+                            v-model="guild.config.privateReminders"
+                            color="discord"
+                            @click.stop="guild.config.privateReminders = !guild.config.privateReminders"
+                          ></v-checkbox>
+                        </v-list-item-action>
+
+                        <v-list-item-content>
+                          <v-list-item-title>{{lang.config.PRIVATE_REMINDERS}}</v-list-item-title>
+                          <v-list-item-subtitle>{{lang.config.desc.PRIVATE_REMINDERS.split('.')[0]}}</v-list-item-subtitle>
+                        </v-list-item-content>
+                      </v-list-item>
+
+                      <v-list-item>
+                        <v-select
+                          :label="lang.config.RESCHEDULE_MODE"
+                          v-model="guild.config.rescheduleMode"
+                          :items="[{text: 'Repost', value: 'repost'},{text: 'Update', value: 'update'}]"
+                        ></v-select>
+                      </v-list-item>
+                    </v-list>
+                  </v-tab-item>
+                </v-tabs-items>
               </v-form>
             </v-card-text>
             <v-divider></v-divider>
@@ -374,6 +444,9 @@ export default {
       config: this.$store.getters.config,
       searchQuery: this.$route.query.s,
       colorMenu: false,
+      colorMenus: {},
+      selectedChannel: "",
+      tab: null,
       emojiRule: value => {
         const splitter = new GraphemeSplitter();
         const rgx = /(?:[\u2700-\u27bf]|(?:\ud83c[\udde6-\uddff]){2}|[\ud800-\udbff][\udc00-\udfff]|[\u0023-\u0039]\ufe0f?\u20e3|\u3299|\u3297|\u303d|\u3030|\u24c2|\ud83c[\udd70-\udd71]|\ud83c[\udd7e-\udd7f]|\ud83c\udd8e|\ud83c[\udd91-\udd9a]|\ud83c[\udde6-\uddff]|\ud83c[\ude01-\ude02]|\ud83c\ude1a|\ud83c\ude2f|\ud83c[\ude32-\ude3a]|\ud83c[\ude50-\ude51]|\u203c|\u2049|[\u25aa-\u25ab]|\u25b6|\u25c0|[\u25fb-\u25fe]|\u00a9|\u00ae|\u2122|\u2139|\ud83c\udc04|[\u2600-\u26FF]|\u2b05|\u2b06|\u2b07|\u2b1b|\u2b1c|\u2b50|\u2b55|\u231a|\u231b|\u2328|\u23cf|[\u23e9-\u23f3]|[\u23f8-\u23fa]|\ud83c\udccf|\u2934|\u2935|[\u2190-\u21ff])/g;
@@ -403,11 +476,28 @@ export default {
   watch: {
     storeGuilds: {
       handler: function(newVal) {
-        this.guilds = cloneDeep(newVal).map(g => ({
-          ...g,
-          collapsed: false,
-          filtered: false
-        }));
+        this.guilds = cloneDeep(newVal).map(g => {
+          g.roleValues = g.roles.filter(r => !r.managed && r.name !== '@everyone').map(r => {
+            return { text: r.name, value: r.name };
+          });
+          g.channelRoleValues = cloneDeep(g.roleValues);
+          g.roleValues.splice(0, 0, { text: (this.lang.config || {}).NO_ROLE, value: null });
+          g.channelRoleValues.splice(0, 0, { text: (this.lang.config || {}).DEFAULT_SERVER, value: null });
+          g.config.escape = g.config.escape || "!";
+          g.config.channel = g.config.channel.map(c => {
+            c.embedColor = c.embedColor || "";
+            c.role = c.role || "";
+            return c;
+          })
+          g.config.channel.forEach(c => {
+            this.colorMenus[c.id] = false;
+          })
+          return {
+            ...g,
+            collapsed: false,
+            filtered: false
+          };
+        });
         if (
           !(
             this.$store.getters.account &&
@@ -447,6 +537,11 @@ export default {
       if (guild && guild.config) {
         const form = this.$refs[`config${guild.id}`][0];
         if (form && form.validate()) {
+          guild.config.channel = guild.config.channel.filter(c => guild.channels.find(ch => ch.id === c.channelId)).map(c => {
+            c.gameDefaults.minPlayers = isNaN(c.gameDefaults.minPlayers) ? 1 : parseInt(c.gameDefaults.minPlayers);
+            c.gameDefaults.maxPlayers = isNaN(c.gameDefaults.maxPlayers) ? 7 : parseInt(c.gameDefaults.maxPlayers);
+            return c;
+          });
           this.$store
             .dispatch("saveGuildConfig", {
               config: guild.config,
@@ -573,6 +668,32 @@ export default {
       this.guilds = this.guilds.map(g => {
         g.collapsed = false;
         return g;
+      });
+    },
+    addChannel() {
+      const guild = this.guilds.find(g => g.channels.find(c => c.id === this.selectedChannel));
+      if (guild) {
+        guild.config.channel.push({
+          channelId: this.selectedChannel,
+          gameDefaults: {
+            minPlayers: 1,
+            maxPlayers: 7,
+            reminder: "0"
+          }
+        });
+      }
+      this.selectedChannel = "";
+    },
+    removeChannel(config, c) {
+      config.channel.splice(c, 1);
+    },
+    updateColors(color) {
+      const g = this.guilds.find(g => g.editing);
+      if (!g) return;
+      if (g.config.embedColor) g.config.embedColor = g.config.embedColor.slice(0, 7);
+      g.config.channel = g.config.channel.map(c => {
+        if (c.embedColor) c.embedColor = (typeof c.embedColor === "string" ? c.embedColor : c.embedColor.hex).slice(0, 7);
+        return c;
       });
     }
   }

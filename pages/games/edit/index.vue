@@ -687,6 +687,29 @@ export default {
       }
       this.dateTimeLinks();
       this.isChanged = false;
+      if (!this.gameId && this.account) {
+        const guild = this.account.guilds.find(g => g.id === this.game.s);
+        if (guild) {
+          const gcChannel = guild.config.channel.find(c => c.id === this.game.c);
+          if (gcChannel) {
+            if (gcChannel.gameDefaults) {
+              this.game.players = gcChannel.gameDefaults.maxPlayers;
+              this.game.minPlayers = gcChannel.gameDefaults.minPlayers;
+              this.game.reminder = gcChannel.gameDefaults.reminder;
+            }
+            else {
+              this.game.players = 7;
+              this.game.minPlayers = 1;
+              this.game.reminder = "0";
+            }
+          }
+          else {
+            this.game.players = 7;
+            this.game.minPlayers = 1;
+            this.game.reminder = "0";
+          }
+        }
+      }
     },
     setDefaultDates() {
       this.game.date = moment().format("YYYY-MM-DD");

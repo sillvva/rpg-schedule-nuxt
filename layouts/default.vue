@@ -365,6 +365,7 @@ export default {
           let guilds = cloneDeep(account.guilds);
           const path = this.$route.path;
           const gamesPage = /^\/games\//.test(path);
+          const gamesEditPage = /^\/games\/edit/.test(path);
           const gameListingsPage = /^\/games\/(upcoming|my-games|calendar|manage-server)/.test(
             path
           );
@@ -395,6 +396,7 @@ export default {
           if (gamesPage) {
             if (
               data.action == "updated" &&
+              !gamesEditPage &&
               guilds.find(g => g.id == data.guildId)
             ) {
               // An existing game has been updated, update the store if it belongs to one of current user's guilds

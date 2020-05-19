@@ -1,5 +1,7 @@
 const colors = require('vuetify/es5/util/colors').default;
-require('dotenv').config();
+require('dotenv').config({
+  path: `.onesignal-${process.env.NODE_ENV}`
+});
 
 module.exports = {
   mode: 'universal',
@@ -82,7 +84,8 @@ module.exports = {
       appId: process.env.ONESIGNAL_APP_ID,
       allowLocalhostAsSecureOrigin: true,
       notificationClickHandlerAction: "navigate",
-      notificationClickHandlerMatch: "exact"
+      notificationClickHandlerMatch: "origin",
+      autoResubscribe: true
     }
   },
   /*

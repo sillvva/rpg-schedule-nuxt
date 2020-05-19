@@ -65,7 +65,11 @@
           <v-card-text style="height: 90vh; max-height: 400px;">
             <v-row dense>
               <v-col class="pb-0" cols="12">
-                <v-select v-model="selectedUserSettings.lang" :items="langOptions" :label="lang.config.LANGUAGE"></v-select>
+                <v-select
+                  v-model="selectedUserSettings.lang"
+                  :items="langOptions"
+                  :label="lang.config.LANGUAGE"
+                ></v-select>
               </v-col>
               <v-col class="pb-0" cols="12">
                 <v-select
@@ -390,15 +394,28 @@ export default {
               pages[this.config.urls.game.dashboard] = "my-games";
               pages[this.config.urls.game.calendar] = "calendar";
               pages[this.config.urls.game.server] = "server";
-              this.$store.dispatch("fetchGuilds", {
-                page: pages[path],
-                games: true,
-                app: this
-              });
-
-              if (data.action === "new") {
-                this.playNotification();
-              }
+              this.$store
+                .dispatch("fetchGuilds", {
+                  page: pages[path],
+                  games: true,
+                  app: this
+                })
+                .then(result => {
+                  const account = this.$store.getters.account;
+                  if (account) {
+                    let newestGame;
+                    account.guilds.forEach(guild => {
+                      guild.games.forEach(game => {
+                        if (game._id === data.gameId) {
+                          newestGame = game;
+                        }
+                      });
+                    });
+                    if (newestGame && newestGame.dm.id !== account.user.id) {
+                      this.newGameNotification(newestGame);
+                    }
+                  }
+                });
             }
           }
           if (gamesPage) {
@@ -506,7 +523,10 @@ export default {
             this.userSettings = cloneDeep(this.selectedUserSettings);
             this.setSettings();
             this.settingsDialog = false;
-            this.$store.dispatch("setSelectedLang", this.selectedUserSettings.lang);
+            this.$store.dispatch(
+              "setSelectedLang",
+              this.selectedUserSettings.lang
+            );
           } else {
             throw new Error(result.message);
           }
@@ -594,6 +614,28 @@ export default {
         );
         audio.play();
       }
+    },
+    newGameNotification(game) {
+      this.playNotification();
+      if (!this.$store.getters.pushEnabled) return;
+      this.$OneSignal.push(() => {
+        this.$OneSignal.sendSelfNotification(
+          game.adventure,
+          game.description,
+          `${this.$store.getters.env.baseUrl}/games/upcoming?s=new`,
+          null,
+          {
+            notificationType: "news-feature"
+          },
+          // [
+          //   {
+          //     id: "sign-up",
+          //     text: this.lang.buttons.SIGN_UP,
+          //     url: `${this.$store.getters.env.baseUrl}/games/rsvp?g=${game._id}`
+          //   }
+          // ]
+        );
+      });
     }
   },
   async mounted() {
@@ -620,6 +662,27 @@ export default {
         }
       });
     }
+
+    this.$OneSignal.push(() => {
+      this.$OneSignal.isPushNotificationsEnabled(isEnabled => {
+        if (isEnabled) {
+          this.$store.commit("setPushState", true);
+          console.log("Push notifications are enabled!");
+        } else {
+          console.log("Push notifications are not enabled yet.");
+        }
+      });
+      this.$OneSignal.on("notificationDisplay", function(event) {
+        console.log("OneSignal notification displayed:", event);
+      });
+    });
+
+    this.$OneSignal.push([
+      "addListenerForNotificationOpened",
+      function(data) {
+        console.log("Received NotificationOpened:", data);
+      }
+    ]);
   },
   beforeDestroy() {
     window.removeEventListener("resize", this.onResize);

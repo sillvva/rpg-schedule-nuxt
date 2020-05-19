@@ -1,4 +1,5 @@
-const colors = require('vuetify/es5/util/colors').default
+const colors = require('vuetify/es5/util/colors').default;
+require('dotenv').config();
 
 module.exports = {
   mode: 'universal',
@@ -51,6 +52,7 @@ module.exports = {
   buildModules: [
     '@nuxt/typescript-build',
     '@nuxtjs/vuetify',
+    "@nuxtjs/dotenv"
   ],
   /*
   ** Nuxt.js modules
@@ -60,8 +62,29 @@ module.exports = {
     '@nuxtjs/axios',
     // Doc: https://github.com/nuxt-community/dotenv-module
     '@nuxtjs/dotenv',
+    // Doc: https://pwa.nuxtjs.org/
+    '@nuxtjs/onesignal',
+    '@nuxtjs/pwa',
     'cookie-universal-nuxt'
   ],
+  pwa: {
+    manifest: {
+      name: "RPG Schedule",
+      short_name: "RPG Schedule",
+      display: "standalone",
+      orientation: "portrait",
+      lang: "en",
+      background_color: "#222"
+    }
+  },
+  oneSignal: {
+    init: {
+      appId: process.env.ONESIGNAL_APP_ID,
+      allowLocalhostAsSecureOrigin: true,
+      notificationClickHandlerAction: "navigate",
+      notificationClickHandlerMatch: "exact"
+    }
+  },
   /*
   ** Axios module configuration
   ** See https://axios.nuxtjs.org/options

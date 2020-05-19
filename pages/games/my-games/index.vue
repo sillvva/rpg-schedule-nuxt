@@ -222,11 +222,15 @@ export default {
               matches
                 .map(match => ({
                   type: match.type,
+                  query: match.query,
                   regex: new RegExp(match.query, "gi")
                 }))
                 .filter(match => {
                   return (
-                    (match.type === "any" &&
+                    (match.query === "new" &&
+                      new Date().getTime() - game.createdTimestamp <
+                        24 * 3600 * 1000) ||
+                    (match.query != "new" && match.type === "any" &&
                       (match.regex.test(game.adventure) ||
                         match.regex.test(game.dm.tag || game.dm) ||
                         match.regex.test(game.author && game.author.tag) ||

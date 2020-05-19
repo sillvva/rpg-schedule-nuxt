@@ -55,7 +55,8 @@ const baseState = {
   settings: {},
   userSettings: {},
   snackBars: [],
-  socketData: {}
+  socketData: {},
+  pushEnabled: false
 };
 
 const reauthenticate = async (vuexContext, app, redirect) => {
@@ -147,6 +148,9 @@ export const mutations = {
   },
   setSocketData(state, data) {
     state.socketData = data;
+  },
+  setPushState(state, enabled) {
+    state.pushEnabled = enabled;
   }
 };
 
@@ -721,5 +725,8 @@ export const getters = {
   },
   socketData(state) {
     return state.socketData;
+  },
+  pushEnabled(state) {
+    return state.pushEnabled;
   }
 };

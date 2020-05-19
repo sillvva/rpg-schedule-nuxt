@@ -361,7 +361,7 @@
                         @click="save"
                         width="100%"
                         :color="saveResult && saveResult != 'saving' ? saveResult : 'discord'"
-                        :disabled="saveResult == 'saving' || saveResult == 'success' || !valid"
+                        :disabled="saveResult == 'saving' || saveResult == 'success' || !valid || game.pruned"
                       >
                         <v-progress-circular
                           indeterminate
@@ -379,7 +379,7 @@
                         @click="save"
                         width="100%"
                         :color="saveResult && saveResult != 'saving' ? saveResult : 'discord'"
-                        :disabled="saveResult == 'saving' || !valid"
+                        :disabled="saveResult == 'saving' || !valid || game.pruned"
                       >
                         <v-progress-circular
                           indeterminate
@@ -537,6 +537,8 @@ export default {
             this.$router.replace(
               `${this.$store.getters.config.urls.game.create.path}?g=${data.newGameId}`
             );
+          } else if (data.action === "pruned") {
+            this.game.pruned = true;
           } else if (
             data.action === "deleted" &&
             !localStorage.getItem("rescheduled")

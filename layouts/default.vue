@@ -65,7 +65,7 @@
           <v-card-text style="height: 90vh; max-height: 400px;">
             <v-row dense>
               <v-col class="pb-0" cols="12">
-                <v-select v-model="selectedUserSettings.lang" :items="langOptions" label="Language"></v-select>
+                <v-select v-model="selectedUserSettings.lang" :items="langOptions" :label="lang.config.LANGUAGE"></v-select>
               </v-col>
               <v-col class="pb-0" cols="12">
                 <v-select
@@ -178,6 +178,13 @@
           >
             <v-list-item-title>{{lang.nav.MANAGE_SERVER}}</v-list-item-title>
           </v-list-item>
+
+          <v-list-item
+            :to="config.urls.game.past.path"
+            v-if="account && account.guilds.find(g => g.isAdmin)"
+          >
+            <v-list-item-title>{{lang.nav.PAST_EVENTS}}</v-list-item-title>
+          </v-list-item>
         </v-list-item-group>
       </v-list>
 
@@ -201,6 +208,7 @@
         <span>{{lang.other.MAINTENANCE.replace(":TIME", maintenanceTime.toLowerCase()).replace(":DURATION", `${settings.maintenanceDuration}`)}}</span>
         <v-spacer></v-spacer>
       </v-system-bar>
+
       <nuxt :key="!urlConfig || urlConfig.refreshOnParamsChange ? $route.fullPath : $route.path" />
     </v-content>
     <SnackBars></SnackBars>
@@ -498,6 +506,7 @@ export default {
             this.userSettings = cloneDeep(this.selectedUserSettings);
             this.setSettings();
             this.settingsDialog = false;
+            this.$store.dispatch("setSelectedLang", this.selectedUserSettings.lang);
           } else {
             throw new Error(result.message);
           }

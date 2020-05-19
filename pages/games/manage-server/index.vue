@@ -48,6 +48,13 @@
         ></v-img>
         <v-toolbar-title>{{guild.name}}</v-toolbar-title>
         <v-spacer></v-spacer>
+        <v-btn
+          icon
+          :href="guild.csv"
+          :download="`manage-server-${new Date().getFullYear()}-${new Date().getMonth()+1 < 10 ? '0' : ''}${new Date().getMonth()+1}-${new Date().getDate() < 10 ? '0' : ''}${new Date().getDate()}.csv`"
+        >
+          <v-icon>mdi-download</v-icon>
+        </v-btn>
         <v-dialog v-model="guild.editing" scrollable max-width="600px">
           <template v-slot:activator="{ on }">
             <v-btn icon v-on="on">
@@ -59,7 +66,7 @@
               <v-icon dark class="mr-2">mdi-cog</v-icon>
               {{lang.config.CONFIGURATION}}
             </v-card-title>
-            <v-tabs v-model="tab" background-color="discord" dark center-active show-arrows centered>
+            <v-tabs v-model="tab" background-color="discord" slider-color="white" dark center-active show-arrows centered>
               <v-tab active-class="white--text">{{lang.config.GUILD}}</v-tab>
               <v-tab active-class="white--text">{{lang.config.BOT_CONFIGURATION}}</v-tab>
               <v-tab active-class="white--text">{{lang.config.CHANNEL_CONFIGURATION}}</v-tab>
@@ -83,7 +90,7 @@
 
                       <v-list-item class="px-4 mb-2">
                         <v-text-field
-                          label="Password"
+                          :label="lang.config.PASSWORD"
                           type="password"
                           v-model="guild.config.password"
                           :hint="lang.config.desc.PASSWORD_SET"
@@ -93,12 +100,55 @@
 
                       <v-list-item class="px-4 mb-2">
                         <v-select
-                          label="Language"
+                          :label="lang.config.LANGUAGE"
                           v-model="guild.config.lang"
                           :items="langs.map(lang => ({ text: lang.name, value: lang.code }))"
                           :hint="`${lang.config.desc.LANG.split('.')[0]}`"
                           persistent-hint
                         ></v-select>
+                      </v-list-item>
+
+                      <v-divider class="my-3" />
+
+                      <v-list-item>
+                        <v-text-field
+                          :label="lang.config.PRUNE_INTERVAL_EVENTS"
+                          type="number"
+                          :min="guild.config.pruneIntDiscord"
+                          max="14"
+                          v-model="guild.config.pruneIntEvents"
+                          :hint="lang.config.desc.PRUNE_INTERVAL_EVENTS"
+                          persistent-hint
+                          :rules="[v => parseInt(v) >= guild.config.pruneIntDiscord, v => parseInt(v) >= 2, v => parseInt(v) <= 14]"
+                        ></v-text-field>
+                      </v-list-item>
+
+                      <v-list-item @click="guild.config.pruning = !guild.config.pruning">
+                        <v-list-item-action>
+                          <v-checkbox
+                            v-model="guild.config.pruning"
+                            color="discord"
+                            @click.stop="guild.config.pruning = !guild.config.pruning"
+                          ></v-checkbox>
+                        </v-list-item-action>
+
+                        <v-list-item-content>
+                          <v-list-item-title>{{lang.config.PRUNING}}</v-list-item-title>
+                          <v-list-item-subtitle>{{lang.config.desc.PRUNING}}</v-list-item-subtitle>
+                        </v-list-item-content>
+                      </v-list-item>
+
+                      <v-list-item>
+                        <v-text-field
+                          :label="lang.config.PRUNE_INTERVAL_DISCORD"
+                          type="number"
+                          min="2"
+                          :max="guild.config.pruneIntEvents"
+                          v-model="guild.config.pruneIntDiscord"
+                          :hint="lang.config.desc.PRUNE_INTERVAL_DISCORD"
+                          persistent-hint
+                          :rules="[v => parseInt(v) <= guild.config.pruneIntEvents, v => parseInt(v) >= 2, v => parseInt(v) <= 14]"
+                        ></v-text-field>
                       </v-list-item>
                     </v-list>
                   </v-tab-item>
@@ -213,26 +263,33 @@
 
                   <v-tab-item>
                     <v-list dense>
-                      <div v-for="(channel, c) in guild.config.channel.filter(c => guild.channels.find(ch => ch.id === c.channelId))" :key="c">
-                        <h4 class="mx-4 mt-4 mb-0">
-                          <span v-html="guild.channels.find(ch => ch.type === 'text' && ch.id === channel.channelId).parentID ? guild.channelCategories.find(gc => gc.id === guild.channels.find(ch => ch.type === 'text' && ch.id === channel.channelId).parentID).name + '<br />' : ''"></span>
-                          #{{guild.channels.find(ch => ch.type === 'text' && ch.id === channel.channelId).name}}
-                        </h4>
+                      <v-subheader class="px-4">{{lang.config.desc.CHANNEL_CONFIGURATION}}</v-subheader>
 
+                      <v-list-item class="mb-6">
+                        <v-select
+                          :label="lang.config.CHANNELS"
+                          v-model="selectedChannel"
+                          :items="guild.channels.filter(channel => channel.type === 'text' && !guild.config.channel.find(c => c.channelId === channel.id)).map(channel => {
+                            const category = channel.parentID ? guild.channelCategories.find(gc => gc.id === channel.parentID).name + ' - ' : '';
+                            return { text: `${category}#${channel.name}`, value: channel.id };
+                          })"
+                          :hint="lang.config.desc.ADD_CHANNEL"
+                          persistent-hint
+                          @change="addChannel"
+                        ></v-select>
+                      </v-list-item>
+
+                      <div v-for="(channel, c) in guild.config.channel.filter(c => guild.channels.find(ch => ch.id === c.channelId))" :key="c">
+                        <v-divider></v-divider>
+                        
                         <v-row dense class="mx-0">
                           <v-col class="pr-0">
-                            <v-list-item class="px-4 mb-2">
-                              <v-select
-                                :label="lang.config.ROLE"
-                                v-model="channel.role"
-                                :placeholder="lang.config.DEFAULT_SERVER"
-                                :hint="lang.config.desc.ROLE"
-                                persistent-hint
-                                :items="guild.channelRoleValues"
-                              ></v-select>
-                            </v-list-item>
+                            <h4 class="mx-4 mt-4 mb-0">
+                              <span v-html="guild.channels.find(ch => ch.type === 'text' && ch.id === channel.channelId).parentID ? guild.channelCategories.find(gc => gc.id === guild.channels.find(ch => ch.type === 'text' && ch.id === channel.channelId).parentID).name + '<br />' : ''"></span>
+                              #{{guild.channels.find(ch => ch.type === 'text' && ch.id === channel.channelId).name}}
+                            </h4>
                           </v-col>
-                          <v-col class="pl-0" style="max-width: 80px;">
+                          <v-col class="pl-0 pr-4 text-right" style="max-width: 80px;">
                             <v-btn fab icon @click="removeChannel(guild.config, c)">
                               <v-icon>
                                 mdi-trash-can-outline
@@ -240,6 +297,17 @@
                             </v-btn>
                           </v-col>
                         </v-row>
+
+                        <v-list-item class="px-4 mb-2">
+                          <v-select
+                            :label="lang.config.ROLE"
+                            v-model="channel.role"
+                            :placeholder="lang.config.DEFAULT_SERVER"
+                            :hint="lang.config.desc.ROLE"
+                            persistent-hint
+                            :items="guild.channelRoleValues"
+                          ></v-select>
+                        </v-list-item>
 
                         <v-menu
                           v-model="colorMenus[channel.channelId]"
@@ -312,39 +380,11 @@
                           </v-col>
                         </v-row>
                       </div>
-
-                      <v-list-item class="mb-6">
-                        <v-select
-                          :label="lang.config.CHANNELS"
-                          v-model="selectedChannel"
-                          :items="guild.channels.filter(channel => channel.type === 'text' && !guild.config.channel.find(c => c.channelId === channel.id)).map(channel => {
-                            return { text: channel.name, value: channel.id };
-                          })"
-                          :hint="lang.config.desc.ADD_CHANNEL"
-                          persistent-hint
-                          @change="addChannel"
-                        ></v-select>
-                      </v-list-item>
                     </v-list>
                   </v-tab-item>
 
                   <v-tab-item>
                     <v-list dense>
-                      <v-list-item @click="guild.config.pruning = !guild.config.pruning">
-                        <v-list-item-action>
-                          <v-checkbox
-                            v-model="guild.config.pruning"
-                            color="discord"
-                            @click.stop="guild.config.pruning = !guild.config.pruning"
-                          ></v-checkbox>
-                        </v-list-item-action>
-
-                        <v-list-item-content>
-                          <v-list-item-title>{{lang.config.PRUNING}}</v-list-item-title>
-                          <v-list-item-subtitle>{{lang.config.desc.PRUNING}}</v-list-item-subtitle>
-                        </v-list-item-content>
-                      </v-list-item>
-
                       <v-list-item
                         @click="guild.config.privateReminders = !guild.config.privateReminders"
                       >
@@ -424,6 +464,7 @@
 
 <script>
 import { updateToken } from "../../../components/auxjs/auth";
+import { gamesCSV } from "../../../components/auxjs/appaux";
 import GameCard from "../../../components/game-card";
 import { cloneDeep } from "lodash";
 import GraphemeSplitter from "grapheme-splitter";
@@ -488,10 +529,11 @@ export default {
             c.embedColor = c.embedColor || "";
             c.role = c.role || "";
             return c;
-          })
+          });
           g.config.channel.forEach(c => {
             this.colorMenus[c.id] = false;
-          })
+          });
+          g.csv = gamesCSV(g);
           return {
             ...g,
             collapsed: false,
@@ -505,6 +547,16 @@ export default {
           )
         ) {
           this.searchGuild();
+          if (this.guilds) {
+            this.guilds.forEach(guild => {
+              guild.channels.forEach(channel => { 
+                console.log(channel.name, channel.type)
+                if (channel.type == 'category') { 
+                  console.log(channel.name);
+                } 
+              });
+            });
+          }
         }
       },
       immediate: true
@@ -537,6 +589,13 @@ export default {
       if (guild && guild.config) {
         const form = this.$refs[`config${guild.id}`][0];
         if (form && form.validate()) {
+          if (guild.config.pruneIntEvents < 2) guild.config.pruneIntEvents = 2;
+          if (guild.config.pruneIntEvents > 14) guild.config.pruneIntEvents = 14;
+          if (guild.config.pruneIntDiscord < 2) guild.config.pruneIntDiscord = 2;
+          if (guild.config.pruneIntDiscord > 14) guild.config.pruneIntDiscord = 14;
+          if (guild.config.pruneIntEvents < guild.config.pruneIntDiscord) {
+            guild.config.pruneIntEvents = guild.config.pruneIntDiscord;
+          }
           guild.config.channel = guild.config.channel.filter(c => guild.channels.find(ch => ch.id === c.channelId)).map(c => {
             c.gameDefaults.minPlayers = isNaN(c.gameDefaults.minPlayers) ? 1 : parseInt(c.gameDefaults.minPlayers);
             c.gameDefaults.maxPlayers = isNaN(c.gameDefaults.maxPlayers) ? 7 : parseInt(c.gameDefaults.maxPlayers);
@@ -686,6 +745,7 @@ export default {
     },
     removeChannel(config, c) {
       config.channel.splice(c, 1);
+      this.selectedChannel = "";
     },
     updateColors(color) {
       const g = this.guilds.find(g => g.editing);

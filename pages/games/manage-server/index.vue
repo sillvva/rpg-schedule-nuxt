@@ -55,9 +55,14 @@
         >
           <v-icon>mdi-download</v-icon>
         </v-btn>
-        <v-dialog v-model="guild.editing" scrollable max-width="600px">
+        <v-dialog
+          v-model="guild.editing"
+          scrollable
+          max-width="600px"
+          @click:outside="guildSettingToggle(g)"
+        >
           <template v-slot:activator="{ on }">
-            <v-btn icon v-on="on">
+            <v-btn icon v-on="on" @click="guildSettingToggle(g)">
               <v-icon dark>mdi-cog</v-icon>
             </v-btn>
           </template>
@@ -66,19 +71,27 @@
               <v-icon dark class="mr-2">mdi-cog</v-icon>
               {{lang.config.CONFIGURATION}}
             </v-card-title>
-            <v-tabs v-model="tab" background-color="discord" slider-color="white" dark center-active show-arrows centered>
+            <v-tabs
+              v-model="tab"
+              background-color="discord"
+              slider-color="white"
+              dark
+              center-active
+              show-arrows
+              centered
+            >
               <v-tab active-class="white--text">{{lang.config.GUILD}}</v-tab>
               <v-tab active-class="white--text">{{lang.config.BOT_CONFIGURATION}}</v-tab>
               <v-tab active-class="white--text">{{lang.config.CHANNEL_CONFIGURATION}}</v-tab>
               <v-tab active-class="white--text">{{lang.config.GAME_CONFIGURATION}}</v-tab>
+              <v-tab active-class="white--text">{{lang.config.TEMPLATE_CONFIGURATION}}</v-tab>
             </v-tabs>
             <v-card-text class="px-0" style="height: 90vh; max-height: 600px;" v-if="guild.config">
               <v-form :ref="`config${guild.id}`">
-
                 <v-tabs-items v-model="tab">
                   <v-tab-item>
                     <v-list dense>
-                      <v-list-item class="px-4 mb-2">
+                      <!-- <v-list-item class="px-4 mb-2">
                         <v-select
                           :label="lang.config.ROLE"
                           v-model="guild.config.role"
@@ -86,7 +99,7 @@
                           persistent-hint
                           :items="guild.roleValues"
                         ></v-select>
-                      </v-list-item>
+                      </v-list-item>-->
 
                       <v-list-item class="px-4 mb-2">
                         <v-text-field
@@ -170,7 +183,9 @@
                         </v-list-item-content>
                       </v-list-item>
 
-                      <v-list-item @click="guild.config.embedMentions = !guild.config.embedMentions">
+                      <v-list-item
+                        @click="guild.config.embedMentions = !guild.config.embedMentions"
+                      >
                         <v-list-item-action>
                           <v-checkbox
                             v-model="guild.config.embedMentions"
@@ -185,7 +200,7 @@
                         </v-list-item-content>
                       </v-list-item>
 
-                      <v-menu
+                      <!-- <v-menu
                         v-model="colorMenu"
                         transition="scale-transition"
                         offset-y
@@ -207,7 +222,7 @@
                           </v-list-item>
                         </template>
                         <v-color-picker v-model="guild.config.embedColor"></v-color-picker>
-                      </v-menu>
+                      </v-menu>-->
 
                       <v-row no-gutters>
                         <v-col cols="12" sm="6">
@@ -279,106 +294,39 @@
                         ></v-select>
                       </v-list-item>
 
-                      <div v-for="(channel, c) in guild.config.channel.filter(c => guild.channels.find(ch => ch.id === c.channelId))" :key="c">
+                      <div
+                        v-for="(channel, c) in guild.config.channel.filter(c => guild.channels.find(ch => ch.id === c.channelId))"
+                        :key="c"
+                      >
                         <v-divider></v-divider>
-                        
+
                         <v-row dense class="mx-0">
                           <v-col class="pr-0">
                             <h4 class="mx-4 mt-4 mb-0">
-                              <span v-html="guild.channels.find(ch => ch.type === 'text' && ch.id === channel.channelId).parentID ? guild.channelCategories.find(gc => gc.id === guild.channels.find(ch => ch.type === 'text' && ch.id === channel.channelId).parentID).name + '<br />' : ''"></span>
+                              <span
+                                v-html="guild.channels.find(ch => ch.type === 'text' && ch.id === channel.channelId).parentID ? guild.channelCategories.find(gc => gc.id === guild.channels.find(ch => ch.type === 'text' && ch.id === channel.channelId).parentID).name + '<br />' : ''"
+                              ></span>
                               #{{guild.channels.find(ch => ch.type === 'text' && ch.id === channel.channelId).name}}
                             </h4>
                           </v-col>
                           <v-col class="pl-0 pr-4 text-right" style="max-width: 80px;">
                             <v-btn fab icon @click="removeChannel(guild.config, c)">
-                              <v-icon>
-                                mdi-trash-can-outline
-                              </v-icon>
+                              <v-icon>mdi-trash-can-outline</v-icon>
                             </v-btn>
                           </v-col>
                         </v-row>
 
                         <v-list-item class="px-4 mb-2">
                           <v-select
-                            :label="lang.config.ROLE"
-                            v-model="channel.role"
-                            :placeholder="lang.config.DEFAULT_SERVER"
-                            :hint="lang.config.desc.ROLE"
+                            label="Template"
+                            v-model="channel.gameTemplates"
                             persistent-hint
-                            :items="guild.channelRoleValues"
+                            :items="(guild.config.gameTemplates || []).filter(gt => gt.id).map(gt => ({ text: gt.name, value: gt.id }))"
+                            multiple
+                            chips
+                            attach
                           ></v-select>
                         </v-list-item>
-
-                        <v-menu
-                          v-model="colorMenus[channel.channelId]"
-                          transition="scale-transition"
-                          offset-y
-                          min-width="290px"
-                        >
-                          <template v-slot:activator="{ on }">
-                            <v-list-item class="px-4 mb-2">
-                              <v-list-item-action>
-                                <v-btn fab small :color="channel.embedColor" v-on="on">&nbsp;</v-btn>
-                              </v-list-item-action>
-                              <v-list-item-content class="pt-0">
-                                <v-text-field
-                                  :label="lang.config.EMBED_COLOR"
-                                  v-model="channel.embedColor"
-                                  :placeholder="lang.config.DEFAULT_SERVER"
-                                  :hint="lang.config.desc.EMBED_COLOR"
-                                  persistent-hint
-                                ></v-text-field>
-                              </v-list-item-content>
-                            </v-list-item>
-                          </template>
-                          <v-color-picker v-model="channel.embedColor" @update:color="updateColors"></v-color-picker>
-                        </v-menu>
-
-                        <v-subheader class="px-4" v-if="channel.gameDefaults">{{lang.config.GAME_DEFAULTS}}</v-subheader>
-                        <v-row no-gutters v-if="channel.gameDefaults">
-                          <v-col cols="12" sm="4">
-                            <v-list-item>
-                              <v-text-field
-                                :label="lang.game.MIN_PLAYERS"
-                                v-model="channel.gameDefaults.minPlayers"
-                                type="number"
-                                min="1"
-                                :max="!channel.gameDefaults || isNaN(channel.gameDefaults.maxPlayers) ? 1 : parseInt(channel.gameDefaults.maxPlayers)"
-                                maxlength="3"
-                                :rules="[v => parseInt(v) <= channel.gameDefaults.maxPlayers]"
-                              ></v-text-field>
-                            </v-list-item>
-                          </v-col>
-                          <v-col cols="12" sm="4">
-                            <v-list-item>
-                              <v-text-field
-                                :label="lang.game.MAX_PLAYERS"
-                                v-model="channel.gameDefaults.maxPlayers"
-                                type="number"
-                                :min="isNaN(channel.gameDefaults.minPlayers) ? 1 : parseInt(channel.gameDefaults.minPlayers)"
-                                maxlength="3"
-                                :rules="[v => parseInt(v) >= channel.gameDefaults.minPlayers]"
-                              ></v-text-field>
-                            </v-list-item>
-                          </v-col>
-                          <v-col cols="12" sm="4">
-                            <v-list-item>
-                              <v-select
-                                :label="lang.game.REMINDER"
-                                v-model="channel.gameDefaults.reminder"
-                                :items="[
-                                  { text: lang.game.options.NO_REMINDER, value: '0' },
-                                  { text: lang.game.options.MINUTES_15, value: '15' },
-                                  { text: lang.game.options.MINUTES_30, value: '30' },
-                                  { text: lang.game.options.MINUTES_60, value: '60' },
-                                  { text: lang.game.options.HOURS_6, value: '360' },
-                                  { text: lang.game.options.HOURS_12, value: '720' },
-                                  { text: lang.game.options.HOURS_24, value: '1440' }
-                                ]"
-                              ></v-select>
-                            </v-list-item>
-                          </v-col>
-                        </v-row>
                       </div>
                     </v-list>
                   </v-tab-item>
@@ -411,13 +359,140 @@
                       </v-list-item>
                     </v-list>
                   </v-tab-item>
+
+                  <v-tab-item>
+                    <p class="ma-3 text-right">
+                      <v-btn color="discord" @click="newTemplate">{{lang.config.NEW_TEMPLATE}}</v-btn>
+                    </p>
+
+                    <v-expansion-panels v-model="openTemplate">
+                      <v-expansion-panel
+                        v-for="(template, t) in guild.config.gameTemplates"
+                        :key="t"
+                        class="grey darken-3"
+                        style="border-radius: 0;"
+                      >
+                        <v-expansion-panel-header style="min-height: 72px;">
+                          {{template.name}}
+                          <div class="text-right">
+                            <v-btn
+                              fab
+                              small
+                              text
+                              v-if="!template.isDefault"
+                              @click.stop="removeTemplate(t);"
+                            >
+                              <v-icon>mdi-trash-can-outline</v-icon>
+                            </v-btn>
+                          </div>
+                        </v-expansion-panel-header>
+                        <v-expansion-panel-content>
+                          <v-list-item class="mb-2 px-0" v-if="!template.isDefault">
+                            <v-text-field
+                              :label="lang.config.TEMPLATE_NAME"
+                              v-model="template.name"
+                            ></v-text-field>
+                          </v-list-item>
+
+                          <v-list-item class="mb-2 px-0">
+                            <v-select
+                              :label="lang.config.ROLE"
+                              v-model="template.role"
+                              :placeholder="lang.config.DEFAULT_SERVER"
+                              :hint="lang.config.desc.ROLE"
+                              persistent-hint
+                              :items="template.isDefault ? guild.roleValues : guild.channelRoleValues"
+                            ></v-select>
+                          </v-list-item>
+
+                          <v-menu
+                            v-model="colorMenus[template.id]"
+                            transition="scale-transition"
+                            offset-y
+                            min-width="290px"
+                          >
+                            <template v-slot:activator="{ on }">
+                              <v-list-item class="px-0 mb-2">
+                                <v-list-item-action>
+                                  <v-btn fab small :color="template.embedColor" v-on="on">&nbsp;</v-btn>
+                                </v-list-item-action>
+                                <v-list-item-content class="pt-0">
+                                  <v-text-field
+                                    :label="lang.config.EMBED_COLOR"
+                                    v-model="template.embedColor"
+                                    :placeholder="lang.config.DEFAULT_SERVER"
+                                    :hint="lang.config.desc.EMBED_COLOR"
+                                    persistent-hint
+                                    @keyup="updateColors"
+                                  ></v-text-field>
+                                </v-list-item-content>
+                              </v-list-item>
+                            </template>
+                            <v-color-picker
+                              v-model="template.embedColor"
+                              @update:color="updateColors"
+                            ></v-color-picker>
+                          </v-menu>
+
+                          <v-subheader
+                            class="px-0"
+                            v-if="template.gameDefaults"
+                          >{{lang.config.GAME_DEFAULTS}}</v-subheader>
+                          <v-row no-gutters v-if="template.gameDefaults">
+                            <v-col cols="12" sm="4">
+                              <v-list-item class="px-0">
+                                <v-text-field
+                                  :label="lang.game.MIN_PLAYERS"
+                                  v-model="template.gameDefaults.minPlayers"
+                                  type="number"
+                                  min="1"
+                                  :max="!template.gameDefaults || isNaN(template.gameDefaults.maxPlayers) ? 1 : parseInt(template.gameDefaults.maxPlayers)"
+                                  maxlength="3"
+                                  :rules="[v => parseInt(v) <= template.gameDefaults.maxPlayers]"
+                                ></v-text-field>
+                              </v-list-item>
+                            </v-col>
+                            <v-col cols="12" sm="4">
+                              <v-list-item class="px-0">
+                                <v-text-field
+                                  :label="lang.game.MAX_PLAYERS"
+                                  v-model="template.gameDefaults.maxPlayers"
+                                  type="number"
+                                  :min="isNaN(template.gameDefaults.minPlayers) ? 1 : parseInt(template.gameDefaults.minPlayers)"
+                                  maxlength="3"
+                                  :rules="[v => parseInt(v) >= template.gameDefaults.minPlayers]"
+                                ></v-text-field>
+                              </v-list-item>
+                            </v-col>
+                            <v-col cols="12" sm="4">
+                              <v-list-item class="px-0">
+                                <v-select
+                                  :label="lang.game.REMINDER"
+                                  v-model="template.gameDefaults.reminder"
+                                  :items="[
+                                    { text: lang.game.options.NO_REMINDER, value: '0' },
+                                    { text: lang.game.options.MINUTES_15, value: '15' },
+                                    { text: lang.game.options.MINUTES_30, value: '30' },
+                                    { text: lang.game.options.MINUTES_60, value: '60' },
+                                    { text: lang.game.options.HOURS_6, value: '360' },
+                                    { text: lang.game.options.HOURS_12, value: '720' },
+                                    { text: lang.game.options.HOURS_24, value: '1440' }
+                                  ]"
+                                ></v-select>
+                              </v-list-item>
+                            </v-col>
+                          </v-row>
+                        </v-expansion-panel-content>
+                      </v-expansion-panel>
+                    </v-expansion-panels>
+                  </v-tab-item>
                 </v-tabs-items>
               </v-form>
             </v-card-text>
             <v-divider></v-divider>
             <v-card-actions>
               <v-spacer />
-              <v-btn color="white" text @click="guild.editing = false">Close</v-btn>
+              <v-btn color="white" text @click="guildSettingToggle(g); guild.editing = false">Close</v-btn>
               <v-btn color="discord" text @click="saveGuildConfiguration">Save</v-btn>
             </v-card-actions>
           </v-card>
@@ -463,11 +538,12 @@
 </template>
 
 <script>
-import { updateToken } from "../../../components/auxjs/auth";
-import { gamesCSV } from "../../../components/auxjs/appaux";
+import { updateToken } from "../../../assets/auxjs/auth";
+import { gamesCSV } from "../../../assets/auxjs/appaux";
 import GameCard from "../../../components/game-card";
 import { cloneDeep } from "lodash";
 import GraphemeSplitter from "grapheme-splitter";
+import { ObjectID } from "bson";
 
 export default {
   middleware: ["authenticated"],
@@ -487,6 +563,7 @@ export default {
       colorMenu: false,
       colorMenus: {},
       selectedChannel: "",
+      openTemplate: null,
       tab: null,
       emojiRule: value => {
         const splitter = new GraphemeSplitter();
@@ -518,20 +595,31 @@ export default {
     storeGuilds: {
       handler: function(newVal) {
         this.guilds = cloneDeep(newVal).map(g => {
-          g.roleValues = g.roles.filter(r => !r.managed && r.name !== '@everyone').map(r => {
-            return { text: r.name, value: r.name };
-          });
-          g.channelRoleValues = cloneDeep(g.roleValues);
-          g.roleValues.splice(0, 0, { text: (this.lang.config || {}).NO_ROLE, value: null });
-          g.channelRoleValues.splice(0, 0, { text: (this.lang.config || {}).DEFAULT_SERVER, value: null });
+          g.roleValues = [
+            {
+              text: (this.lang.config || {}).NO_ROLE,
+              value: null
+            },
+            ...g.roles
+              .filter(r => !r.managed && r.name !== "@everyone")
+              .map(r => {
+                return { text: r.name, value: r.name };
+              })
+          ];
+          g.channelRoleValues = [
+            {
+              text: (this.lang.config || {}).DEFAULT_SERVER,
+              value: null
+            },
+            ...g.roles
+              .filter(r => !r.managed && r.name !== "@everyone")
+              .map(r => {
+                return { text: r.name, value: r.name };
+              })
+          ];
           g.config.escape = g.config.escape || "!";
-          g.config.channel = g.config.channel.map(c => {
-            c.embedColor = c.embedColor || "";
-            c.role = c.role || "";
-            return c;
-          });
-          g.config.channel.forEach(c => {
-            this.colorMenus[c.id] = false;
+          g.config.gameTemplates.forEach(gt => {
+            this.colorMenus[gt.id] = false;
           });
           g.csv = gamesCSV(g);
           return {
@@ -547,16 +635,6 @@ export default {
           )
         ) {
           this.searchGuild();
-          if (this.guilds) {
-            this.guilds.forEach(guild => {
-              guild.channels.forEach(channel => { 
-                console.log(channel.name, channel.type)
-                if (channel.type == 'category') { 
-                  console.log(channel.name);
-                } 
-              });
-            });
-          }
         }
       },
       immediate: true
@@ -585,22 +663,35 @@ export default {
   },
   methods: {
     saveGuildConfiguration() {
+      const index = this.guilds.findIndex(g => g.editing);
       const guild = this.guilds.find(g => g.editing);
       if (guild && guild.config) {
         const form = this.$refs[`config${guild.id}`][0];
         if (form && form.validate()) {
           if (guild.config.pruneIntEvents < 2) guild.config.pruneIntEvents = 2;
-          if (guild.config.pruneIntEvents > 14) guild.config.pruneIntEvents = 14;
-          if (guild.config.pruneIntDiscord < 2) guild.config.pruneIntDiscord = 2;
-          if (guild.config.pruneIntDiscord > 14) guild.config.pruneIntDiscord = 14;
+          if (guild.config.pruneIntEvents > 14)
+            guild.config.pruneIntEvents = 14;
+          if (guild.config.pruneIntDiscord < 2)
+            guild.config.pruneIntDiscord = 2;
+          if (guild.config.pruneIntDiscord > 14)
+            guild.config.pruneIntDiscord = 14;
           if (guild.config.pruneIntEvents < guild.config.pruneIntDiscord) {
             guild.config.pruneIntEvents = guild.config.pruneIntDiscord;
           }
-          guild.config.channel = guild.config.channel.filter(c => guild.channels.find(ch => ch.id === c.channelId)).map(c => {
-            c.gameDefaults.minPlayers = isNaN(c.gameDefaults.minPlayers) ? 1 : parseInt(c.gameDefaults.minPlayers);
-            c.gameDefaults.maxPlayers = isNaN(c.gameDefaults.maxPlayers) ? 7 : parseInt(c.gameDefaults.maxPlayers);
-            return c;
+          guild.config.gameTemplates = guild.config.gameTemplates.map(gt => {
+            gt.gameDefaults.minPlayers = parseInt(gt.gameDefaults.minPlayers);
+            gt.gameDefaults.maxPlayers = parseInt(gt.gameDefaults.maxPlayers);
+            delete gt.unsaved;
+            return gt;
           });
+          guild.config.channel = guild.config.channel
+            .filter(c => guild.channels.find(ch => ch.id === c.channelId))
+            .filter(
+              (c, i) =>
+                guild.config.channel.findIndex(
+                  gc => gc.channelId === c.channelId
+                ) === i
+            );
           this.$store
             .dispatch("saveGuildConfig", {
               config: guild.config,
@@ -608,6 +699,13 @@ export default {
               route: this.$route
             })
             .then(result => {
+              this.$store.commit(
+                "setGuilds",
+                this.guilds.map(g => {
+                  if (g.editing) g.config = result.guildConfig;
+                  return g;
+                })
+              );
               this.$store.dispatch("addSnackBar", {
                 message: "Configuration saved successfully" || err,
                 color: "success darken-2"
@@ -683,7 +781,8 @@ export default {
                       (match.query === "new" &&
                         new Date().getTime() - game.createdTimestamp <
                           24 * 3600 * 1000) ||
-                      (match.query != "new" && match.type === "any" &&
+                      (match.query != "new" &&
+                        match.type === "any" &&
                         (match.regex.test(game.adventure) ||
                           match.regex.test(game.dm.tag || game.dm) ||
                           match.regex.test(game.author.tag) ||
@@ -734,7 +833,9 @@ export default {
       });
     },
     addChannel() {
-      const guild = this.guilds.find(g => g.channels.find(c => c.id === this.selectedChannel));
+      const guild = this.guilds.find(g =>
+        g.channels.find(c => c.id === this.selectedChannel)
+      );
       if (guild) {
         guild.config.channel.push({
           channelId: this.selectedChannel,
@@ -754,11 +855,50 @@ export default {
     updateColors(color) {
       const g = this.guilds.find(g => g.editing);
       if (!g) return;
-      if (g.config.embedColor) g.config.embedColor = g.config.embedColor.slice(0, 7);
-      g.config.channel = g.config.channel.map(c => {
-        if (c.embedColor) c.embedColor = (typeof c.embedColor === "string" ? c.embedColor : c.embedColor.hex).slice(0, 7);
-        return c;
+      g.config.embedColor = this.colorFixer(g.config.embedColor);
+      g.config.gameTemplates = g.config.gameTemplates.map(gt => {
+        gt.embedColor = this.colorFixer(gt.embedColor);
+        return gt;
       });
+    },
+    guildSettingToggle(gIndex) {
+      if (this.guilds[gIndex].editing) {
+        this.openTemplate = null;
+        this.guilds[gIndex].config.gameTemplates = this.guilds[
+          gIndex
+        ].config.gameTemplates.filter(g => !g.unsaved);
+      }
+    },
+    newTemplate() {
+      const guild = this.guilds.find(g => g.editing);
+      if (guild && guild.config) {
+        guild.config.gameTemplates.push({
+          id: new ObjectID().toHexString(),
+          name: this.lang.config.NEW_TEMPLATE,
+          embedColor: guild.config.embedColor,
+          role: guild.config.role,
+          unsaved: true,
+          gameDefaults: {
+            minPlayers: 1,
+            maxPlayers: 7,
+            reminder: "0"
+          }
+        });
+        this.openTemplate = guild.config.gameTemplates.length - 1;
+      }
+    },
+    removeTemplate(index) {
+      const guild = this.guilds.find(g => g.editing);
+      if (guild && guild.config) {
+        guild.config.gameTemplates.splice(index, 1);
+      }
+    },
+    colorFixer(color) {
+      color = color.replace(/[^0-9a-f#]/gi, "");
+      if (!color.startsWith("#")) color = "#" + color;
+      if (/^#([0-9a-f]{7,})$/i.test((color || "").trim()))
+        color = color.slice(0, 7);
+      return color;
     }
   }
 };

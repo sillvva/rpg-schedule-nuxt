@@ -81,8 +81,8 @@
 </template>
 
 <script>
-import { updateToken } from "../../../components/auxjs/auth";
-import { gamesCSV } from "../../../components/auxjs/appaux";
+import { updateToken } from "../../../assets/auxjs/auth";
+import { gamesCSV } from "../../../assets/auxjs/appaux";
 import GameCard from "../../../components/game-card";
 import { cloneDeep } from "lodash";
 import GraphemeSplitter from "grapheme-splitter";

@@ -88,8 +88,8 @@
 </template>
 
 <script>
-import { updateToken } from "../../../components/auxjs/auth";
-import { checkRSVP } from "../../../components/auxjs/appaux";
+import { updateToken } from "../../../assets/auxjs/auth";
+import { checkRSVP } from "../../../assets/auxjs/appaux";
 import GameCard from "../../../components/game-card";
 import { cloneDeep } from "lodash";
 import moment from "moment";

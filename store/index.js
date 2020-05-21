@@ -1,8 +1,8 @@
 import { cloneDeep } from "lodash";
 
-import aux from "../components/auxjs/appaux";
-import config from "../components/auxjs/config";
-import authAux from "../components/auxjs/auth";
+import aux from "../assets/auxjs/appaux";
+import config from "../assets/auxjs/config";
+import authAux from "../assets/auxjs/auth";
 import moment from "moment";
 
 const resetItems = {
@@ -255,10 +255,10 @@ export const actions = {
       const langCookie = this.$cookies.get("lang");
       if (langCookie) lang = langCookie;
 
-      commit("setLang", require(`../components/lang/${lang}.json`));
-      const langOptions = require(`../components/lang/langs.json`);
+      commit("setLang", require(`../assets/lang/${lang}.json`));
+      const langOptions = require(`../assets/lang/langs.json`);
       const langs = langOptions.langs.map(lang => {
-        const langData = require(`../components/lang/${lang}.json`);
+        const langData = require(`../assets/lang/${lang}.json`);
         return {
           name: langData.name,
           code: lang
@@ -273,7 +273,7 @@ export const actions = {
   },
   setSelectedLang(vuexContext, selectedLang) {
     const langCookie = this.$cookies.get("lang", { path: "/" });
-    const lang = require(`../components/lang/${selectedLang}.json`);
+    const lang = require(`../assets/lang/${selectedLang}.json`);
 
     vuexContext.commit("setLang", lang);
 

@@ -34,7 +34,7 @@
 </template>
 
 <script>
-import { updateToken } from "../../components/auxjs/auth";
+import { updateToken } from "../../assets/auxjs/auth";
 import AboutPage from "../../components/pages/help/about";
 import CreditsPage from "../../components/pages/help/credits";
 import CommandsPage from "../../components/pages/help/commands";

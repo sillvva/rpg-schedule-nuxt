@@ -617,15 +617,15 @@ export default {
       this.changed();
       if (this.guilds.length > 0) {
         if (this.game.c) {
-          await this.fetchGameChannels("s", this.game.s);
+          await this.fetchGameChannels();
         } else {
           await this.fetchGame("s", this.game.s);
         }
       }
     },
     selectTemplate() {
-      if (this.guild && !this.$route.query.g && this.game) {
-        const templates = this.guild.config.gameTemplates.filter(gt => ($route.query.g || this.guild.isAdmin || !gt.role || this.guild.userRoles.includes(gt.role)) && this.guild.config.channel.find(c => c.channelId === game.c) && this.guild.config.channel.find(c => c.channelId === game.c).gameTemplates.includes(gt.id));
+      if (this.guild && !this.gameId && this.game) {
+        const templates = this.guild.config.gameTemplates.filter(gt => (this.gameId || this.guild.isAdmin || !gt.role || this.guild.userRoles.includes(gt.role)) && this.guild.config.channel.find(c => c.channelId === this.game.c) && this.guild.config.channel.find(c => c.channelId === this.game.c).gameTemplates.includes(gt.id));
         const template = templates.find(t => t.id === this.game.template);
         if (template) {
           this.game.minPlayers = template.gameDefaults.minPlayers;
@@ -637,16 +637,14 @@ export default {
     changed() {
       this.isChanged = true;
     },
-    fetchGameChannels(param, value) {
-      return this.$store
-        .dispatch("fetchGame", {
-          param: param,
-          value: value
-        })
-        .then(game => {
-          this.game.c = game.channels[0].id;
-          this.game.channel = game.channels[0].name;
-        });
+    fetchGameChannels() {
+      if (this.account) {
+        const guild = this.account.guilds.find(g => g.id === this.game.s);
+        if (guild) {
+          this.game.c = guild.announcementChannels[0].id;
+          this.game.channel = guild.announcementChannels[0].name;
+        }
+      }
     },
     async fetchGame(param, value) {
       return await this.$store

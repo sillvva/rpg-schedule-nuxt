@@ -106,7 +106,7 @@
 <script>
 import { Remarkable } from "remarkable";
 import { cloneDeep } from "lodash";
-import { checkRSVP } from "../components/auxjs/appaux";
+import { checkRSVP } from "../assets/auxjs/appaux";
 
 export default {
   props: ["gameData", "numColumns", "filter", "exclude", "edit"],

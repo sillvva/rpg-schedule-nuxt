@@ -1,13 +1,13 @@
 const moment = require("moment");
-const { toPairs } = require("lodash");
+const { toPairs, cloneDeep } = require("lodash");
 
 const log = (...content) => {
   console.log(moment().format("lll") + ":", ...content);
 };
 
-const parseConfigURLs = (paths) => {
+const parseConfigURLs = paths => {
   let urls = [];
-  toPairs(paths).forEach((entry) => {
+  toPairs(paths).forEach(entry => {
     const [id, path] = entry;
     if (path.hasOwnProperty("path")) {
       urls.push(path);
@@ -20,10 +20,16 @@ const parseConfigURLs = (paths) => {
 };
 
 const checkRSVP = (rsvp, user) => {
-  return rsvp && user && (typeof rsvp === "string" ? rsvp.trim() === user.tag : (rsvp.tag || "").trim() === user.tag || rsvp.id === user.id);
-}
+  return (
+    rsvp &&
+    user &&
+    (typeof rsvp === "string"
+      ? rsvp.trim() === user.tag
+      : (rsvp.tag || "").trim() === user.tag || rsvp.id === user.id)
+  );
+};
 
-const gamesCSV = (guild) => {
+const gamesCSV = guild => {
   const includeKeys = [
     "guild",
     "channel",
@@ -49,7 +55,8 @@ const gamesCSV = (guild) => {
     const csv =
       guild.games
         .map((game, i) => {
-          const keys = Object.keys(game);
+          const cGame = cloneDeep(game);
+          const keys = Object.keys(cGame);
           const rows = [];
           let row = [];
           if (i === 0) {
@@ -60,14 +67,21 @@ const gamesCSV = (guild) => {
             row = [];
           }
           includeKeys.forEach((k, i) => {
-            if (k === "guild") game[k] = guild.name;
-            if (k === "dm") game[k] = game[k].tag;
-            if (k === "reserved")
-              game[k] = game[k].map(r => r.tag).join(",");
+            if (k === "guild") cGame[k] = guild.name;
+            if (k === "dm") cGame[k] = cGame[k].tag;
+            if (k === "reserved") {
+              if (!Array.isArray(cGame[k])) {
+                cGame[k] = cGame[k]
+                  .split(/\r?\n/g)
+                  .filter(r => r.trim().length > 0)
+                  .map(r => ({ tag: r.trim() }));
+              }
+              cGame[k] = cGame[k].map(r => r.tag).join(",");
+            }
             row.push(
-              typeof game[k] === "string"
-                ? game[k].replace(/"/g, '\\"')
-                : game[k]
+              typeof cGame[k] === "string"
+                ? cGame[k].replace(/"/g, '\\"')
+                : cGame[k]
             );
           });
           rows.push(`"${row.join('","')}"`);

@@ -7,7 +7,7 @@
 </template>
 
 <script>
-import lang from "../../components/lang/en.json";
+import lang from "../../assets/lang/en.json";
 
 export default {
   data() {

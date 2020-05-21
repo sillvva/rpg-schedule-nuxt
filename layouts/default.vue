@@ -220,8 +220,8 @@
 </template>
 
 <script>
-import lang from "../components/lang/en.json";
-import aux from "../components/auxjs/appaux";
+import lang from "../assets/lang/en.json";
+import aux from "../assets/auxjs/appaux";
 import SnackBars from "../components/snackbars";
 import ws from "../store/socket";
 import { cloneDeep } from "lodash";
@@ -614,6 +614,11 @@ export default {
         );
         audio.play();
       }
+      // this.newGameNotification({
+      //   adventure: "test",
+      //   description: "This is a test",
+      //   _id: "test"
+      // })
     },
     newGameNotification(game) {
       this.playNotification();

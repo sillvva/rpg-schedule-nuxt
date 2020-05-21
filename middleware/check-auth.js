@@ -1,4 +1,4 @@
-import aux from "../components/auxjs/appaux";
+import aux from "../assets/auxjs/appaux";
 
 export default async function({ store, req }) {
   try {

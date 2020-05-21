@@ -13,7 +13,7 @@
               <v-row dense>
                 <v-col cols="12" lg="7" class="py-0">
                   <v-row dense>
-                    <v-col cols="12" sm="6" class="py-0">
+                    <v-col cols="12" sm="4" class="py-0">
                       <v-select
                         id="guild"
                         :label="lang.game.SERVER"
@@ -24,7 +24,7 @@
                     </v-col>
                     <v-col
                       cols="12"
-                      sm="6"
+                      sm="4"
                       class="py-0"
                       v-if="channels && channels.length > 0 && guilds.filter(c => !gameId || c.value === game.s).length > 0"
                     >
@@ -35,6 +35,16 @@
                         required
                         :items="channels.map(c => ({ text: c.name, value: c.id })).filter(c => !gameId || c.value === game.c)"
                         @change="changed"
+                      ></v-select>
+                    </v-col>
+                    <v-col cols="12" sm="4" class="py-0" v-if="guild">
+                      <v-select
+                        :label="lang.config.TEMPLATE_CONFIGURATION"
+                        id="template"
+                        v-model="game.template"
+                        required
+                        :items="guild.config.gameTemplates.filter(gt => ($route.query.g || guild.isAdmin || !gt.role || guild.userRoles.includes(gt.role)) && guild.config.channel.find(c => c.channelId === game.c) && guild.config.channel.find(c => c.channelId === game.c).gameTemplates.includes(gt.id)).map(gt => ({ text: gt.name, value: gt.id }))"
+                        @change="selectTemplate"
                       ></v-select>
                     </v-col>
                     <v-col cols="12" sm="5" md="4" lg="6" class="py-0">
@@ -164,13 +174,14 @@
                             @click:prepend-inner="dateMenu = true"
                           ></v-text-field>
                         </template>
-                        <v-date-picker
-                          v-model="game.date"
-                          :locale="lang.code"
-                        >
+                        <v-date-picker v-model="game.date" :locale="lang.code">
                           <v-spacer></v-spacer>
                           <v-btn text color="primary" @click="dateMenu = false">Cancel</v-btn>
-                          <v-btn text color="primary" @click="$refs.dateDialog.save(game.date); isChanged = true;">OK</v-btn>
+                          <v-btn
+                            text
+                            color="primary"
+                            @click="$refs.dateDialog.save(game.date); isChanged = true;"
+                          >OK</v-btn>
                         </v-date-picker>
                       </v-dialog>
                     </v-col>
@@ -206,7 +217,11 @@
                         >
                           <v-spacer></v-spacer>
                           <v-btn text color="primary" @click="timeMenu = false">Cancel</v-btn>
-                          <v-btn text color="primary" @click="$refs.timeDialog.save(game.time); isChanged = true;">OK</v-btn>
+                          <v-btn
+                            text
+                            color="primary"
+                            @click="$refs.timeDialog.save(game.time); isChanged = true;"
+                          >OK</v-btn>
                         </v-time-picker>
                       </v-dialog>
                     </v-col>
@@ -418,8 +433,8 @@
 </template>
 
 <script>
-import { updateToken } from "../../../components/auxjs/auth";
-import lang from "../../../components/lang/en.json";
+import { updateToken } from "../../../assets/auxjs/auth";
+import lang from "../../../assets/lang/en.json";
 import ws from "../../../store/socket";
 import { cloneDeep } from "lodash";
 
@@ -438,6 +453,7 @@ export default {
       account: null,
       reservedList: "",
       guilds: [],
+      guild: null,
       game: {},
       channel: "",
       channels: [],
@@ -607,6 +623,17 @@ export default {
         }
       }
     },
+    selectTemplate() {
+      if (this.guild && !this.$route.query.g && this.game) {
+        const templates = this.guild.config.gameTemplates.filter(gt => ($route.query.g || this.guild.isAdmin || !gt.role || this.guild.userRoles.includes(gt.role)) && this.guild.config.channel.find(c => c.channelId === game.c) && this.guild.config.channel.find(c => c.channelId === game.c).gameTemplates.includes(gt.id));
+        const template = templates.find(t => t.id === this.game.template);
+        if (template) {
+          this.game.minPlayers = template.gameDefaults.minPlayers;
+          this.game.players = template.gameDefaults.maxPlayers;
+          this.game.reminder = template.gameDefaults.reminder;
+        }
+      }
+    },
     changed() {
       this.isChanged = true;
     },
@@ -663,9 +690,23 @@ export default {
         this.game.dmTag = this.game.dm.tag;
       }
       if (this.account) {
-        const guild = this.account.guilds.find(g => g.id === this.game.s);
-        if (guild) {
-          this.channels = guild.announcementChannels;
+        this.guild = this.account.guilds.find(g => g.id === game.s);
+        if (this.guild) {
+          this.channels = this.guild.announcementChannels;
+          const templates = this.guild.config.gameTemplates.filter(
+            gt =>
+              (this.$route.query.g || this.guild.isAdmin || !gt.role || this.guild.userRoles.includes(gt.role)) &&
+              this.guild.config.channel.find(c => c.channelId === game.c) &&
+              this.guild.config.channel
+                .find(c => c.channelId === game.c)
+                .gameTemplates.includes(gt.id)
+          );
+          if (
+            templates[0] &&
+            !templates.find(t => t.id === this.game.template)
+          ) {
+            this.game.template = templates[0].id;
+          }
         }
         if (!game.dm || (this.game.dm.tag || "").trim().length === 0) {
           this.game.dmTag = this.account.user.tag;
@@ -692,20 +733,20 @@ export default {
       if (!this.gameId && this.account) {
         const guild = this.account.guilds.find(g => g.id === this.game.s);
         if (guild) {
-          const gcChannel = guild.config.channel.find(c => c.id === this.game.c);
+          const gcChannel = guild.config.channel.find(
+            c => c.id === this.game.c
+          );
           if (gcChannel) {
             if (gcChannel.gameDefaults) {
               this.game.players = gcChannel.gameDefaults.maxPlayers;
               this.game.minPlayers = gcChannel.gameDefaults.minPlayers;
               this.game.reminder = gcChannel.gameDefaults.reminder;
-            }
-            else {
+            } else {
               this.game.players = 7;
               this.game.minPlayers = 1;
               this.game.reminder = "0";
             }
-          }
-          else {
+          } else {
             this.game.players = 7;
             this.game.minPlayers = 1;
             this.game.reminder = "0";
@@ -1043,7 +1084,10 @@ export default {
               .weeksOfMonthByDay();
             nextDate = dateGenerator.next(1)[0];
 
-            if (weekOfMonth == 4 && moment(nextDate).month() != moment(baseDate).month() + 1) {
+            if (
+              weekOfMonth == 4 &&
+              moment(nextDate).month() != moment(baseDate).month() + 1
+            ) {
               dateGenerator = moment(baseDate)
                 .recur()
                 .every(validDay)

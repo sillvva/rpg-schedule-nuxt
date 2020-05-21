@@ -16,6 +16,8 @@
       <a href="/r/donate" target="_blank" style="white-space: nowrap;">Patreon</a>
       |
       <a href="/r/paypal" target="_blank" style="white-space: nowrap;">PayPal</a>
+      |
+      <a href="/r/cashapp" target="_blank" style="white-space: nowrap;">Cash App</a>
     </h4>
     <h4>
       Need assistance?

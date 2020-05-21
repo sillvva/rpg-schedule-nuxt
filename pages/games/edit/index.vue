@@ -34,7 +34,7 @@
                         v-model="game.c"
                         required
                         :items="channels.map(c => ({ text: c.name, value: c.id })).filter(c => !gameId || c.value === game.c)"
-                        @change="changed"
+                        @change="selectChannel"
                       ></v-select>
                     </v-col>
                     <v-col cols="12" sm="4" class="py-0" v-if="guild">
@@ -623,6 +623,10 @@ export default {
         }
       }
     },
+    selectChannel() {
+      this.changed();
+      this.modGame(this.game);
+    },
     selectTemplate() {
       if (this.guild && !this.gameId && this.game) {
         const templates = this.guild.config.gameTemplates.filter(gt => (this.gameId || this.guild.isAdmin || !gt.role || this.guild.userRoles.includes(gt.role)) && this.guild.config.channel.find(c => c.channelId === this.game.c) && this.guild.config.channel.find(c => c.channelId === this.game.c).gameTemplates.includes(gt.id));
@@ -633,6 +637,8 @@ export default {
           this.game.reminder = template.gameDefaults.reminder;
         }
       }
+      this.changed();
+      this.modGame(this.game);
     },
     changed() {
       this.isChanged = true;
@@ -687,6 +693,16 @@ export default {
       if (this.game.dm) {
         this.game.dmTag = this.game.dm.tag;
       }
+      if (this.game.channels) {
+        if (!game.c) {
+          this.game.c = this.game.channels[0].id;
+          this.game.channel = this.game.channels[0].name;
+        } else {
+          this.game.channel = this.game.channels.find(
+            c => c.id === game.c
+          ).name;
+        }
+      }
       if (this.account) {
         this.guild = this.account.guilds.find(g => g.id === game.s);
         if (this.guild) {
@@ -708,16 +724,6 @@ export default {
         }
         if (!game.dm || (this.game.dm.tag || "").trim().length === 0) {
           this.game.dmTag = this.account.user.tag;
-        }
-      }
-      if (this.game.channels) {
-        if (!game.c) {
-          this.game.c = this.game.channels[0].id;
-          this.game.channel = this.game.channels[0].name;
-        } else {
-          this.game.channel = this.game.channels.find(
-            c => c.id === game.c
-          ).name;
         }
       }
       this.reservedList = Array.isArray(this.game.reserved)

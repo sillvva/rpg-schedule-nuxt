@@ -16,15 +16,16 @@ const baseState = {
   langs: [],
   lang: {},
   env: {
-    githubUIUrl: process.env.GITHUB_UI_URL,
-    githubAPIUrl: process.env.GITHUB_API_URL,
     baseUrl: process.env.BASE_URL,
     apiUrl: process.env.API_URL,
     authUrl: process.env.AUTH_URL,
-    paypalUrl: process.env.PAYPAL_URL,
-    donateUrl: process.env.DONATE_URL,
-    twitterUrl: process.env.TWITTER_URL,
-    inviteUrl: process.env.INVITE_URL
+    inviteUrl: process.env.INVITE_URL,
+    githubUIUrl: "https://github.com/sillvva/rpg-schedule-nuxt",
+    githubAPIUrl: "https://github.com/sillvva/rpg-schedule",
+    paypalUrl: "https://paypal.me/Sillvva",
+    donateUrl: "https://www.patreon.com/rpg_schedule",
+    twitterUrl: "https://twitter.com/SillvvaSensei",
+    cashappUrl: "https://cash.app/$SillvvaSensei"
   },
   enums: {
     GameWhen: {

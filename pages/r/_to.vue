@@ -5,9 +5,6 @@ export default {
   middleware: 'redirect',
   head: {
     title: "Redirecting..."
-  },
-  created() {
-    this.$route.params
   }
 };
 </script>

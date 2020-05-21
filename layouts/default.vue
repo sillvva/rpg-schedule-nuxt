@@ -480,6 +480,58 @@ export default {
       immediate: true
     }
   },
+  async mounted() {
+    window.addEventListener("resize", this.onResize);
+    this.onResize();
+
+    await this.$store.dispatch("fetchGuilds", {
+      app: this,
+      games: false
+    });
+    this.$store.commit("setSnackBars", []);
+    await this.$store.dispatch("fetchLangs");
+    this.setSettings();
+
+    let isMobile = await this.$store.dispatch("isMobile");
+
+    if (!isMobile) {
+      this.socket = ws.socket(this.$store.getters.env.apiUrl);
+
+      this.socket.on("game", data => {
+        this.$store.commit("setSocketData", { type: "game", data: data });
+      });
+
+      this.socket.on("site", data => {
+        if (data.action == "settings") {
+          this.$store.commit("setSiteSettings", data);
+        }
+      });
+    }
+
+    this.$OneSignal.push(() => {
+      this.$OneSignal.isPushNotificationsEnabled(isEnabled => {
+        if (isEnabled) {
+          this.$store.commit("setPushState", true);
+          console.log("Push notifications are enabled!");
+        } else {
+          console.log("Push notifications are not enabled yet.");
+        }
+      });
+      this.$OneSignal.on("notificationDisplay", function(event) {
+        console.log("OneSignal notification displayed:", event);
+      });
+    });
+
+    this.$OneSignal.push([
+      "addListenerForNotificationOpened",
+      function(data) {
+        console.log("Received NotificationOpened:", data);
+      }
+    ]);
+  },
+  beforeDestroy() {
+    window.removeEventListener("resize", this.onResize);
+  },
   methods: {
     signOut() {
       this.$store.dispatch("signOut").then(() => {
@@ -642,55 +694,6 @@ export default {
         );
       });
     }
-  },
-  async mounted() {
-    window.addEventListener("resize", this.onResize);
-    this.onResize();
-
-    this.$store.commit("setSnackBars", []);
-
-    await this.$store.dispatch("fetchLangs");
-    this.setSettings();
-
-    let isMobile = await this.$store.dispatch("isMobile");
-
-    if (!isMobile) {
-      this.socket = ws.socket(this.$store.getters.env.apiUrl);
-
-      this.socket.on("game", data => {
-        this.$store.commit("setSocketData", { type: "game", data: data });
-      });
-
-      this.socket.on("site", data => {
-        if (data.action == "settings") {
-          this.$store.commit("setSiteSettings", data);
-        }
-      });
-    }
-
-    this.$OneSignal.push(() => {
-      this.$OneSignal.isPushNotificationsEnabled(isEnabled => {
-        if (isEnabled) {
-          this.$store.commit("setPushState", true);
-          console.log("Push notifications are enabled!");
-        } else {
-          console.log("Push notifications are not enabled yet.");
-        }
-      });
-      this.$OneSignal.on("notificationDisplay", function(event) {
-        console.log("OneSignal notification displayed:", event);
-      });
-    });
-
-    this.$OneSignal.push([
-      "addListenerForNotificationOpened",
-      function(data) {
-        console.log("Received NotificationOpened:", data);
-      }
-    ]);
-  },
-  beforeDestroy() {
-    window.removeEventListener("resize", this.onResize);
   }
 };
 </script>

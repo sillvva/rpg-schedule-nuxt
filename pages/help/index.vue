@@ -5,7 +5,12 @@
         <v-toolbar-title>Help</v-toolbar-title>
       </v-toolbar>
 
-      <v-tabs v-model="tab" :vertical="windowWidth >= 800" center-active :grow="windowWidth < 800">
+      <v-tabs
+        v-model="tab"
+        :vertical="windowWidth >= 800"
+        center-active
+        :grow="windowWidth < 800"
+      >
         <v-tab>About</v-tab>
         <v-tab>Credits</v-tab>
         <v-tab>Commands</v-tab>
@@ -41,6 +46,7 @@ import CommandsPage from "../../components/pages/help/commands";
 import ReschedulingPage from "../../components/pages/help/rescheduling";
 
 export default {
+  middleware: ["authenticated"],
   head: {
     title: "Help"
   },
@@ -56,6 +62,12 @@ export default {
       env: {},
       tab: null,
       windowWidth: 0,
+      tabIndexes: {
+        about: 0,
+        credits: 1,
+        commands: 2,
+        rescheduling: 3
+      },
       onResize: () => {
         this.windowWidth = window.innerWidth;
       }
@@ -77,11 +89,23 @@ export default {
       immediate: true
     }
   },
+  created() {
+    this.tab = null;
+  },
   mounted() {
     updateToken(this);
 
     window.addEventListener("resize", this.onResize);
     this.onResize();
+
+    const tab = this.$route.query.tab;
+    if (tab) {
+      setTimeout(() => {
+        if (this.tabIndexes[tab]) this.tab = this.tabIndexes[tab];
+        else if (!isNaN(tab)) this.tab = tab;
+        else this.tab = null;
+      }, 100);
+    }
   },
   beforeDestroy() {
     window.removeEventListener("resize", this.onResize);

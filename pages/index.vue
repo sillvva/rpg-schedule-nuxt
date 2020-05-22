@@ -3,7 +3,7 @@
     <v-img src="/images/logo.png" :max-height="windowWidth < 600 || windowHeight < 600 ? windowHeight <= 568 ? 100 : 200 : 264" max-width="300px" contain class="mb-3" />
     <v-row justify="center">
       <v-col cols="6" class="text-right">
-        <v-btn :href="$store.getters.env.inviteUrl" target="_blank">{{lang.nav.INVITE}}</v-btn>
+        <v-btn :href="$store.getters.env.inviteUrl" target="_blank" @click="invited">{{lang.nav.INVITE}}</v-btn>
       </v-col>
       <v-col cols="6">
         <v-btn :href="$store.getters.env.authUrl" class="bg-discord">{{lang.nav.LOGIN}}</v-btn>
@@ -126,6 +126,9 @@ export default {
   methods: {
     setLang(newVal) {
       this.lang = newVal;
+    },
+    invited() {
+      localStorage.setItem("invited", 1);
     }
   },
   created() {

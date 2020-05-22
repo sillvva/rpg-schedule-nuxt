@@ -14,6 +14,7 @@
         <v-tab>About</v-tab>
         <v-tab>Credits</v-tab>
         <v-tab>Commands</v-tab>
+        <v-tab>Setup</v-tab>
         <v-tab>Rescheduling</v-tab>
 
         <v-tabs-items v-model="tab" touchless>
@@ -27,6 +28,10 @@
 
           <v-tab-item>
             <CommandsPage />
+          </v-tab-item>
+
+          <v-tab-item>
+            <SetupPage />
           </v-tab-item>
 
           <v-tab-item>
@@ -44,6 +49,7 @@ import AboutPage from "../../components/pages/help/about";
 import CreditsPage from "../../components/pages/help/credits";
 import CommandsPage from "../../components/pages/help/commands";
 import ReschedulingPage from "../../components/pages/help/rescheduling";
+import SetupPage from "../../components/pages/help/setup";
 
 export default {
   middleware: ["authenticated"],
@@ -54,7 +60,8 @@ export default {
     AboutPage: AboutPage,
     CreditsPage: CreditsPage,
     CommandsPage: CommandsPage,
-    ReschedulingPage: ReschedulingPage
+    ReschedulingPage: ReschedulingPage,
+    SetupPage: SetupPage
   },
   data() {
     return {
@@ -66,7 +73,8 @@ export default {
         about: 0,
         credits: 1,
         commands: 2,
-        rescheduling: 3
+        setup: 3,
+        rescheduling: 4
       },
       onResize: () => {
         this.windowWidth = window.innerWidth;

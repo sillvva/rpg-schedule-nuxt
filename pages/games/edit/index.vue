@@ -343,7 +343,7 @@
                 </v-col>
                 <v-col cols="12" lg="5" class="py-0">
                   <v-row dense>
-                    <v-col cols="5" lg="12" class="py-0">
+                    <v-col cols="12" sm="5" lg="12" class="py-0">
                       <v-textarea
                         rows="7"
                         :label="lang.game.RESERVED"
@@ -351,7 +351,7 @@
                         no-resize
                       ></v-textarea>
                     </v-col>
-                    <v-col cols="7" lg="12" class="py-0">
+                    <v-col cols="12" sm="7" lg="12" class="py-0">
                       <v-textarea
                         rows="7"
                         :label="lang.game.DESCRIPTION"

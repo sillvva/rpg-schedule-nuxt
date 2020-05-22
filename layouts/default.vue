@@ -196,7 +196,11 @@
 
       <v-list nav dense>
         <v-list-item-group v-model="selection">
-          <v-list-item :href="config.urls.invite.path" target="_blank">
+          <v-list-item
+            :href="config.urls.invite.path"
+            target="_blank"
+            @click="invited"
+          >
             <v-list-item-title>{{lang.nav.INVITE}}</v-list-item-title>
           </v-list-item>
         </v-list-item-group>
@@ -528,11 +532,21 @@ export default {
         console.log("Received NotificationOpened:", data);
       }
     ]);
+
+    this.setup();
+    window.addEventListener("focus", this.setup);
   },
   beforeDestroy() {
     window.removeEventListener("resize", this.onResize);
+    window.removeEventListener("focus", this.setup);
   },
   methods: {
+    setup() {
+      if (localStorage.getItem("invited") && this.$store.getters.account) {
+        this.$router.push("/help?tab=setup");
+        localStorage.removeItem("invited");
+      }
+    },
     signOut() {
       this.$store.dispatch("signOut").then(() => {
         this.$cookies.remove("token", { path: "/" });
@@ -683,7 +697,7 @@ export default {
           null,
           {
             notificationType: "news-feature"
-          },
+          }
           // [
           //   {
           //     id: "sign-up",
@@ -693,6 +707,9 @@ export default {
           // ]
         );
       });
+    },
+    invited() {
+      localStorage.setItem('invited', 1);
     }
   }
 };

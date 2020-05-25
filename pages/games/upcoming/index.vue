@@ -1,5 +1,11 @@
 <template>
-  <v-container fluid>
+  <v-app v-if="$fetchState.pending">
+    <v-flex class="d-flex" justify-center align-center style="height: 100%;">
+      <v-progress-circular :size="100" :width="7" color="discord" indeterminate></v-progress-circular>
+      <nuxt />
+    </v-flex>
+  </v-app>
+  <v-container fluid v-else>
     <v-text-field
       v-model="searchQuery"
       @keyup="search"
@@ -138,14 +144,18 @@ export default {
       immediate: true
     }
   },
-  mounted() {
+  fetchOnServer: false,
+  async fetch() {
     updateToken(this);
     this.$store.dispatch("emptyGuilds");
-    this.$store.dispatch("fetchGuilds", {
+    await this.$store.dispatch("fetchGuilds", {
       page: "upcoming",
       games: true,
       app: this
     });
+  },
+  activated() {
+    this.$fetch();
   },
   methods: {
     collapseAll() {

@@ -1,5 +1,11 @@
 <template>
-  <v-container fluid style="height: 100%;" class="cal-cont">
+  <v-app v-if="$fetchState.pending">
+    <v-flex class="d-flex" justify-center align-center style="height: 100%;">
+      <v-progress-circular :size="100" :width="7" color="discord" indeterminate></v-progress-circular>
+      <nuxt />
+    </v-flex>
+  </v-app>
+  <v-container fluid v-else style="height: 100%;" class="cal-cont">
     <v-card style="height: 100%;">
       <v-toolbar color="discord" v-if="lang.game && baseDate && moment">
         <v-toolbar-title class="d-none d-md-flex mb-0 align-center">
@@ -154,13 +160,18 @@ export default {
       immediate: true
     }
   },
-  mounted() {
+  fetchOnServer: false,
+  async fetch() {
     updateToken(this);
-    this.$store.dispatch("fetchGuilds", {
+    this.$store.dispatch("emptyGuilds");
+    await this.$store.dispatch("fetchGuilds", {
       page: "calendar",
       games: true,
       app: this
     });
+  },
+  activated() {
+    this.$fetch();
   },
   methods: {
     allGames() {

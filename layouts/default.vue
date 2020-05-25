@@ -7,7 +7,9 @@
       v-if="!['/','/maintenace'].includes(this.$route.path) && !maintenanceMode"
     >
       <v-app-bar-nav-icon class="hidden-lg-and-up" @click.stop="drawer = !drawer"></v-app-bar-nav-icon>
-      <v-img src="/images/logo2.png" max-width="40" max-height="40" contain />
+      <nuxt-link to="/games/upcoming">
+        <v-img src="/images/logo2.png" max-width="40" max-height="40" contain />
+      </nuxt-link>
       <v-spacer />
       <v-btn
         outlined
@@ -196,11 +198,7 @@
 
       <v-list nav dense>
         <v-list-item-group v-model="selection">
-          <v-list-item
-            :href="config.urls.invite.path"
-            target="_blank"
-            @click="invited"
-          >
+          <v-list-item :href="config.urls.invite.path" target="_blank" @click="invited">
             <v-list-item-title>{{lang.nav.INVITE}}</v-list-item-title>
           </v-list-item>
         </v-list-item-group>
@@ -217,7 +215,11 @@
         <v-spacer></v-spacer>
       </v-system-bar>
 
-      <nuxt :key="!urlConfig || urlConfig.refreshOnParamsChange ? $route.fullPath : $route.path" />
+      <nuxt
+        keep-alive
+        :keep-alive-props="{ max: 10 }"
+        :key="!urlConfig || urlConfig.refreshOnParamsChange ? $route.fullPath : $route.path"
+      />
     </v-content>
     <SnackBars></SnackBars>
   </v-app>
@@ -376,50 +378,73 @@ export default {
         const data = socket.data;
         if (socket.type === "game") {
           let guildRefresh = new Date().getTime();
-          const account = this.$store.getters.account;
+          const account = cloneDeep(this.$store.getters.account);
           if (!account) return;
           let guilds = cloneDeep(account.guilds);
+          if (data.guildId && !guilds.find(g => g.id === data.guildId)) return;
           const path = this.$route.path;
           const gamesPage = /^\/games\//.test(path);
           const gamesEditPage = /^\/games\/edit/.test(path);
-          const gameListingsPage = /^\/games\/(upcoming|my-games|calendar|manage-server)/.test(
+          const gameListingsPage = /^\/games\/(upcoming|my-games|calendar|manage-server|past-events)/.test(
+            path
+          );
+          const gameListingsPageSorted = /^\/games\/(upcoming|my-games)/.test(
             path
           );
 
           if (gameListingsPage) {
-            if (
-              ["new", "rescheduled"].includes(data.action) &&
-              guildRefresh - lastGuildRefresh >= 10 * 1000
-            ) {
+            if (["new"].includes(data.action)) {
               // A new game has been created or an existing game has been rescheduled
+              this.$store
+                .dispatch("fetchGame", {
+                  param: "g",
+                  value: data.gameId
+                })
+                .then(game => {
+                  const guild = guilds.find(g => g.id === data.guildId);
+                  if (guild) {
+                    guild.games.push(cloneDeep(game));
+                    guild.games.sort((a, b) =>
+                      a.timestamp < b.timestamp ? -1 : 1
+                    );
+                    if (gameListingsPageSorted) {
+                      account.guilds.sort((a, b) => {
+                        if (a.games.length === 0 && b.games.length === 0)
+                          return a.name < b.name ? -1 : 1;
+                        if (a.games.length === 0) return 1;
+                        if (b.games.length === 0) return -1;
+
+                        return a.games[0].timestamp < b.games[0].timestamp
+                          ? -1
+                          : 1;
+                      });
+                    }
+                    this.$store.commit("setAccount", account);
+                    if (game && game.dm.id !== account.user.id) {
+                      this.newGameNotification(game);
+                    }
+                  }
+                })
+                .catch(err => {
+                  this.$store.dispatch("addSnackBar", {
+                    message: (err && err.message) || err || "An error occured!",
+                    color: "error darken-1"
+                  });
+                });
               lastGuildRefresh = guildRefresh;
               const pages = {};
               pages[this.config.urls.game.games] = "upcoming";
               pages[this.config.urls.game.dashboard] = "my-games";
               pages[this.config.urls.game.calendar] = "calendar";
               pages[this.config.urls.game.server] = "server";
+              pages[this.config.urls.game.past] = "past-events";
               this.$store
                 .dispatch("fetchGuilds", {
                   page: pages[path],
                   games: true,
                   app: this
                 })
-                .then(result => {
-                  const account = this.$store.getters.account;
-                  if (account) {
-                    let newestGame;
-                    account.guilds.forEach(guild => {
-                      guild.games.forEach(game => {
-                        if (game._id === data.gameId) {
-                          newestGame = game;
-                        }
-                      });
-                    });
-                    if (newestGame && newestGame.dm.id !== account.user.id) {
-                      this.newGameNotification(newestGame);
-                    }
-                  }
-                });
+                .then(result => {});
             }
           }
           if (gamesPage) {
@@ -709,7 +734,7 @@ export default {
       });
     },
     invited() {
-      localStorage.setItem('invited', 1);
+      localStorage.setItem("invited", 1);
     }
   }
 };

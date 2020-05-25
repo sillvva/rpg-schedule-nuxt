@@ -1,6 +1,12 @@
 <template>
   <v-container fluid>
-    <v-row dense>
+    <v-app v-if="$fetchState.pending">
+      <v-flex class="d-flex" justify-center align-center style="height: 100%;">
+        <v-progress-circular :size="100" :width="7" color="discord" indeterminate></v-progress-circular>
+        <nuxt />
+      </v-flex>
+    </v-app>
+    <v-row dense v-else>
       <v-spacer></v-spacer>
       <v-col cols="12" xl="8" class="py-0">
         <v-form v-if="game" ref="game" v-model="valid">
@@ -479,7 +485,9 @@ export default {
       saveResult: null,
       prevSave: null,
       valid: true,
-      isChanged: false
+      isChanged: false,
+      lastGuildSelected: null,
+      gameLoaded: false
     };
   },
   computed: {
@@ -493,6 +501,7 @@ export default {
       return this.$store.getters.socketData;
     }
   },
+  watchQuery: ["s", "c"],
   watch: {
     storeLang: {
       handler: function(newVal) {
@@ -529,7 +538,10 @@ export default {
             )
             .map(g => ({ text: g.name, value: g.id }));
           if (this.guilds.length > 0) {
-            this.game.s = this.guilds[0].value;
+            if (!this.game) {
+              this.game = { s: this.guilds[0].value };
+              await this.$fetch();
+            } else this.game.s = this.guilds[0].value;
             await this.selectGuild();
           }
 
@@ -582,16 +594,39 @@ export default {
       }
     }
   },
-  async mounted() {
+  async fetch() {
     updateToken(this);
-    await this.$store.dispatch("fetchGuilds", {
-      page: "my-games",
-      app: this
-    });
 
-    if (this.gameId) await this.fetchGame("g", this.gameId);
+    if (!this.account && process.client) {
+      await this.$store.dispatch("fetchGuilds", {
+        page: "my-games",
+        app: this
+      });
+    }
+
+    if (this.account) {
+      const guild = this.account.guilds.find(g => g.id === this.game.s);
+      if (guild && this.gameId) {
+        const game = guild.games.find(g => g._id === this.gameId);
+        if (game) {
+          this.game = cloneDeep(game);
+          this.modGame(this.game);
+          this.gameLoaded = true;
+        }
+      }
+    }
+
+    if (this.gameLoaded) return;
+    else if (this.gameId) await this.fetchGame("g", this.gameId);
     else if (this.guildId) await this.fetchGame("s", this.guildId);
-
+    else await this.fetchGame("s", this.game.s);
+  },
+  activated() {
+    if (this.$fetchState.timestamp <= Date.now() - 300000) {
+      this.$fetch();
+    }
+  },
+  async mounted() {
     this.updateSelectItems();
 
     setTimeout(() => {
@@ -612,29 +647,45 @@ export default {
     }
   },
   methods: {
-    async selectGuild() {
+    async selectGuild(event) {
       this.modGame(this.game);
-      this.changed();
-      if (this.guilds.length > 0) {
-        if (this.game.c) {
-          await this.fetchGameChannels();
-        } else {
-          await this.fetchGame("s", this.game.s);
-        }
+      if (event) this.changed();
+      if (this.guilds.length > 0 && this.lastGuildSelected != this.game.s) {
+        this.lastGuildSelected = this.game.s;
+        await this.fetchGameChannels();
+        // if (this.game.c) {
+        // }
+        // else {
+        //   // this.fetchGame("s", this.game.s);
+        // }
+        this.selectTemplate();
       }
     },
     selectChannel() {
       this.changed();
       this.modGame(this.game);
     },
-    selectTemplate() {
+    selectTemplate(event) {
       if (this.guild && !this.gameId && this.game) {
-        const templates = this.guild.config.gameTemplates.filter(gt => (this.gameId || this.guild.isAdmin || !gt.role || this.guild.userRoles.includes(gt.role)) && this.guild.config.channel.find(c => c.channelId === this.game.c) && this.guild.config.channel.find(c => c.channelId === this.game.c).gameTemplates.includes(gt.id));
+        const templates = this.guild.config.gameTemplates.filter(
+          gt =>
+            (this.gameId ||
+              this.guild.isAdmin ||
+              !gt.role ||
+              this.guild.userRoles.includes(gt.role)) &&
+            this.guild.config.channel.find(c => c.channelId === this.game.c) &&
+            this.guild.config.channel
+              .find(c => c.channelId === this.game.c)
+              .gameTemplates.includes(gt.id)
+        );
         const template = templates.find(t => t.id === this.game.template);
-        if (template) {
+        if (template && event) {
           this.game.minPlayers = template.gameDefaults.minPlayers;
           this.game.players = template.gameDefaults.maxPlayers;
           this.game.reminder = template.gameDefaults.reminder;
+        } else if (templates.length > 0) {
+          this.game.template = templates[0].id;
+          this.selectTemplate(true);
         }
       }
       this.changed();
@@ -709,7 +760,10 @@ export default {
           this.channels = this.guild.announcementChannels;
           const templates = this.guild.config.gameTemplates.filter(
             gt =>
-              (this.$route.query.g || this.guild.isAdmin || !gt.role || this.guild.userRoles.includes(gt.role)) &&
+              (this.$route.query.g ||
+                this.guild.isAdmin ||
+                !gt.role ||
+                this.guild.userRoles.includes(gt.role)) &&
               this.guild.config.channel.find(c => c.channelId === game.c) &&
               this.guild.config.channel
                 .find(c => c.channelId === game.c)
@@ -720,6 +774,7 @@ export default {
             !templates.find(t => t.id === this.game.template)
           ) {
             this.game.template = templates[0].id;
+            this.selectTemplate();
           }
         }
         if (!game.dm || (this.game.dm.tag || "").trim().length === 0) {
@@ -734,29 +789,6 @@ export default {
       }
       this.dateTimeLinks();
       this.isChanged = false;
-      if (!this.gameId && this.account) {
-        const guild = this.account.guilds.find(g => g.id === this.game.s);
-        if (guild) {
-          const gcChannel = guild.config.channel.find(
-            c => c.id === this.game.c
-          );
-          if (gcChannel) {
-            if (gcChannel.gameDefaults) {
-              this.game.players = gcChannel.gameDefaults.maxPlayers;
-              this.game.minPlayers = gcChannel.gameDefaults.minPlayers;
-              this.game.reminder = gcChannel.gameDefaults.reminder;
-            } else {
-              this.game.players = 7;
-              this.game.minPlayers = 1;
-              this.game.reminder = "0";
-            }
-          } else {
-            this.game.players = 7;
-            this.game.minPlayers = 1;
-            this.game.reminder = "0";
-          }
-        }
-      }
     },
     setDefaultDates() {
       this.game.date = moment().format("YYYY-MM-DD");

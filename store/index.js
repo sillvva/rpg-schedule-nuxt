@@ -88,9 +88,7 @@ export const mutations = {
         const players = parseInt(game.players);
         game.guildAccount = guild;
         game.slot = Array.isArray(reserved)
-          ? reserved.findIndex(
-              r => aux.checkRSVP(r, account.user)
-            ) + 1
+          ? reserved.findIndex(r => aux.checkRSVP(r, account.user)) + 1
           : 0;
         game.waitlisted = false;
         game.signedUp = false;
@@ -120,9 +118,7 @@ export const mutations = {
         const players = parseInt(game.players);
         game.guildAccount = guild;
         game.slot = Array.isArray(reserved)
-          ? reserved.findIndex(
-              r => aux.checkRSVP(r, account.user)
-            ) + 1
+          ? reserved.findIndex(r => aux.checkRSVP(r, account.user)) + 1
           : 0;
         game.waitlisted = false;
         game.signedUp = false;
@@ -214,7 +210,8 @@ export const actions = {
           return resolve({ status: "success" });
         }
 
-        aux.log("initAuth", tokenCookies, vuexContext.getters.sessionToken);
+        if (process.env.NODE_ENV === "development")
+          aux.log("initAuth", tokenCookies, vuexContext.getters.sessionToken);
 
         for (let i = 0; i < tokenCookies.length; i++) {
           let result = await this.$axios.get(
@@ -362,7 +359,8 @@ export const actions = {
       if (cookie.name == "token") tokenCookies.push(cookie.value);
     }
 
-    aux.log("rsvpGame", tokenCookies);
+    if (process.env.NODE_ENV === "development")
+      aux.log("rsvpGame", tokenCookies);
 
     return new Promise(async (resolve, reject) => {
       let savedAuthResult,
@@ -429,7 +427,8 @@ export const actions = {
       if (cookie.name == "token") tokenCookies.push(cookie.value);
     }
 
-    aux.log("saveGame", tokenCookies);
+    if (process.env.NODE_ENV === "development")
+      aux.log("saveGame", tokenCookies);
 
     return new Promise(async (resolve, reject) => {
       let savedResult,
@@ -536,7 +535,8 @@ export const actions = {
       if (cookie.name == "token") tokenCookies.push(cookie.value);
     }
 
-    aux.log("saveGuildConfig", tokenCookies);
+    if (process.env.NODE_ENV === "development")
+      aux.log("saveGuildConfig", tokenCookies);
 
     return new Promise(async (resolve, reject) => {
       let savedAuthResult,
@@ -607,7 +607,8 @@ export const actions = {
       if (cookie.name == "token") tokenCookies.push(cookie.value);
     }
 
-    aux.log("saveUserSettings", tokenCookies);
+    if (process.env.NODE_ENV === "development")
+      aux.log("saveUserSettings", tokenCookies);
 
     return new Promise(async (resolve, reject) => {
       let savedAuthResult,

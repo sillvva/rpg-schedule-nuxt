@@ -348,7 +348,7 @@
                   </v-row>
                 </v-col>
                 <v-col cols="12" lg="5" class="py-0">
-                  <v-row dense>
+                  <v-row dense class="game-textareas">
                     <v-col cols="12" sm="5" lg="12" class="py-0">
                       <v-textarea
                         rows="7"
@@ -443,6 +443,8 @@ import { updateToken } from "../../../assets/auxjs/auth";
 import lang from "../../../assets/lang/en.json";
 import ws from "../../../store/socket";
 import { cloneDeep } from "lodash";
+import moment from "moment";
+import "moment-recur";
 
 export default {
   middleware: ["authenticated"],
@@ -537,15 +539,18 @@ export default {
                 guild.announcementChannels.length > 0
             )
             .map(g => ({ text: g.name, value: g.id }));
+
           if (this.guilds.length > 0) {
             if (!this.game) {
               this.game = { s: this.guilds[0].value };
               await this.$fetch();
             } else this.game.s = this.guilds[0].value;
             await this.selectGuild();
+            this.modGame(this.game);
           }
-
-          this.modGame(this.game);
+          else if (!this.gameId) {
+            this.$router.replace(this.$store.getters.config.urls.game.games.path);
+          }
         }
       },
       immediate: true
@@ -596,7 +601,6 @@ export default {
   },
   async fetch() {
     updateToken(this);
-
     if (!this.account && process.client) {
       await this.$store.dispatch("fetchGuilds", {
         page: "my-games",
@@ -616,22 +620,23 @@ export default {
       }
     }
 
-    if (this.gameLoaded) return;
-    else if (this.gameId) await this.fetchGame("g", this.gameId);
-    else if (this.guildId) await this.fetchGame("s", this.guildId);
-    else await this.fetchGame("s", this.game.s);
+    if (!this.gameLoaded) {
+      if (this.gameId) await this.fetchGame("g", this.gameId);
+      else if (this.guildId) await this.fetchGame("s", this.guildId);
+      else await this.fetchGame("s", this.game.s);
+    }
   },
   activated() {
-    if (this.$fetchState.timestamp <= Date.now() - 300000) {
+    if (this.$fetchState.timestamp <= Date.now() - 0) {
       this.$fetch();
     }
   },
   async mounted() {
-    this.updateSelectItems();
-
     setTimeout(() => {
       localStorage.removeItem("rescheduled");
     }, 5000);
+
+    this.updateSelectItems();
 
     window.onbeforeunload = () => {
       if (this.isChanged && !confirm(this.lang.game.UNSAVED)) {
@@ -1276,5 +1281,8 @@ export default {
 }
 .v-application .accent--text {
   color: white !important;
+}
+.game-textareas textarea {
+  min-height: 196px;
 }
 </style>

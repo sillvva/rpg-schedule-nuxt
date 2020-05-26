@@ -172,12 +172,14 @@ export default {
   fetchOnServer: false,
   async fetch() {
     updateToken(this);
-    this.$store.dispatch("emptyGuilds");
-    await this.$store.dispatch("fetchGuilds", {
-      page: "my-games",
-      games: true,
-      app: this
-    });
+    if (this.$store.getters.lastListingPage !== "my-games" || await this.$store.dispatch("isMobile")) {
+      this.$store.dispatch("emptyGuilds");
+      await this.$store.dispatch("fetchGuilds", {
+        page: "my-games",
+        games: true,
+        app: this
+      });
+    }
   },
   activated() {
     this.$fetch();
@@ -240,7 +242,8 @@ export default {
                     (match.query === "new" &&
                       new Date().getTime() - game.createdTimestamp <
                         24 * 3600 * 1000) ||
-                    (match.query != "new" && match.type === "any" &&
+                    (match.query != "new" &&
+                      match.type === "any" &&
                       (match.regex.test(game.adventure) ||
                         match.regex.test(game.dm.tag || game.dm) ||
                         match.regex.test(game.author && game.author.tag) ||

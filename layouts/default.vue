@@ -7,7 +7,7 @@
       v-if="!['/','/maintenace'].includes(this.$route.path) && !maintenanceMode"
     >
       <v-app-bar-nav-icon class="hidden-lg-and-up" @click.stop="drawer = !drawer"></v-app-bar-nav-icon>
-      <nuxt-link to="/games/upcoming">
+      <nuxt-link :to="`/games/${lastListingPage || 'upcoming'}`">
         <v-img src="/images/logo2.png" max-width="40" max-height="40" contain />
       </nuxt-link>
       <v-spacer />
@@ -217,7 +217,6 @@
 
       <nuxt
         keep-alive
-        :keep-alive-props="{ max: 10 }"
         :key="!urlConfig || urlConfig.refreshOnParamsChange ? $route.fullPath : $route.path"
       />
     </v-content>
@@ -298,6 +297,9 @@ export default {
     };
   },
   computed: {
+    lastListingPage() {
+      return this.$store.getters.lastListingPage;
+    },
     storeAccount() {
       return this.$store.getters.account;
     },
@@ -375,6 +377,7 @@ export default {
     },
     storeSocketData: {
       handler: function(socket) {
+        if (!socket.type) return;
         const data = socket.data;
         if (socket.type === "game") {
           let guildRefresh = new Date().getTime();
@@ -388,69 +391,17 @@ export default {
           const gameListingsPage = /^\/games\/(upcoming|my-games|calendar|manage-server|past-events)/.test(
             path
           );
-          const gameListingsPageSorted = /^\/games\/(upcoming|my-games)/.test(
-            path
-          );
 
-          if (gameListingsPage) {
-            if (["new"].includes(data.action)) {
-              // A new game has been created or an existing game has been rescheduled
-              this.$store
-                .dispatch("fetchGame", {
-                  param: "g",
-                  value: data.gameId
-                })
-                .then(game => {
-                  const guild = guilds.find(g => g.id === data.guildId);
-                  if (guild) {
-                    guild.games.push(cloneDeep(game));
-                    guild.games.sort((a, b) =>
-                      a.timestamp < b.timestamp ? -1 : 1
-                    );
-                    if (gameListingsPageSorted) {
-                      account.guilds.sort((a, b) => {
-                        if (a.games.length === 0 && b.games.length === 0)
-                          return a.name < b.name ? -1 : 1;
-                        if (a.games.length === 0) return 1;
-                        if (b.games.length === 0) return -1;
-
-                        return a.games[0].timestamp < b.games[0].timestamp
-                          ? -1
-                          : 1;
-                      });
-                    }
-                    this.$store.commit("setAccount", account);
-                    if (game && game.dm.id !== account.user.id) {
-                      this.newGameNotification(game);
-                    }
-                  }
-                })
-                .catch(err => {
-                  this.$store.dispatch("addSnackBar", {
-                    message: (err && err.message) || err || "An error occured!",
-                    color: "error darken-1"
-                  });
-                });
-              lastGuildRefresh = guildRefresh;
-              const pages = {};
-              pages[this.config.urls.game.games] = "upcoming";
-              pages[this.config.urls.game.dashboard] = "my-games";
-              pages[this.config.urls.game.calendar] = "calendar";
-              pages[this.config.urls.game.server] = "server";
-              pages[this.config.urls.game.past] = "past-events";
-              this.$store
-                .dispatch("fetchGuilds", {
-                  page: pages[path],
-                  games: true,
-                  app: this
-                })
-                .then(result => {});
-            }
-          }
           if (gamesPage) {
-            if (
+            if (["new"].includes(data.action)) {
+              this.socketAddGame(
+                account,
+                data.gameId,
+                data.guildId,
+                data.authorId
+              );
+            } else if (
               data.action == "updated" &&
-              !gamesEditPage &&
               guilds.find(g => g.id == data.guildId)
             ) {
               // An existing game has been updated, update the store if it belongs to one of current user's guilds
@@ -460,12 +411,7 @@ export default {
                   game => game._id == data.gameId
                 );
                 if (index < 0) {
-                  lastGuildRefresh = guildRefresh;
-                  this.$store.dispatch("fetchGuilds", {
-                    page: path.replace("/games/", ""),
-                    games: true,
-                    app: this
-                  });
+                  this.socketAddGame(account, data.gameId, data.guildId);
                 } else {
                   for (const prop in data.game) {
                     updated = true;
@@ -480,18 +426,16 @@ export default {
               guilds.find(g => g.id == data.guildId)
             ) {
               // An existing game has been deleted, update the store if it belongs to one of current user's guilds
-              if (gameListingsPage) {
-                guilds = guilds.map(guild => {
-                  if (guild.games.find(game => game._id == data.gameId)) {
-                    guild.games.splice(
-                      guild.games.findIndex(game => game._id == data.gameId),
-                      1
-                    );
-                  }
-                  return guild;
-                });
-                this.$store.commit("setGuilds", guilds);
-              }
+              guilds = guilds.map(guild => {
+                if (guild.games.find(game => game._id == data.gameId)) {
+                  guild.games.splice(
+                    guild.games.findIndex(game => game._id == data.gameId),
+                    1
+                  );
+                }
+                return guild;
+              });
+              this.$store.commit("setGuilds", guilds);
             }
           }
         }
@@ -513,10 +457,6 @@ export default {
     window.addEventListener("resize", this.onResize);
     this.onResize();
 
-    await this.$store.dispatch("fetchGuilds", {
-      app: this,
-      games: false
-    });
     this.$store.commit("setSnackBars", []);
     await this.$store.dispatch("fetchLangs");
     this.setSettings();
@@ -580,6 +520,49 @@ export default {
           // window.location.reload(true);
         });
       });
+    },
+    socketAddGame(account, gameId, guildId, authorId) {
+      const path = this.$route.path;
+      const gameListingsPageSorted = /^\/games\/(upcoming|my-games)/.test(path);
+      if (account.user.id === authorId) return;
+      if (
+        gameId &&
+        account.guilds.find(g => g.games.find(ga => ga.id === gameId))
+      )
+        return;
+      // A new game has been created or an existing game has been rescheduled
+      this.$store
+        .dispatch("fetchGame", {
+          param: "g",
+          value: gameId
+        })
+        .then(game => {
+          const guild = account.guilds.find(g => g.id === guildId);
+          if (guild) {
+            guild.games.push(cloneDeep(game));
+            guild.games.sort((a, b) => (a.timestamp < b.timestamp ? -1 : 1));
+            if (gameListingsPageSorted) {
+              account.guilds.sort((a, b) => {
+                if (a.games.length === 0 && b.games.length === 0)
+                  return a.name < b.name ? -1 : 1;
+                if (a.games.length === 0) return 1;
+                if (b.games.length === 0) return -1;
+
+                return a.games[0].timestamp < b.games[0].timestamp ? -1 : 1;
+              });
+            }
+            this.$store.commit("setGuilds", account.guilds);
+            if (game && game.dm.id !== account.user.id) {
+              this.newGameNotification(game);
+            }
+          }
+        })
+        .catch(err => {
+          this.$store.dispatch("addSnackBar", {
+            message: (err && err.message) || err || "An error occured!",
+            color: "error darken-1"
+          });
+        });
     },
     saveSettings() {
       if (this.account && this.account.user.tag === this.config.author) {

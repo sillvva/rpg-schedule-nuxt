@@ -57,7 +57,8 @@ const baseState = {
   userSettings: {},
   snackBars: [],
   socketData: {},
-  pushEnabled: false
+  pushEnabled: false,
+  lastListingPage: null
 };
 
 const reauthenticate = async (vuexContext, app, redirect) => {
@@ -91,9 +92,9 @@ export const mutations = {
           ? reserved.findIndex(r => aux.checkRSVP(r, account.user)) + 1
           : 0;
         game.waitlisted = false;
-        game.signedUp = false;
+        game.signedup = false;
         if (game.slot > players) game.waitlisted = true;
-        else if (game.slot > 0) game.signedUp = true;
+        else if (game.slot > 0) game.signedup = true;
         return game;
       });
       return guild;
@@ -121,11 +122,21 @@ export const mutations = {
           ? reserved.findIndex(r => aux.checkRSVP(r, account.user)) + 1
           : 0;
         game.waitlisted = false;
-        game.signedUp = false;
+        game.signedup = false;
         if (game.slot > players) game.waitlisted = true;
-        else if (game.slot > 0) game.signedUp = true;
+        else if (game.slot > 0) game.signedup = true;
         return game;
       });
+      return guild;
+    });
+    account.guilds = guilds;
+    state.account = account;
+  },
+  deleteGame(state, gameId) {
+    const account = cloneDeep(state.account);
+    const guilds = (account.guilds || []).map(guild => {
+      const index = guild.games.findIndex(game => game._id === gameId);
+      if (index >= 0) guild.games.splice(index, 1);
       return guild;
     });
     account.guilds = guilds;
@@ -148,6 +159,9 @@ export const mutations = {
   },
   setPushState(state, enabled) {
     state.pushEnabled = enabled;
+  },
+  setLastListingPage(state, listingPage) {
+    state.lastListingPage = listingPage;
   }
 };
 
@@ -318,6 +332,9 @@ export const actions = {
             vuexContext.commit("setUserSettings", authResult.user);
             vuexContext.dispatch("setSelectedLang", authResult.user.lang);
           }
+          if (games) {
+            vuexContext.commit("setLastListingPage", page);
+          }
         } else if (result.data.status == "error") {
           // console.log(3, authResult);
           throw new Error(JSON.stringify(authResult));
@@ -478,6 +495,7 @@ export const actions = {
       .then(result => {
         if (result.data.status == "error")
           throw new Error(result.data && result.data.message);
+        vuexContext.commit("deleteGame", gameId);
         return result.data;
       });
   },
@@ -664,6 +682,7 @@ export const actions = {
     vuexContext.commit("setSnackBars", snackBars);
   },
   isMobile() {
+    if (window.innerWidth > 768) return false;
     var hasTouchScreen = false;
     if ("maxTouchPoints" in navigator) {
       hasTouchScreen = navigator.maxTouchPoints > 0;
@@ -730,5 +749,8 @@ export const getters = {
   },
   pushEnabled(state) {
     return state.pushEnabled;
+  },
+  lastListingPage(state) {
+    return state.lastListingPage;
   }
 };

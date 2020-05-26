@@ -661,12 +661,14 @@ export default {
   fetchOnServer: false,
   async fetch() {
     updateToken(this);
-    this.$store.dispatch("emptyGuilds");
-    await this.$store.dispatch("fetchGuilds", {
-      page: "server",
-      games: true,
-      app: this
-    });
+    if (this.$store.getters.lastListingPage !== "manage-server" || await this.$store.dispatch("isMobile")) {
+      this.$store.dispatch("emptyGuilds");
+      await this.$store.dispatch("fetchGuilds", {
+        page: "manage-server",
+        games: true,
+        app: this
+      });
+    }
   },
   activated() {
     this.$fetch();

@@ -209,12 +209,14 @@ export default {
   fetchOnServer: false,
   async fetch() {
     updateToken(this);
-    this.$store.dispatch("emptyGuilds");
-    await this.$store.dispatch("fetchGuilds", {
-      page: "past-events",
-      games: true,
-      app: this
-    });
+    if (this.$store.getters.lastListingPage !== "past-events" || await this.$store.dispatch("isMobile")) {
+      this.$store.dispatch("emptyGuilds");
+      await this.$store.dispatch("fetchGuilds", {
+        page: "past-events",
+        games: true,
+        app: this
+      });
+    }
   },
   activated() {
     this.$fetch();

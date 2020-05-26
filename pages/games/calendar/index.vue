@@ -163,12 +163,14 @@ export default {
   fetchOnServer: false,
   async fetch() {
     updateToken(this);
-    this.$store.dispatch("emptyGuilds");
-    await this.$store.dispatch("fetchGuilds", {
-      page: "calendar",
-      games: true,
-      app: this
-    });
+    if (this.$store.getters.lastListingPage !== "calendar" || await this.$store.dispatch("isMobile")) {
+      this.$store.dispatch("emptyGuilds");
+      await this.$store.dispatch("fetchGuilds", {
+        page: "calendar",
+        games: true,
+        app: this
+      });
+    }
   },
   activated() {
     this.$fetch();
@@ -209,9 +211,12 @@ export default {
         return d.slice(0, 3) === fd.slice(0, 3);
       });
       this.dates = [];
+      const dim = this.daysInMonth(this.selMonth + 1, this.selYear);
+      let w = 0;
       do {
         this.weekdays.forEach((d, di) => {
-          if (di === fwdi) curmonth = true;
+          if ((w === 0 && di >= fwdi) || (w > 0 && i - fwdi <= dim))
+            curmonth = true;
           const dx = `${this.selYear}-${this.selMonth + 1 < 10 ? "0" : ""}${this
             .selMonth + 1}-${md < 10 ? "0" : ""}${md}`;
           this.dates.push({
@@ -227,12 +232,12 @@ export default {
                   g.reserved.find(r => checkRSVP(r, this.account.user))
               )
           });
-          if (md === this.daysInMonth(this.selMonth + 1, this.selYear))
-            curmonth = false;
+          if (md === dim) curmonth = false;
           if (curmonth) md++;
           i++;
         });
-      } while (i < this.daysInMonth(this.selMonth + 1, this.selYear) + fwdi);
+        w++;
+      } while (i < dim + fwdi + 1);
     },
     moment(val) {
       return moment(val);
@@ -323,6 +328,7 @@ export default {
 .col-game {
   height: 100%;
   overflow-y: auto;
+  overflow-x: hidden;
 }
 
 @media (max-width: 599px) {

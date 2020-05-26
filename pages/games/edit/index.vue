@@ -440,6 +440,7 @@
 
 <script>
 import { updateToken } from "../../../assets/auxjs/auth";
+import { parseEventTimes } from "../../../assets/auxjs/appaux";
 import lang from "../../../assets/lang/en.json";
 import ws from "../../../store/socket";
 import { cloneDeep } from "lodash";
@@ -493,6 +494,9 @@ export default {
     };
   },
   computed: {
+    lastListingPage() {
+      return this.$store.getters.lastListingPage;
+    },
     storeLang() {
       return this.$store.getters.lang;
     },
@@ -547,9 +551,8 @@ export default {
             } else this.game.s = this.guilds[0].value;
             await this.selectGuild();
             this.modGame(this.game);
-          }
-          else if (!this.gameId) {
-            this.$router.replace(this.$store.getters.config.urls.game.games.path);
+          } else if (!this.gameId) {
+            this.$router.replace(`/games/${this.lastListingPage}`);
           }
         }
       },
@@ -582,9 +585,7 @@ export default {
               message: "The game has been deleted",
               color: "error darken-1"
             });
-            this.$router.replace(
-              this.$store.getters.config.urls.game.dashboard.path
-            );
+            this.$router.replace(`/games/${this.lastListingPage}`);
           } else if (data.action === "updated") {
             for (const prop in data.game) {
               this.game[prop] = data.game[prop];
@@ -603,8 +604,9 @@ export default {
     updateToken(this);
     if (!this.account && process.client) {
       await this.$store.dispatch("fetchGuilds", {
-        page: "my-games",
-        app: this
+        app: this,
+        page: this.lastListingPage || "my-games",
+        games: true
       });
     }
 
@@ -620,15 +622,55 @@ export default {
       }
     }
 
-    if (!this.gameLoaded) {
+    if (!this.gameLoaded || this.$route.query.fetch === "true") {
       if (this.gameId) await this.fetchGame("g", this.gameId);
-      else if (this.guildId) await this.fetchGame("s", this.guildId);
-      else await this.fetchGame("s", this.game.s);
+      else {
+        const guild = this.account.guilds.find(
+          g => g.id === (this.guildId || this.game.s)
+        );
+
+        let data = {
+          s: this.game.s,
+          c: guild.announcementChannels[0] && guild.announcementChannels[0].id,
+          channels: guild.announcementChannels.map(ac => ({
+            name: ac.name,
+            id: ac.id
+          })),
+          dm: this.account.user.tag,
+          adventure: "",
+          runtime: "",
+          where: "",
+          reserved: "",
+          description: "",
+          method: "automated",
+          customSignup: "",
+          when: "datetime",
+          timezone: "",
+          hideDate: false,
+          gameImage: "",
+          frequency: "0",
+          monthlyType: "weekday",
+          weekdays: [false, false, false, false, false, false, false],
+          xWeeks: 2,
+          clearReservedOnRepeat: false
+        };
+
+        this.finishFetchGame(data);
+      }
     }
-  },
-  activated() {
-    if (this.$fetchState.timestamp <= Date.now() - 0) {
-      this.$fetch();
+
+    if (this.account) {
+      const guild = this.account.guilds.find(g => g.id === this.game.s);
+      if (
+        !guild ||
+        (this.game.dm.id !== this.account.user.id && guild && !guild.isAdmin)
+      ) {
+        this.$router.replace(`/games/${this.lastListingPage}`);
+        this.$store.dispatch("addSnackBar", {
+          message: "You do not have permission to edit this game",
+          color: "error darken-1"
+        });
+      }
     }
   },
   async mounted() {
@@ -715,22 +757,51 @@ export default {
           value: value
         })
         .then(game => {
-          this.modGame(cloneDeep(game));
-          this.isChanged = false;
-          if (this.game && this.game.guildConfig) {
-            if (
-              this.game.guildConfig.password &&
-              this.game.guildConfig.password.length > 0
-            ) {
-              const pass = prompt("Password?", "");
-              if (pass !== this.game.guildConfig.password) {
-                return this.$router.replace(
-                  this.config.urls.game.dashboard.path
-                );
-              }
-            }
-          }
+          this.finishFetchGame(game);
         });
+    },
+    finishFetchGame(game) {
+      if (this.$route.query.fetch === "true") {
+        const account = cloneDeep(this.account);
+        const guild = account.guilds.find(g => g.id === game.s);
+        if (guild) {
+          game.moment = parseEventTimes(game);
+          game.reserved = game.reserved.filter(r => r.tag);
+          game.slot =
+            game.reserved.findIndex(
+              t => t.tag.replace("@", "") === tag || t.id === id
+            ) + 1;
+          game.signedup = game.slot > 0 && game.slot <= parseInt(game.players);
+          game.waitlisted = game.slot > parseInt(game.players);
+
+          guild.games.push(cloneDeep(game));
+          guild.games.sort((a, b) => (a.timestamp < b.timestamp ? -1 : 1));
+          if (["my-games", "upcoming"].includes(this.lastListingPage)) {
+            account.guilds.sort((a, b) => {
+              if (a.games.length === 0 && b.games.length === 0)
+                return a.name < b.name ? -1 : 1;
+              if (a.games.length === 0) return 1;
+              if (b.games.length === 0) return -1;
+
+              return a.games[0].timestamp < b.games[0].timestamp ? -1 : 1;
+            });
+          }
+          this.$store.commit("setGuilds", account.guilds);
+        }
+      }
+      this.modGame(cloneDeep(game));
+      this.isChanged = false;
+      if (this.game && this.game.guildConfig) {
+        if (
+          this.game.guildConfig.password &&
+          this.game.guildConfig.password.length > 0
+        ) {
+          const pass = prompt("Password?", "");
+          if (pass !== this.game.guildConfig.password) {
+            return this.$router.replace(this.config.urls.game.dashboard.path);
+          }
+        }
+      }
     },
     async modGame(game) {
       this.game = cloneDeep(game);
@@ -808,13 +879,9 @@ export default {
       ) {
         this.$store.dispatch("deleteGame", this.gameId).then(result => {
           if (this.$store.getters.account) {
-            this.$router.replace(
-              this.$store.getters.config.urls.game.dashboard.path
-            );
+            this.$router.replace(`/games/${this.lastListingPage}`);
           } else {
-            this.$router.replace(
-              `${this.$store.getters.config.urls.game.create.path}?s=${this.game.guildConfig.guild}`
-            );
+            this.$router.replace(`/`);
           }
         });
       }
@@ -831,6 +898,8 @@ export default {
     saveGame() {
       const data = this.$refs.game.$data.inputs;
       const updatedGame = cloneDeep(this.game);
+      const guild = this.account.guilds.find(g => g.id === updatedGame.s);
+
       data.forEach(d => {
         if (updatedGame[d.id]) updatedGame[d.id] = d.value;
       });
@@ -867,8 +936,9 @@ export default {
 
       if (this.copy) updatedGame.copy = true;
 
+      updatedGame.guild = guild.name;
       updatedGame.channel = (
-        this.game.channels.find(c => c.id === updatedGame.c) || {}
+        guild.announcementChannels.find(c => c.id === updatedGame.c) || {}
       ).name;
 
       let reservedList = (Array.isArray(this.game.reserved)
@@ -938,6 +1008,10 @@ export default {
       delete updatedGame.reminderMessageId;
       delete updatedGame.pm;
       delete updatedGame.sequence;
+      delete updatedGame.guildAccount;
+      delete updatedGame.slot;
+      delete updatedGame.signedup;
+      delete updatedGame.waitlisted;
       this.prevSave = updatedGame;
       this.$store
         .dispatch("saveGame", {
@@ -945,9 +1019,11 @@ export default {
           app: this
         })
         .then(async result => {
-          if (!this.gameId) {
+          if (!this.gameId || (result._id && this.gameId != result._id)) {
             return this.$router.replace(
-              `${this.config.urls.game.create.path}?g=${result._id}`
+              `${this.config.urls.game.create.path}?g=${
+                result._id
+              }&fetch=${!this.gameId}`
             );
           }
           await this.modGame(cloneDeep(result.game));

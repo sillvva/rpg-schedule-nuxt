@@ -163,12 +163,14 @@ export default {
   fetchOnServer: false,
   async fetch() {
     updateToken(this);
-    this.$store.dispatch("emptyGuilds");
-    await this.$store.dispatch("fetchGuilds", {
-      page: "calendar",
-      games: true,
-      app: this
-    });
+    if (this.$store.getters.lastListingPage !== "calendar" || await this.$store.dispatch("isMobile")) {
+      this.$store.dispatch("emptyGuilds");
+      await this.$store.dispatch("fetchGuilds", {
+        page: "calendar",
+        games: true,
+        app: this
+      });
+    }
   },
   activated() {
     this.$fetch();
@@ -213,7 +215,8 @@ export default {
       let w = 0;
       do {
         this.weekdays.forEach((d, di) => {
-          if ((w === 0 && di >= fwdi) || (w > 0 && i - fwdi <= dim)) curmonth = true;
+          if ((w === 0 && di >= fwdi) || (w > 0 && i - fwdi <= dim))
+            curmonth = true;
           const dx = `${this.selYear}-${this.selMonth + 1 < 10 ? "0" : ""}${this
             .selMonth + 1}-${md < 10 ? "0" : ""}${md}`;
           this.dates.push({
@@ -229,8 +232,7 @@ export default {
                   g.reserved.find(r => checkRSVP(r, this.account.user))
               )
           });
-          if (md === dim)
-            curmonth = false;
+          if (md === dim) curmonth = false;
           if (curmonth) md++;
           i++;
         });

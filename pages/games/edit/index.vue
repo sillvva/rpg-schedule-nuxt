@@ -769,7 +769,9 @@ export default {
           game.reserved = game.reserved.filter(r => r.tag);
           game.slot =
             game.reserved.findIndex(
-              t => t.tag.replace("@", "") === tag || t.id === id
+              t =>
+                t.tag.replace("@", "") === account.user.tag ||
+                t.id === account.user.id
             ) + 1;
           game.signedup = game.slot > 0 && game.slot <= parseInt(game.players);
           game.waitlisted = game.slot > parseInt(game.players);

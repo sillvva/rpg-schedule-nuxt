@@ -68,7 +68,7 @@
             cols="12"
             sm="6"
             md="4"
-            lg="3"
+            lg="4"
             xl="2"
           >
             <GameCard :gameData="game" :numColumns="1" :exclude="['server']"></GameCard>
@@ -262,3 +262,19 @@ export default {
   }
 };
 </script>
+
+<style>
+@media (min-width: 1400px) {
+  .col-lg-4 {
+    flex: 0 0 calc(100% / 4);
+    max-width: calc(100% / 4);
+  }
+}
+
+@media (min-width: 1800px) {
+  .col-xl-2 {
+    flex: 0 0 calc(100% / 5);
+    max-width: calc(100% / 5);
+  }
+}
+</style>

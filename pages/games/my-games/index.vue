@@ -71,16 +71,15 @@
       <v-container fluid v-if="!guild.collapsed">
         <v-row dense>
           <v-col
-            v-for="(game, i) in guild.games.filter(game => game && !game.filtered)"
+            v-for="(game, i) in guild.games.filter(game => game && !game.filtered && (checkRSVP(game.dm, account.user) || (game.author && checkRSVP(game.author, account.user))))"
             v-bind:key="i"
             cols="12"
             sm="6"
             md="4"
-            lg="3"
+            lg="4"
             xl="2"
           >
             <GameCard
-              v-if="checkRSVP(game.dm, account.user) || (game.author && checkRSVP(game.author, account.user))"
               :gameData="game"
               :numColumns="1"
               :exclude="['gm', 'server']"
@@ -293,3 +292,19 @@ export default {
   }
 };
 </script>
+
+<style>
+@media (min-width: 1400px) {
+  .col-lg-4 {
+    flex: 0 0 calc(100% / 4);
+    max-width: calc(100% / 4);
+  }
+}
+
+@media (min-width: 1800px) {
+  .col-xl-2 {
+    flex: 0 0 calc(100% / 5);
+    max-width: calc(100% / 5);
+  }
+}
+</style>

@@ -899,7 +899,7 @@ export default {
     saveGame() {
       const data = this.$refs.game.$data.inputs;
       const updatedGame = cloneDeep(this.game);
-      const guild = this.account.guilds.find(g => g.id === updatedGame.s);
+      const guild = this.account ? this.account.guilds.find(g => g.id === updatedGame.s) : {};
 
       data.forEach(d => {
         if (updatedGame[d.id]) updatedGame[d.id] = d.value;

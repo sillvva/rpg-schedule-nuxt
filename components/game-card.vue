@@ -108,7 +108,7 @@
 <script>
 import { Remarkable } from "remarkable";
 import { cloneDeep } from "lodash";
-import { checkRSVP } from "../assets/auxjs/appaux";
+import { checkRSVP, parseEventTimes } from "../assets/auxjs/appaux";
 
 export default {
   props: ["gameData", "numColumns", "filter", "exclude", "edit"],
@@ -288,15 +288,13 @@ export default {
     parseDates(game) {
       try {
         if (!game) game = this.game;
-        const date = game.moment.raw;
-        const iso = game.moment.iso;
-        game.moment.date = moment(iso).format("llll");
-        game.moment.calendar = moment(iso).calendar();
-        game.moment.from = moment(iso).fromNow();
+        game.moment = parseEventTimes(game);
         if (new Date().getTime() >= new Date(date).getTime()) {
           game.moment.state = "red--text";
         }
-      } catch (err) {}
+      } catch (err) {
+
+      }
       return game;
     },
     mdParse(string) {

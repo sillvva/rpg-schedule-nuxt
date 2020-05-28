@@ -2,7 +2,9 @@
   <v-dialog v-model="cardDialog" scrollable max-width="500px">
     <template v-slot:activator="{ on }">
       <v-card v-on="on" color="grey darken-3" max-width="100%" height="100%">
-        <div class="ribbon" v-if="new Date().getTime() - game.createdTimestamp < 24 * 3600 * 1000"><span>NEW</span></div>
+        <div class="ribbon" v-if="new Date().getTime() - game.createdTimestamp < 24 * 3600 * 1000">
+          <span>NEW</span>
+        </div>
         <v-card-title class="subtitle-1">
           <div class="game-title">{{game && game.adventure}}</div>
         </v-card-title>
@@ -55,8 +57,8 @@
               :sm="numColumns === 2 ? (c === 0 ? 7 : 5) : 12"
               :class="`${col.class} py-0`"
             >
-              <p v-for="(item, i) in col.items" :key="i" class="my-0">
-                <strong v-if="item.label">{{item.label}}:</strong>
+              <p v-for="(item, i) in col.items" :key="i" class="my-0 card-item">
+                <strong class="card-label" v-if="item.label">{{item.label}}:</strong>
                 <a
                   v-if="item.href"
                   :href="item.href"
@@ -92,7 +94,7 @@
         class="pt-3"
         style="height: 90vh; max-height: 500px;"
         v-html="mdParse(`
-        **${lang.game.DATE}:** ${game.hideDate ? this.lang.game.labesl.TBD : game.moment.date}
+        **${lang.game.DATE}:** ${game.hideDate ? this.lang.game.labesl.TBD : game.moment && game.moment.date}
         **${lang.game.RUN_TIME}:** ${game.runtime} ${lang.game.labels.HOURS}
         **${lang.game.WHERE}:** ${game.where}
         ${game.description.trim().length > 0 ? `**${lang.game.DESCRIPTION}:**
@@ -182,7 +184,7 @@ export default {
       });
     },
     populateColumns() {
-      const game = cloneDeep(this.game);
+      const game = cloneDeep(this.parseDates(this.game));
       let items = [];
       if (game && game.adventure) {
         this.parseDates();
@@ -283,16 +285,19 @@ export default {
         });
       }
     },
-    parseDates() {
+    parseDates(game) {
       try {
-        const date = this.game.moment.raw;
-        const iso = this.game.moment.iso;
-        this.game.moment.calendar = moment(iso).calendar();
-        this.game.moment.from = moment(iso).fromNow();
+        if (!game) game = this.game;
+        const date = game.moment.raw;
+        const iso = game.moment.iso;
+        game.moment.date = moment(iso).format("llll");
+        game.moment.calendar = moment(iso).calendar();
+        game.moment.from = moment(iso).fromNow();
         if (new Date().getTime() >= new Date(date).getTime()) {
-          this.game.moment.state = "red--text";
+          game.moment.state = "red--text";
         }
       } catch (err) {}
+      return game;
     },
     mdParse(string) {
       const parsedString = string
@@ -326,16 +331,18 @@ export default {
 
 .ribbon {
   position: absolute;
-  right: -5px; top: -5px;
+  right: -5px;
+  top: -5px;
   z-index: 1;
   overflow: hidden;
-  width: 75px; height: 75px;
+  width: 75px;
+  height: 75px;
   text-align: right;
 }
 .ribbon span {
   font-size: 10px;
   font-weight: bold;
-  color: #FFF;
+  color: #fff;
   text-transform: uppercase;
   text-align: center;
   line-height: 20px;
@@ -343,28 +350,39 @@ export default {
   -webkit-transform: rotate(45deg);
   width: 100px;
   display: block;
-  background: #79A70A;
-  background: linear-gradient(#9BC90D 0%, #79A70A 100%);
+  background: #79a70a;
+  background: linear-gradient(#9bc90d 0%, #79a70a 100%);
   box-shadow: 0 3px 10px -5px rgba(0, 0, 0, 1);
   position: absolute;
-  top: 19px; right: -21px;
+  top: 19px;
+  right: -21px;
 }
 .ribbon span::before {
   content: "";
-  position: absolute; left: 0px; top: 100%;
+  position: absolute;
+  left: 0px;
+  top: 100%;
   z-index: -1;
-  border-left: 3px solid #79A70A;
+  border-left: 3px solid #79a70a;
   border-right: 3px solid transparent;
   border-bottom: 3px solid transparent;
-  border-top: 3px solid #79A70A;
+  border-top: 3px solid #79a70a;
 }
 .ribbon span::after {
   content: "";
-  position: absolute; right: 0px; top: 100%;
+  position: absolute;
+  right: 0px;
+  top: 100%;
   z-index: -1;
   border-left: 3px solid transparent;
-  border-right: 3px solid #79A70A;
+  border-right: 3px solid #79a70a;
   border-bottom: 3px solid transparent;
-  border-top: 3px solid #79A70A;
+  border-top: 3px solid #79a70a;
+}
+.card-item {
+  display: flex;
+}
+.card-item .card-label {
+  margin-right: 5px;
 }
 </style>

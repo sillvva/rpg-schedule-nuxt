@@ -2,7 +2,6 @@
   <v-app v-if="$fetchState.pending">
     <v-flex class="d-flex" justify-center align-center style="height: 100%;">
       <v-progress-circular :size="100" :width="7" color="discord" indeterminate></v-progress-circular>
-      <nuxt />
     </v-flex>
   </v-app>
   <v-container fluid v-else>
@@ -209,7 +208,10 @@ export default {
   fetchOnServer: false,
   async fetch() {
     updateToken(this);
-    if (this.$store.getters.lastListingPage !== "past-events" || await this.$store.dispatch("isMobile")) {
+    if (
+      this.$store.getters.lastListingPage !== "past-events" ||
+      (await this.$store.dispatch("isMobile"))
+    ) {
       this.$store.dispatch("emptyGuilds");
       await this.$store.dispatch("fetchGuilds", {
         page: "past-events",
@@ -357,8 +359,12 @@ export default {
             }
             return game;
           });
-          if (guild.games.find(game => !game.filtered)) guild.filtered = false;
-          else guild.filtered = true;
+          if (
+            !this.searchQuery ||
+            this.searchQuery.trim().length === 0 ||
+            guild.games.find(game => !game.filtered)
+          )
+            guild.filtered = false;
           return guild;
         });
         this.expandAll();

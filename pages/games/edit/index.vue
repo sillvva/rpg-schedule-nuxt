@@ -3,7 +3,6 @@
     <v-app v-if="$fetchState.pending">
       <v-flex class="d-flex" justify-center align-center style="height: 100%;">
         <v-progress-circular :size="100" :width="7" color="discord" indeterminate></v-progress-circular>
-        <nuxt />
       </v-flex>
     </v-app>
     <v-row dense v-else>
@@ -769,7 +768,9 @@ export default {
           game.reserved = game.reserved.filter(r => r.tag);
           game.slot =
             game.reserved.findIndex(
-              t => t.tag.replace("@", "") === tag || t.id === id
+              t =>
+                t.tag.replace("@", "") === account.user.tag ||
+                t.id === account.user.id
             ) + 1;
           game.signedup = game.slot > 0 && game.slot <= parseInt(game.players);
           game.waitlisted = game.slot > parseInt(game.players);

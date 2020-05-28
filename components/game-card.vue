@@ -236,7 +236,7 @@ export default {
           value: `${Math.min(game.reserved.length, parseInt(game.players))}/${
             game.players
           }`,
-          secondValue: game.signedUp
+          secondValue: game.signedup
             ? `(${this.lang.game.SLOT} #${game.slot})`
             : null
         });

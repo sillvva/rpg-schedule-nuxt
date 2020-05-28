@@ -249,8 +249,12 @@ export default {
           }
           return game;
         });
-        if (guild.games.find(game => !game.filtered)) guild.filtered = false;
-        else guild.filtered = true;
+        if (
+          !this.searchQuery ||
+          this.searchQuery.trim().length === 0 ||
+          guild.games.find(game => !game.filtered)
+        )
+          guild.filtered = false;
         return guild;
       });
       this.expandAll();

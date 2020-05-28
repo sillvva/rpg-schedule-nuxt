@@ -459,6 +459,7 @@ export default {
 
     this.$store.commit("setSnackBars", []);
     await this.$store.dispatch("fetchLangs");
+    // await this.$store.dispatch("fetchGuilds", {});
     this.setSettings();
 
     let isMobile = await this.$store.dispatch("isMobile");
@@ -614,8 +615,9 @@ export default {
     },
     setSettings() {
       if (process.server) return;
-      if (!this.userSettings || !this.userSettings.lang) return;
-      if (this.lang.code) {
+      if (!this.userSettings) return;
+      const locales = moment.locales();
+      if (this.lang.code && this.userSettings.lang && !locales.includes(this.userSettings.lang)) {
         if (document.getElementById("moment-lang"))
           document.getElementById("moment-lang").remove();
         if (document.getElementById("moment-lang-load"))

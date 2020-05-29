@@ -180,14 +180,14 @@
 
           <v-list-item
             :to="config.urls.game.server.path"
-            v-if="account && account.guilds.find(g => g.isAdmin)"
+            v-if="account && (account.guilds.find(g => g.isAdmin) || account.user.tag === config.author)"
           >
             <v-list-item-title>{{lang.nav.MANAGE_SERVER}}</v-list-item-title>
           </v-list-item>
 
           <v-list-item
             :to="config.urls.game.past.path"
-            v-if="account && account.guilds.find(g => g.isAdmin)"
+            v-if="account && (account.guilds.find(g => g.isAdmin) || account.user.tag === config.author)"
           >
             <v-list-item-title>{{lang.nav.PAST_EVENTS}}</v-list-item-title>
           </v-list-item>
@@ -459,8 +459,11 @@ export default {
 
     this.$store.commit("setSnackBars", []);
     await this.$store.dispatch("fetchLangs");
-    // await this.$store.dispatch("fetchGuilds", {});
     this.setSettings();
+
+    if (!/^\/games\//.test(this.$route.path)) {
+      await this.$store.dispatch("fetchGuilds", {});
+    }
 
     let isMobile = await this.$store.dispatch("isMobile");
 
@@ -477,27 +480,6 @@ export default {
         }
       });
     }
-
-    this.$OneSignal.push(() => {
-      this.$OneSignal.isPushNotificationsEnabled(isEnabled => {
-        if (isEnabled) {
-          this.$store.commit("setPushState", true);
-          console.log("Push notifications are enabled!");
-        } else {
-          console.log("Push notifications are not enabled yet.");
-        }
-      });
-      this.$OneSignal.on("notificationDisplay", function(event) {
-        console.log("OneSignal notification displayed:", event);
-      });
-    });
-
-    this.$OneSignal.push([
-      "addListenerForNotificationOpened",
-      function(data) {
-        console.log("Received NotificationOpened:", data);
-      }
-    ]);
 
     this.setup();
     window.addEventListener("focus", this.setup);
@@ -554,7 +536,7 @@ export default {
             }
             this.$store.commit("setGuilds", account.guilds);
             if (game && game.dm.id !== account.user.id) {
-              this.newGameNotification(game);
+              this.playNotification();
             }
           }
         })
@@ -690,33 +672,6 @@ export default {
         );
         audio.play();
       }
-      // this.newGameNotification({
-      //   adventure: "test",
-      //   description: "This is a test",
-      //   _id: "test"
-      // })
-    },
-    newGameNotification(game) {
-      this.playNotification();
-      if (!this.$store.getters.pushEnabled) return;
-      this.$OneSignal.push(() => {
-        this.$OneSignal.sendSelfNotification(
-          game.adventure,
-          game.description,
-          `${this.$store.getters.env.baseUrl}/games/upcoming?s=new`,
-          null,
-          {
-            notificationType: "news-feature"
-          }
-          // [
-          //   {
-          //     id: "sign-up",
-          //     text: this.lang.buttons.SIGN_UP,
-          //     url: `${this.$store.getters.env.baseUrl}/games/rsvp?g=${game._id}`
-          //   }
-          // ]
-        );
-      });
     },
     invited() {
       localStorage.setItem("invited", 1);

@@ -21,7 +21,7 @@ const baseState = {
     authUrl: process.env.AUTH_URL,
     inviteUrl: process.env.INVITE_URL,
     githubUIUrl: "https://github.com/sillvva/rpg-schedule-nuxt",
-    githubAPIUrl: "https://github.com/sillvva/rpg-schedule",
+    githubAPIUrl: "https://github.com/sillvva/rpg-schedule/tree/API",
     paypalUrl: "https://paypal.me/Sillvva",
     donateUrl: "https://www.patreon.com/rpg_schedule",
     twitterUrl: "https://twitter.com/SillvvaSensei",
@@ -169,7 +169,6 @@ export const actions = {
   async nuxtServerInit(vuexContext, context) {
     try {
       vuexContext.commit("resetState", resetItems);
-      await vuexContext.dispatch("fetchSiteSettings");
     } catch (err) {
       aux.log("actions.nuxtServerInit", (err && err.message) || err);
     }
@@ -190,6 +189,8 @@ export const actions = {
       });
   },
   async initAuth(vuexContext, req) {
+    await vuexContext.dispatch("fetchSiteSettings");
+    
     const cookies = [];
     if (req) {
       const hCookies = (req.headers.cookie || "").split("; ");

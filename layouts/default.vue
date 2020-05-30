@@ -392,6 +392,7 @@ export default {
             path
           );
 
+          console.log(data);
           if (gamesPage) {
             if (["new"].includes(data.action)) {
               this.socketAddGame(
@@ -410,8 +411,9 @@ export default {
                 const index = guild.games.findIndex(
                   game => game._id == data.gameId
                 );
+                console.log(data.gameId, index);
                 if (index < 0) {
-                  this.socketAddGame(account, data.gameId, data.guildId);
+                  // this.socketAddGame(account, data.gameId, data.guildId);
                 } else {
                   for (const prop in data.game) {
                     updated = true;

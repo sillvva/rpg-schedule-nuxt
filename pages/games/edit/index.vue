@@ -1118,16 +1118,20 @@ export default {
           googleCalExtras.push(`&location=${escape(`${server} - ${where}`)}`);
         if (description)
           googleCalExtras.push(`&details=${escape(description)}`);
-      } catch (err) {
-        console.log(err);
-      }
 
-      return {
-        convert: `https://timee.io/${d1}`,
-        gcal: `http://www.google.com/calendar/render?action=TEMPLATE&dates=${d1}/${d2}&trp=true${googleCalExtras.join(
-          ""
-        )}`
-      };
+        return {
+          convert: `https://timee.io/${d1}`,
+          gcal: `http://www.google.com/calendar/render?action=TEMPLATE&dates=${d1}/${d2}&trp=true${googleCalExtras.join(
+            ""
+          )}`
+        };
+      } catch (err) {
+        console.warn(err);
+        return {
+          convert: "",
+          gcal: ""
+        };
+      }
     },
     dateTimeLinks() {
       const link = this.getTZUrls();

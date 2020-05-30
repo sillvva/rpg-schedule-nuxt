@@ -209,7 +209,7 @@ export default {
             id: "when",
             label: this.lang.game.WHEN,
             class: game.moment.state,
-            value: this.lang.game.labels.TBD
+            value: this.lang.game.labels.TBD,
           });
         } else {
           const tdiff = game.timestamp - moment().valueOf();
@@ -292,9 +292,7 @@ export default {
         if (new Date().getTime() >= new Date(date).getTime()) {
           game.moment.state = "red--text";
         }
-      } catch (err) {
-
-      }
+      } catch (err) {}
       return game;
     },
     mdParse(string) {

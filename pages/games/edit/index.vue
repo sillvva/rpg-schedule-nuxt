@@ -601,13 +601,10 @@ export default {
   },
   async fetch() {
     updateToken(this);
-    if (!this.account && process.client) {
-      await this.$store.dispatch("fetchGuilds", {
-        app: this,
-        page: this.lastListingPage || "my-games",
-        games: true
-      });
-    }
+    await this.$store.dispatch("fetchGuilds", {
+      app: this,
+      page: this.lastListingPage || "my-games"
+    });
 
     if (this.account) {
       const guild = this.account.guilds.find(g => g.id === this.game.s);
@@ -676,6 +673,13 @@ export default {
     setTimeout(() => {
       localStorage.removeItem("rescheduled");
     }, 5000);
+
+    if (!this.account) {
+      await this.$store.dispatch("fetchGuilds", {
+        app: this,
+        page: this.lastListingPage || "my-games"
+      });
+    }
 
     this.updateSelectItems();
 
@@ -826,9 +830,7 @@ export default {
           this.game.c = this.game.channels[0].id;
           this.game.channel = this.game.channels[0].name;
         } else {
-          const channel = this.game.channels.find(
-            c => c.id === game.c
-          );
+          const channel = this.game.channels.find(c => c.id === game.c);
           this.game.channel = channel && channel.name;
         }
       }
@@ -854,8 +856,7 @@ export default {
             this.game.template = templates[0].id;
             this.selectTemplate();
           }
-        }
-        else {
+        } else {
           this.channels = [];
         }
         if (!game.dm || (this.game.dm.tag || "").trim().length === 0) {

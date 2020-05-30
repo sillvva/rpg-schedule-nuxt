@@ -453,9 +453,6 @@ export default {
       immediate: true
     }
   },
-  async created() {
-    await this.$store.dispatch("fetchSiteSettings");
-  },
   async mounted() {
     window.addEventListener("resize", this.onResize);
     this.onResize();
@@ -468,6 +465,7 @@ export default {
       await this.$store.dispatch("fetchGuilds", {});
     }
 
+    await this.$store.dispatch("fetchSiteSettings");
     let isMobile = await this.$store.dispatch("isMobile");
 
     if (!isMobile) {

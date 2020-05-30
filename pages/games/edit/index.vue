@@ -899,7 +899,9 @@ export default {
     saveGame() {
       const data = this.$refs.game.$data.inputs;
       const updatedGame = cloneDeep(this.game);
-      const guild = this.account ? this.account.guilds.find(g => g.id === updatedGame.s) : {};
+      const guild = this.account
+        ? this.account.guilds.find(g => g.id === updatedGame.s)
+        : {};
 
       data.forEach(d => {
         if (updatedGame[d.id]) updatedGame[d.id] = d.value;
@@ -1052,75 +1054,84 @@ export default {
       const server = this.game.guild;
       const where = this.game.where;
       const description = this.game.description;
-
-      const d1raw = new Date(
-        `${date.replace(/-/g, "/").replace(/UTC\//, "UTC-")} ${time} UTC${
-          gmtOffset < 0 ? "-" : "+"
-        }${Math.abs(gmtOffset)}`
-      );
-      const d1 = d1raw
-        .toISOString()
-        .replace(/[^0-9T]/gi, "")
-        .slice(0, 13);
-      const d2raw = new Date(
-        `${date.replace(/-/g, "/").replace(/UTC\//, "UTC-")} ${time} UTC${
-          gmtOffset < 0 ? "-" : "+"
-        }${Math.abs(gmtOffset)}`
-      );
-      d2raw.setHours(parseFloat(runtime));
-      const d2 = d2raw
-        .toISOString()
-        .replace(/[^0-9T]/gi, "")
-        .slice(0, 13);
-
       const googleCalExtras = [];
-      const days = ["SU", "MO", "TU", "WE", "TH", "FR", "SA"];
-      if (!this.game.weekdays) this.game.weekdays = Array(7).fill(false);
-      const weekdays = this.game.weekdays
-        .map((w, i) => w && days[i])
-        .filter(w => w);
 
-      if (weekdays.length == 0) {
-        const wd = moment(date).weekday();
-        this.game.weekdays[wd] = true;
-      }
+      try {
+        const d1raw = new Date(
+          `${date.replace(/-/g, "/").replace(/UTC\//, "UTC-")} ${time} UTC${
+            gmtOffset < 0 ? "-" : "+"
+          }${Math.abs(gmtOffset)}`
+        );
+        const d1 = d1raw
+          .toISOString()
+          .replace(/[^0-9T]/gi, "")
+          .slice(0, 13);
+        const d2raw = new Date(
+          `${date.replace(/-/g, "/").replace(/UTC\//, "UTC-")} ${time} UTC${
+            gmtOffset < 0 ? "-" : "+"
+          }${Math.abs(gmtOffset)}`
+        );
+        d2raw.setHours(parseFloat(runtime));
+        const d2 = d2raw
+          .toISOString()
+          .replace(/[^0-9T]/gi, "")
+          .slice(0, 13);
 
-      if (frequency == 1) {
-        googleCalExtras.push(`&recur=RRULE:FREQ=DAILY`);
-      }
-      if (frequency == 2) {
-        googleCalExtras.push(
-          `&recur=RRULE:FREQ=WEEKLY;BYDAY=${weekdays.join(",")}`
-        );
-      }
-      if (frequency == 3) {
-        googleCalExtras.push(
-          `&recur=RRULE:FREQ=WEEKLY;INTERVAL=${xWeeks ||
-            2};BYDAY=${weekdays.join(",")}`
-        );
-      }
-      if (frequency == 4) {
-        if (monthlyType == "date") {
-          googleCalExtras.push(`&recur=RRULE:FREQ=MONTHLY`);
-        } else if (monthlyType == "weekday") {
+        const days = ["SU", "MO", "TU", "WE", "TH", "FR", "SA"];
+        if (!this.game.weekdays) this.game.weekdays = Array(7).fill(false);
+        const weekdays = this.game.weekdays
+          .map((w, i) => w && days[i])
+          .filter(w => w);
+
+        if (weekdays.length == 0) {
+          const wd = moment(date).weekday();
+          this.game.weekdays[wd] = true;
+        }
+
+        if (frequency == 1) {
+          googleCalExtras.push(`&recur=RRULE:FREQ=DAILY`);
+        }
+        if (frequency == 2) {
           googleCalExtras.push(
-            `&recur=RRULE:FREQ=MONTHLY;BYDAY=${moment(date).monthWeekByDay() +
-              1}${days[d1raw.getDay()]}`
+            `&recur=RRULE:FREQ=WEEKLY;BYDAY=${weekdays.join(",")}`
           );
         }
+        if (frequency == 3) {
+          googleCalExtras.push(
+            `&recur=RRULE:FREQ=WEEKLY;INTERVAL=${xWeeks ||
+              2};BYDAY=${weekdays.join(",")}`
+          );
+        }
+        if (frequency == 4) {
+          if (monthlyType == "date") {
+            googleCalExtras.push(`&recur=RRULE:FREQ=MONTHLY`);
+          } else if (monthlyType == "weekday") {
+            googleCalExtras.push(
+              `&recur=RRULE:FREQ=MONTHLY;BYDAY=${moment(date).monthWeekByDay() +
+                1}${days[d1raw.getDay()]}`
+            );
+          }
+        }
+
+        if (name) googleCalExtras.push(`&text=${escape(name)}`);
+        if (where)
+          googleCalExtras.push(`&location=${escape(`${server} - ${where}`)}`);
+        if (description)
+          googleCalExtras.push(`&details=${escape(description)}`);
+
+        return {
+          convert: `https://timee.io/${d1}`,
+          gcal: `http://www.google.com/calendar/render?action=TEMPLATE&dates=${d1}/${d2}&trp=true${googleCalExtras.join(
+            ""
+          )}`
+        };
+      } catch (err) {
+        console.warn(err);
+        return {
+          convert: "",
+          gcal: ""
+        };
       }
-
-      if (name) googleCalExtras.push(`&text=${escape(name)}`);
-      if (where)
-        googleCalExtras.push(`&location=${escape(`${server} - ${where}`)}`);
-      if (description) googleCalExtras.push(`&details=${escape(description)}`);
-
-      return {
-        convert: `https://timee.io/${d1}`,
-        gcal: `http://www.google.com/calendar/render?action=TEMPLATE&dates=${d1}/${d2}&trp=true${googleCalExtras.join(
-          ""
-        )}`
-      };
     },
     dateTimeLinks() {
       const link = this.getTZUrls();

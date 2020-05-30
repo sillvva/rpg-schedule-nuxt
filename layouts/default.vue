@@ -457,8 +457,9 @@ export default {
     window.addEventListener("resize", this.onResize);
     this.onResize();
 
-    this.$store.commit("setSnackBars", []);
+    await this.$store.dispatch("fetchSiteSettings");
     await this.$store.dispatch("fetchLangs");
+    this.$store.commit("setSnackBars", []);
     this.setSettings();
 
     if (!/^\/games\//.test(this.$route.path)) {

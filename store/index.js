@@ -189,8 +189,6 @@ export const actions = {
       });
   },
   async initAuth(vuexContext, req) {
-    await vuexContext.dispatch("fetchSiteSettings");
-    
     const cookies = [];
     if (req) {
       const hCookies = (req.headers.cookie || "").split("; ");
@@ -300,8 +298,6 @@ export const actions = {
     this.$cookies.set("lang", selectedLang, { expires: d });
   },
   async fetchGuilds(vuexContext, { page, games, search, app }) {
-    await vuexContext.dispatch("fetchSiteSettings");
-
     return new Promise(async (resolve, reject) => {
       try {
         let result = await this.$axios.get(

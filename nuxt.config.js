@@ -1,7 +1,4 @@
 const colors = require('vuetify/es5/util/colors').default;
-require('dotenv').config({
-  path: `.onesignal-${process.env.NODE_ENV}`
-});
 
 module.exports = {
   mode: 'universal',
@@ -64,8 +61,6 @@ module.exports = {
     '@nuxtjs/axios',
     // Doc: https://github.com/nuxt-community/dotenv-module
     '@nuxtjs/dotenv',
-    // Doc: https://pwa.nuxtjs.org/
-    '@nuxtjs/onesignal',
     '@nuxtjs/pwa',
     'cookie-universal-nuxt'
   ],
@@ -77,15 +72,6 @@ module.exports = {
       orientation: "portrait",
       lang: "en",
       background_color: "#222"
-    }
-  },
-  oneSignal: {
-    init: {
-      appId: process.env.ONESIGNAL_APP_ID,
-      allowLocalhostAsSecureOrigin: true,
-      notificationClickHandlerAction: "navigate",
-      notificationClickHandlerMatch: "origin",
-      autoResubscribe: true
     }
   },
   /*

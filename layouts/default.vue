@@ -407,14 +407,16 @@ export default {
             ) {
               // An existing game has been updated, update the store if it belongs to one of current user's guilds
               let updated = false;
+              const match = !!guild.find(g =>
+                g.games.find(ga => game._id == data.gameId)
+              );
+              if (!match)
+                this.socketAddGame(account, data.gameId, data.guildId);
               guilds = guilds.map(guild => {
                 const index = guild.games.findIndex(
                   game => game._id == data.gameId
                 );
-                console.log(data.gameId, index);
-                if (index < 0) {
-                  // this.socketAddGame(account, data.gameId, data.guildId);
-                } else {
+                if (index >= 0) {
                   for (const prop in data.game) {
                     updated = true;
                     guild.games[index][prop] = data.game[prop];
@@ -672,9 +674,12 @@ export default {
       }
     },
     playNotification() {
-      if (this.notification && /^\/games\/(upcoming|my-games|calendar|manage-server|past-events)/.test(
-        this.$route.path
-      )) {
+      if (
+        this.notification &&
+        /^\/games\/(upcoming|my-games|calendar|manage-server|past-events)/.test(
+          this.$route.path
+        )
+      ) {
         this.notification.play();
       }
     },

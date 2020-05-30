@@ -392,7 +392,6 @@ export default {
             path
           );
 
-          console.log(data);
           if (gamesPage) {
             if (["new"].includes(data.action)) {
               this.socketAddGame(
@@ -407,7 +406,7 @@ export default {
             ) {
               // An existing game has been updated, update the store if it belongs to one of current user's guilds
               let updated = false;
-              const match = !!guild.find(g =>
+              const match = !!guilds.find(g =>
                 g.games.find(ga => game._id == data.gameId)
               );
               if (!match)

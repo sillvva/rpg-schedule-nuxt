@@ -453,11 +453,13 @@ export default {
       immediate: true
     }
   },
+  async created() {
+    await this.$store.dispatch("fetchSiteSettings");
+  },
   async mounted() {
     window.addEventListener("resize", this.onResize);
     this.onResize();
 
-    await this.$store.dispatch("fetchSiteSettings");
     await this.$store.dispatch("fetchLangs");
     this.$store.commit("setSnackBars", []);
     this.setSettings();

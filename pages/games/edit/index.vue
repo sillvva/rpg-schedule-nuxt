@@ -929,7 +929,7 @@ export default {
         return;
       }
 
-      if (updatedGame.when === this.enums.GameWhen.DATETIME) {
+      if (updatedGame.when !== this.enums.GameWhen.DATETIME) {
         updatedGame.frequency = "0";
       }
 
@@ -1156,9 +1156,7 @@ export default {
       );
 
       const weekdays = cloneDeep(this.weekdays);
-      this.game.weekdays = Array(7).fill(false);
       const validDays = weekdays.map((day, i) => {
-        this.game.weekdays[i + 1] = true;
         return moment()
           .day(day)
           .format("dddd")

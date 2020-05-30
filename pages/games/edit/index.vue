@@ -620,13 +620,14 @@ export default {
 
     if (!this.gameLoaded || this.$route.query.fetch === "true") {
       if (this.gameId) await this.fetchGame("g", this.gameId);
+      else if (this.guildId) await this.fetchGame("s", this.guildId);
       else {
         const guild = this.account.guilds.find(
           g => g.id === (this.guildId || this.game.s)
         );
 
         let data = {
-          s: this.game.s,
+          s: guild.id,
           c: guild.announcementChannels[0] && guild.announcementChannels[0].id,
           channels: guild.announcementChannels.map(ac => ({
             name: ac.name,
@@ -652,6 +653,8 @@ export default {
         };
 
         this.finishFetchGame(data);
+        this.game.s = guild.id;
+        this.selectGuild();
       }
     }
 

@@ -826,9 +826,10 @@ export default {
           this.game.c = this.game.channels[0].id;
           this.game.channel = this.game.channels[0].name;
         } else {
-          this.game.channel = this.game.channels.find(
+          const channel = this.game.channels.find(
             c => c.id === game.c
-          ).name;
+          );
+          this.game.channel = channel && channel.name;
         }
       }
       if (this.account) {
@@ -853,6 +854,9 @@ export default {
             this.game.template = templates[0].id;
             this.selectTemplate();
           }
+        }
+        else {
+          this.channels = [];
         }
         if (!game.dm || (this.game.dm.tag || "").trim().length === 0) {
           this.game.dmTag = this.account.user.tag;

@@ -46,7 +46,7 @@ export default {
 
 <style scoped>
 .snackbar-container {
-  position: absolute;
+  position: fixed;
   bottom: 10px;
   right: 10px;
   display: flex;

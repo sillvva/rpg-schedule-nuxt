@@ -658,7 +658,7 @@ export default {
       }
     }
 
-    if (this.account) {
+    if (this.account && this.gameId) {
       const guild = this.account.guilds.find(g => g.id === this.game.s);
       if (
         !guild ||

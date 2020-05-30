@@ -670,7 +670,9 @@ export default {
       }
     },
     playNotification() {
-      if (this.notification) {
+      if (this.notification && /^\/games\/(upcoming|my-games|calendar|manage-server|past-events)/.test(
+        this.$route.path
+      )) {
         this.notification.play();
       }
     },

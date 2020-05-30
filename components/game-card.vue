@@ -209,7 +209,7 @@ export default {
             id: "when",
             label: this.lang.game.WHEN,
             class: game.moment.state,
-            value: this.lang.game.labesl.TBD
+            value: this.lang.game.labels.TBD
           });
         } else {
           const tdiff = game.timestamp - moment().valueOf();

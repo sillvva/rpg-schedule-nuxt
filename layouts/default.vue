@@ -461,7 +461,11 @@ export default {
     this.$store.commit("setSnackBars", []);
     this.setSettings();
 
-    if (!/^\/games\//.test(this.$route.path)) {
+    if (
+      !/^\/games\/(upcoming|my-games|calendar|manage-server|past-events)/.test(
+        this.$route.path
+      )
+    ) {
       await this.$store.dispatch("fetchGuilds", {});
     }
 
@@ -600,7 +604,11 @@ export default {
       if (process.server) return;
       if (!this.userSettings) return;
       const locales = moment.locales();
-      if (this.lang.code && this.userSettings.lang && !locales.includes(this.userSettings.lang)) {
+      if (
+        this.lang.code &&
+        this.userSettings.lang &&
+        !locales.includes(this.userSettings.lang)
+      ) {
         if (document.getElementById("moment-lang"))
           document.getElementById("moment-lang").remove();
         if (document.getElementById("moment-lang-load"))

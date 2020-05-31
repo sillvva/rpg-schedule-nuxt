@@ -189,6 +189,8 @@ export const actions = {
       });
   },
   async initAuth(vuexContext, req) {
+    vuexContext.commit("setToken", null);
+
     const cookies = [];
     if (req) {
       const hCookies = (req.headers.cookie || "").split("; ");
@@ -223,7 +225,7 @@ export const actions = {
           return resolve({ status: "success" });
         }
 
-        if (process.env.NODE_ENV === "development")
+        if (process.env.NODE_ENV === "development" || vuexContext.getters.sessionToken)
           aux.log("initAuth", tokenCookies, vuexContext.getters.sessionToken);
 
         for (let i = 0; i < tokenCookies.length; i++) {

@@ -170,17 +170,17 @@ export default {
   fetchOnServer: false,
   async fetch() {
     updateToken(this);
-    if (
-      this.$store.getters.lastListingPage !== "my-games" ||
-      (await this.$store.dispatch("isMobile"))
-    ) {
+    // if (
+    //   this.$store.getters.lastListingPage !== "my-games" ||
+    //   (await this.$store.dispatch("isMobile"))
+    // ) {
       this.$store.dispatch("emptyGuilds");
       await this.$store.dispatch("fetchGuilds", {
         page: "my-games",
         games: true,
         app: this
       });
-    }
+    // }
   },
   activated() {
     this.$fetch();

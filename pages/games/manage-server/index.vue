@@ -599,7 +599,7 @@ export default {
   watch: {
     storeGuilds: {
       handler: function(newVal) {
-        this.guilds = cloneDeep(newVal).map(g => {
+        this.guilds = cloneDeep(newVal).filter(g => g.isAdmin).map(g => {
           g.roleValues = [
             {
               text: (this.lang.config || {}).NO_ROLE,

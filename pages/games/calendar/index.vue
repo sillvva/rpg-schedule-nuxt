@@ -241,15 +241,22 @@ export default {
     moment(val) {
       return moment(val);
     },
+    updateUrl() {
+      const url = `${this.config.urls.game.calendar.path}?y=${this.selYear}&m=${this.selMonth+1}&d=${this.selDate}`;
+      if (this.$route.path === this.config.urls.game.calendar.path && this.$route.fullPath === url) return;
+      this.$router.replace(url);
+    },
     selectDate(date) {
       if (!date.curMonth) return;
       this.selDate = moment(`${date.dx}T00:00:00`).date();
+      this.updateUrl();
       this.renderCalendarMonth();
     },
     selectToday() {
       this.selYear = moment().year();
       this.selMonth = moment().month();
       this.selDate = moment().date();
+      this.updateUrl();
       this.renderCalendarMonth();
     },
     incrementMonth() {
@@ -258,6 +265,7 @@ export default {
         this.selMonth = 1;
         this.selYear += 1;
       }
+      this.updateUrl();
       this.renderCalendarMonth();
     },
     decrementMonth() {
@@ -266,6 +274,7 @@ export default {
         this.selMonth = 12;
         this.selYear -= 1;
       }
+      this.updateUrl();
       this.renderCalendarMonth();
     }
   }

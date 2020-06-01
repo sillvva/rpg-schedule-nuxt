@@ -406,11 +406,11 @@ export default {
             ) {
               // An existing game has been updated, update the store if it belongs to one of current user's guilds
               let updated = false;
-              const match = !!guilds.find(g =>
-                g.games.find(ga => ga._id == data.gameId)
-              );
-              if (!match)
-                this.socketAddGame(account, data.gameId, data.guildId);
+              // const match = !!guilds.find(g =>
+              //   g.games.find(ga => ga._id == data.gameId)
+              // );
+              // if (!match)
+              //   this.socketAddGame(account, data.gameId, data.guildId);
               guilds = guilds.map(guild => {
                 const index = guild.games.findIndex(
                   game => game._id == data.gameId

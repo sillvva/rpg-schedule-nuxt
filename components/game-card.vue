@@ -211,7 +211,7 @@ export default {
             class: game.moment.state,
             value: this.lang.game.labels.TBD,
           });
-        } else {
+        } else if (game.moment) {
           const tdiff = game.timestamp - moment().valueOf();
           items.push({
             id: "when",

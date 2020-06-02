@@ -38,7 +38,7 @@
       >Collapse All</v-btn>
     </v-app-bar>
     <v-card
-      v-for="(guild, g) in guilds.filter(g => !g.filtered)"
+      v-for="(guild, g) in guilds.filter(g => !g.filtered && (g.permission || g.games.length > 0))"
       v-bind:key="g"
       max-width="100%"
       class="mb-3"

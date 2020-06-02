@@ -198,8 +198,11 @@
     }
   },
   "other": {
+    "DM_WAITLIST": "В настоящее время вы находитесь в слоте :NUM в списке ожидания.",
+    "DM_INSTRUCTIONS": "Сообщение от :DM для :EVENT",
     "MAINTENANCE": "Сайт будет в обслуживании :TIME приблизительно :DURATION часов.",
     "UNDER_MAINTENANCE": "находится на обслуживании",
+    "YOURE_IN": "You're in! You've secured a spot for **:GAME** in **:SERVER**.",
     "BACK_SOON": "Скоро вернусь!"
   }
 }

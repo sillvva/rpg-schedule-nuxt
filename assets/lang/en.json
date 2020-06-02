@@ -198,6 +198,8 @@
     }
   },
   "other": {
+    "DM_WAITLIST": "You are currently slot :NUM on the waitlist.",
+    "DM_INSTRUCTIONS": "A message from :DM for :EVENT",
     "MAINTENANCE": "The site will be under maintenance :TIME for approximately :DURATION hour(s).",
     "UNDER_MAINTENANCE": "is under maintenance",
     "YOURE_IN": "You're in! You've secured a spot for **:GAME** in **:SERVER**.",

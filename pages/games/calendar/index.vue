@@ -255,7 +255,6 @@ export default {
         });
         w++;
       } while (i < dim + fwdi + 1);
-      console.log(this.dates);
     },
     moment(val) {
       return moment(val);

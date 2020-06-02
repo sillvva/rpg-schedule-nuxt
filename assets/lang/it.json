@@ -196,8 +196,11 @@
     }
   },
   "other": {
+    "DM_WAITLIST": "Attualmente sei nello slot :NUM della lista d'attesa.",
+    "DM_INSTRUCTIONS": "Un messaggio di :DM per :EVENT",
     "MAINTENANCE": "Il sito sarà in manutenzione :TIME per circa :DURATION ora / e.",
     "UNDER_MAINTENANCE": "è in manutenzione",
+    "YOURE_IN": "You're in! You've secured a spot for **:GAME** in **:SERVER**.",
     "BACK_SOON": "Tornerà presto!"
   }
 }

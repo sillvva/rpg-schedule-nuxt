@@ -215,8 +215,14 @@
         <v-spacer></v-spacer>
       </v-system-bar>
 
+      <v-app v-if="/^\/games\//.test($route.path) && !account">
+        <v-flex class="d-flex" justify-center align-center style="height: 100%;">
+          <v-progress-circular :size="100" :width="7" color="discord" indeterminate></v-progress-circular>
+        </v-flex>
+      </v-app>
       <nuxt
         keep-alive
+        v-else
         :key="!urlConfig || urlConfig.refreshOnParamsChange ? $route.fullPath : $route.path"
       />
     </v-content>
@@ -539,7 +545,11 @@ export default {
               });
             }
             this.$store.commit("setGuilds", account.guilds);
-            if (game && game.author.id !== account.user.id && game.timestamp > new Date().getTime()) {
+            if (
+              game &&
+              game.author.id !== account.user.id &&
+              game.timestamp > new Date().getTime()
+            ) {
               this.playNotification();
             }
           }

@@ -392,54 +392,52 @@ export default {
             path
           );
 
-          if (gamesPage) {
-            if (["new"].includes(data.action)) {
-              this.socketAddGame(
-                account,
-                data.gameId,
-                data.guildId,
-                data.authorId
+          if (["new"].includes(data.action)) {
+            this.socketAddGame(
+              account,
+              data.gameId,
+              data.guildId,
+              data.authorId
+            );
+          } else if (
+            data.action == "updated" &&
+            guilds.find(g => g.id == data.guildId)
+          ) {
+            // An existing game has been updated, update the store if it belongs to one of current user's guilds
+            let updated = false;
+            // const match = !!guilds.find(g =>
+            //   g.games.find(ga => ga._id == data.gameId)
+            // );
+            // if (!match)
+            //   this.socketAddGame(account, data.gameId, data.guildId);
+            guilds = guilds.map(guild => {
+              const index = guild.games.findIndex(
+                game => game._id == data.gameId
               );
-            } else if (
-              data.action == "updated" &&
-              guilds.find(g => g.id == data.guildId)
-            ) {
-              // An existing game has been updated, update the store if it belongs to one of current user's guilds
-              let updated = false;
-              // const match = !!guilds.find(g =>
-              //   g.games.find(ga => ga._id == data.gameId)
-              // );
-              // if (!match)
-              //   this.socketAddGame(account, data.gameId, data.guildId);
-              guilds = guilds.map(guild => {
-                const index = guild.games.findIndex(
-                  game => game._id == data.gameId
+              if (index >= 0) {
+                for (const prop in data.game) {
+                  updated = true;
+                  guild.games[index][prop] = data.game[prop];
+                }
+              }
+              return guild;
+            });
+            if (updated) this.$store.commit("setGuilds", guilds);
+          } else if (
+            data.action == "deleted" &&
+            guilds.find(g => g.id == data.guildId)
+          ) {
+            // An existing game has been deleted, update the store if it belongs to one of current user's guilds
+            guilds = guilds.map(guild => {
+              if (guild.games.find(game => game._id == data.gameId)) {
+                guild.games.splice(
+                  guild.games.findIndex(game => game._id == data.gameId),
+                  1
                 );
-                if (index >= 0) {
-                  for (const prop in data.game) {
-                    updated = true;
-                    guild.games[index][prop] = data.game[prop];
-                  }
-                }
-                return guild;
-              });
-              if (updated) this.$store.commit("setGuilds", guilds);
-            } else if (
-              data.action == "deleted" &&
-              guilds.find(g => g.id == data.guildId)
-            ) {
-              // An existing game has been deleted, update the store if it belongs to one of current user's guilds
-              guilds = guilds.map(guild => {
-                if (guild.games.find(game => game._id == data.gameId)) {
-                  guild.games.splice(
-                    guild.games.findIndex(game => game._id == data.gameId),
-                    1
-                  );
-                }
-                return guild;
-              });
-              this.$store.commit("setGuilds", guilds);
-            }
+              }
+              return guild;
+            });
+            this.$store.commit("setGuilds", guilds);
           }
         }
       }
@@ -464,13 +462,11 @@ export default {
     this.$store.commit("setSnackBars", []);
     this.setSettings();
 
-    if (
-      !/^\/games\/(upcoming|my-games|calendar|manage-server|past-events)/.test(
-        this.$route.path
-      )
-    ) {
-      await this.$store.dispatch("fetchGuilds", {});
-    }
+    await this.$store.dispatch("fetchGuilds", {
+      app: this,
+      page: "manage-server",
+      games: true
+    });
 
     await this.$store.dispatch("fetchSiteSettings");
     let isMobile = await this.$store.dispatch("isMobile");
@@ -543,7 +539,7 @@ export default {
               });
             }
             this.$store.commit("setGuilds", account.guilds);
-            if (game && game.dm.id !== account.user.id) {
+            if (game && game.author.id !== account.user.id && game.timestamp > new Date().getTime()) {
               this.playNotification();
             }
           }

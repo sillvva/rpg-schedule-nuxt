@@ -1,10 +1,10 @@
 <template>
-  <v-app v-if="$fetchState.pending">
+  <!-- <v-app v-if="$fetchState.pending">
     <v-flex class="d-flex" justify-center align-center style="height: 100%;">
       <v-progress-circular :size="100" :width="7" color="discord" indeterminate></v-progress-circular>
     </v-flex>
-  </v-app>
-  <v-container fluid v-else>
+  </v-app> -->
+  <v-container fluid>
     <v-text-field
       v-model="searchQuery"
       @keyup="search"
@@ -167,6 +167,9 @@ export default {
           g.csv = gamesCSV(g);
           return {
             ...g,
+            games: g.games.filter(game => {
+              return game.timestamp < new Date().getTime();
+            }),
             collapsed: false,
             filtered: false
           };
@@ -205,24 +208,24 @@ export default {
       immediate: true
     }
   },
-  fetchOnServer: false,
-  async fetch() {
-    updateToken(this);
-    // if (
-    //   this.$store.getters.lastListingPage !== "past-events" ||
-    //   (await this.$store.dispatch("isMobile"))
-    // ) {
-      this.$store.dispatch("emptyGuilds");
-      await this.$store.dispatch("fetchGuilds", {
-        page: "past-events",
-        games: true,
-        app: this
-      });
-    // }
-  },
-  activated() {
-    this.$fetch();
-  },
+  // fetchOnServer: false,
+  // async fetch() {
+  //   updateToken(this);
+  //   // if (
+  //   //   this.$store.getters.lastListingPage !== "past-events" ||
+  //   //   (await this.$store.dispatch("isMobile"))
+  //   // ) {
+  //     this.$store.dispatch("emptyGuilds");
+  //     await this.$store.dispatch("fetchGuilds", {
+  //       page: "past-events",
+  //       games: true,
+  //       app: this
+  //     });
+  //   // }
+  // },
+  // activated() {
+  //   this.$fetch();
+  // },
   methods: {
     saveGuildConfiguration() {
       const guild = this.guilds.find(g => g.editing);

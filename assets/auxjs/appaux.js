@@ -96,9 +96,9 @@ const parseEventTimes = (event, options = {}) => {
     countdown: `https://www.timeanddate.com/countdown/generic?iso=${d}&p0=1440${convert2Extras.join("")}`,
     googleCal: `http://www.google.com/calendar/render?action=TEMPLATE&dates=${isoutcStart}/${isoutcEnd}&trp=true${googleCalExtras.join("")}`,
     iso: date,
-    date: moment(date).utcOffset(parseInt(event.timezone)).format('llll'),
-    calendar: moment(date).utcOffset(parseInt(event.timezone)).calendar(),
-    from: moment(date).utcOffset(parseInt(event.timezone)).fromNow(),
+    date: moment(date).format('llll'),
+    calendar: moment(date).calendar(),
+    from: moment(date).fromNow(),
   };
 };
 

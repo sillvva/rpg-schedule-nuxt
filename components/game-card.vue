@@ -158,10 +158,10 @@ export default {
       immediate: true
     }
   },
-  created() {
+  mounted() {
     this.populateColumns();
     this.parseDateInterval = setInterval(() => {
-      this.parseDates();
+      this.populateColumns();
     }, 30 * 1000);
   },
   onDestroy() {

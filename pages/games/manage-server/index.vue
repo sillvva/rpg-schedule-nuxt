@@ -205,6 +205,23 @@
                         </v-list-item-content>
                       </v-list-item>
 
+                      <v-list-item
+                        @click="guild.config.embedMentionsAbove = !guild.config.embedMentionsAbove"
+                      >
+                        <v-list-item-action>
+                          <v-checkbox
+                            v-model="guild.config.embedMentionsAbove"
+                            color="discord"
+                            @click.stop="guild.config.embedMentionsAbove = !guild.config.embedMentionsAbove"
+                          ></v-checkbox>
+                        </v-list-item-action>
+
+                        <v-list-item-content>
+                          <v-list-item-title>{{lang.config.EMBED_USER_TAGS_ABOVE}}</v-list-item-title>
+                          <v-list-item-subtitle>{{lang.config.desc.EMBED_USER_TAGS_ABOVE}}</v-list-item-subtitle>
+                        </v-list-item-content>
+                      </v-list-item>
+
                       <!-- <v-menu
                         v-model="colorMenu"
                         transition="scale-transition"

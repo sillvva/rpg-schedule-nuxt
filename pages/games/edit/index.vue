@@ -600,12 +600,6 @@ export default {
     }
   },
   async fetch() {
-    updateToken(this);
-    await this.$store.dispatch("fetchGuilds", {
-      app: this,
-      page: this.lastListingPage || "my-games"
-    });
-
     if (this.account) {
       const guild = this.account.guilds.find(g => g.id === this.game.s);
       if (guild && this.gameId) {

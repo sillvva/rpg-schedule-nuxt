@@ -159,21 +159,6 @@ export default {
       immediate: true
     }
   },
-  // fetchOnServer: false,
-  // async fetch() {
-  //   updateToken(this);
-  //   // if (this.$store.getters.lastListingPage !== "calendar" || await this.$store.dispatch("isMobile")) {
-  //     this.$store.dispatch("emptyGuilds");
-  //     await this.$store.dispatch("fetchGuilds", {
-  //       page: "calendar",
-  //       games: true,
-  //       app: this
-  //     });
-  //   // }
-  // },
-  // activated() {
-  //   this.$fetch();
-  // },
   methods: {
     allGames() {
       if (!this.account.guilds) return;

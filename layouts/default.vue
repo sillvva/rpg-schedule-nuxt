@@ -118,7 +118,7 @@
 
     <v-navigation-drawer
       v-model="drawer"
-      v-if="!['/','/maintenace'].includes(this.$route.path) && !maintenanceMode"
+      v-if="!['/','/maintenace'].includes(this.$route.path) && !maintenanceMode && !(['/help', '/games/edit'].includes($route.path) && !account && !loadingAccount)"
       fixed
       clipped
       app
@@ -240,7 +240,7 @@ import { cloneDeep } from "lodash";
 let lastGuildRefresh = new Date().getTime();
 
 export default {
-  middleware: ["check-auth"],
+  // middleware: ["check-auth"],
   components: {
     SnackBars: SnackBars
   },
@@ -299,7 +299,8 @@ export default {
       onResize: () => {
         this.windowWidth = window.innerWidth;
       },
-      socket: null
+      socket: null,
+      loadingAccount: false
     };
   },
   computed: {
@@ -461,6 +462,8 @@ export default {
     }
   },
   async mounted() {
+    this.loadingAccount = true;
+
     window.addEventListener("resize", this.onResize);
     this.onResize();
 
@@ -473,6 +476,8 @@ export default {
       page: "manage-server",
       games: true
     });
+
+    this.loadingAccount = false;
 
     await this.$store.dispatch("fetchSiteSettings");
     let isMobile = await this.$store.dispatch("isMobile");

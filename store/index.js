@@ -225,7 +225,10 @@ export const actions = {
           return resolve({ status: "success" });
         }
 
-        if (process.env.NODE_ENV === "development" || vuexContext.getters.sessionToken)
+        if (
+          process.env.NODE_ENV === "development" ||
+          vuexContext.getters.sessionToken
+        )
           aux.log("initAuth", tokenCookies, vuexContext.getters.sessionToken);
 
         for (let i = 0; i < tokenCookies.length; i++) {
@@ -300,6 +303,20 @@ export const actions = {
     this.$cookies.set("lang", selectedLang, { expires: d });
   },
   async fetchGuilds(vuexContext, { page, games, search, app }) {
+    const cookies = [];
+    const hCookies = this.$cookies.getAll();
+    for (const name in hCookies) {
+      cookies.push({ name: name, value: hCookies[name] });
+    }
+
+    const tokenCookies = [];
+    for (const cookie of cookies) {
+      if (cookie.name == "token") tokenCookies.push(cookie.value);
+    }
+
+    if (tokenCookies.length > 0 && !vuexContext.getters.sessionToken)
+      await vuexContext.dispatch("initAuth");
+
     return new Promise(async (resolve, reject) => {
       try {
         let result = await this.$axios.get(

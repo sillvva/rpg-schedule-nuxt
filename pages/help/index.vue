@@ -52,7 +52,7 @@ import ReschedulingPage from "../../components/pages/help/rescheduling";
 import SetupPage from "../../components/pages/help/setup";
 
 export default {
-  middleware: ["authenticated"],
+  // middleware: ["authenticated"],
   head: {
     title: "Help"
   },

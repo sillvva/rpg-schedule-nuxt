@@ -96,15 +96,15 @@
                 <v-tabs-items v-model="tab">
                   <v-tab-item>
                     <v-list dense>
-                      <!-- <v-list-item class="px-4 mb-2">
+                      <v-list-item class="px-4 mb-2" v-if="!guild.userRoles.includes(guild.config.managerRole)">
                         <v-select
-                          :label="lang.config.ROLE"
-                          v-model="guild.config.role"
-                          :hint="lang.config.desc.ROLE"
+                          :label="lang.config.MANAGER_ROLE"
+                          v-model="guild.config.managerRole"
+                          :hint="lang.config.desc.MANAGER_ROLE"
                           persistent-hint
                           :items="guild.roleValues"
                         ></v-select>
-                      </v-list-item>-->
+                      </v-list-item>
 
                       <v-list-item class="px-4 mb-2">
                         <v-text-field

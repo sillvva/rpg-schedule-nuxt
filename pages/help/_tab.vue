@@ -106,7 +106,7 @@ export default {
     window.addEventListener("resize", this.onResize);
     this.onResize();
 
-    const tab = this.$route.query.tab;
+    const tab = this.$route.params.tab;
     if (tab) {
       setTimeout(() => {
         if (this.tabIndexes[tab]) this.tab = this.tabIndexes[tab];

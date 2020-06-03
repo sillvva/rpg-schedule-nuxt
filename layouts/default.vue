@@ -506,7 +506,7 @@ export default {
   methods: {
     setup() {
       if (localStorage.getItem("invited") && this.$store.getters.account) {
-        this.$router.push("/help?tab=setup");
+        this.$router.push("/help/setup");
         localStorage.removeItem("invited");
       }
     },

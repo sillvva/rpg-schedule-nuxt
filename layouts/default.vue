@@ -634,7 +634,7 @@ export default {
         el.src = `/locale/${this.userSettings.lang}.js`;
         document.body.appendChild(el);
       }
-      if (this.userSettings.notification != "") {
+      if (this.userSettings.notification) {
         this.notification = new Audio(
           `/sounds/${this.userSettings.notification}`
         );
@@ -696,7 +696,7 @@ export default {
       }
     },
     playSelectedNotification() {
-      if (this.selectedUserSettings.notification != "") {
+      if (this.selectedUserSettings.notification) {
         const audio = new Audio(
           `/sounds/${this.selectedUserSettings.notification}`
         );

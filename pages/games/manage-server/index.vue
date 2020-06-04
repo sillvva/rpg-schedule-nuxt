@@ -3,7 +3,7 @@
     <v-flex class="d-flex" justify-center align-center style="height: 100%;">
       <v-progress-circular :size="100" :width="7" color="discord" indeterminate></v-progress-circular>
     </v-flex>
-  </v-app> -->
+  </v-app>-->
   <v-container fluid>
     <v-text-field
       v-model="searchQuery"
@@ -96,7 +96,10 @@
                 <v-tabs-items v-model="tab">
                   <v-tab-item>
                     <v-list dense>
-                      <v-list-item class="px-4 mb-2" v-if="!guild.userRoles.includes(guild.config.managerRole)">
+                      <v-list-item
+                        class="px-4 mb-2"
+                        v-if="!guild.userRoles.includes(guild.config.managerRole)"
+                      >
                         <v-select
                           :label="lang.config.MANAGER_ROLE"
                           v-model="guild.config.managerRole"
@@ -221,30 +224,6 @@
                           <v-list-item-subtitle>{{lang.config.desc.EMBED_USER_TAGS_ABOVE}}</v-list-item-subtitle>
                         </v-list-item-content>
                       </v-list-item>
-
-                      <!-- <v-menu
-                        v-model="colorMenu"
-                        transition="scale-transition"
-                        offset-y
-                        min-width="290px"
-                      >
-                        <template v-slot:activator="{ on }">
-                          <v-list-item class="px-4 mb-2">
-                            <v-list-item-action>
-                              <v-btn fab small :color="guild.config.embedColor" v-on="on">&nbsp;</v-btn>
-                            </v-list-item-action>
-                            <v-list-item-content class="pt-0">
-                              <v-text-field
-                                :label="lang.config.EMBED_COLOR"
-                                v-model="guild.config.embedColor"
-                                :hint="lang.config.desc.EMBED_COLOR"
-                                persistent-hint
-                              ></v-text-field>
-                            </v-list-item-content>
-                          </v-list-item>
-                        </template>
-                        <v-color-picker v-model="guild.config.embedColor"></v-color-picker>
-                      </v-menu>-->
 
                       <v-row no-gutters>
                         <v-col cols="12" sm="6">
@@ -616,40 +595,8 @@ export default {
   watch: {
     storeGuilds: {
       handler: function(newVal) {
-        this.guilds = cloneDeep(newVal).filter(g => g.isAdmin).map(g => {
-          g.roleValues = [
-            {
-              text: (this.lang.config || {}).NO_ROLE,
-              value: null
-            },
-            ...g.roles
-              .filter(r => !r.managed && r.name !== "@everyone")
-              .map(r => {
-                return { text: r.name, value: r.name };
-              })
-          ];
-          g.channelRoleValues = [
-            {
-              text: (this.lang.config || {}).DEFAULT_SERVER,
-              value: null
-            },
-            ...g.roles
-              .filter(r => !r.managed && r.name !== "@everyone")
-              .map(r => {
-                return { text: r.name, value: r.name };
-              })
-          ];
-          g.config.escape = g.config.escape || "!";
-          g.config.gameTemplates.forEach(gt => {
-            this.colorMenus[gt.id] = false;
-          });
-          g.csv = gamesCSV(g);
-          return {
-            ...g,
-            collapsed: false,
-            filtered: false
-          };
-        });
+        this.guilds = cloneDeep(newVal).filter(g => g.isAdmin);
+        this.guilds = this.mapGuilds(this.guilds);
         if (
           !(
             this.$store.getters.account &&
@@ -663,7 +610,10 @@ export default {
     },
     storeLang: {
       handler: function(newVal) {
-        if (newVal && newVal.nav) this.lang = newVal;
+        if (newVal && newVal.nav) {
+          this.lang = newVal;
+          this.guilds = this.mapGuilds(this.guilds);
+        }
       },
       immediate: true
     },
@@ -674,24 +624,6 @@ export default {
       immediate: true
     }
   },
-  // fetchOnServer: false,
-  // async fetch() {
-  //   updateToken(this);
-  //   // if (
-  //   //   this.$store.getters.lastListingPage !== "manage-server" ||
-  //   //   (await this.$store.dispatch("isMobile"))
-  //   // ) {
-  //     this.$store.dispatch("emptyGuilds");
-  //     await this.$store.dispatch("fetchGuilds", {
-  //       page: "manage-server",
-  //       games: true,
-  //       app: this
-  //     });
-  //   // }
-  // },
-  // activated() {
-  //   this.$fetch();
-  // },
   methods: {
     saveGuildConfiguration() {
       const index = this.guilds.findIndex(g => g.editing);
@@ -754,6 +686,42 @@ export default {
     },
     cloneDeep(val) {
       return cloneDeep(val);
+    },
+    mapGuilds(guilds) {
+      return guilds.map(g => {
+          g.roleValues = [
+            {
+              text: (this.lang.config || {}).NO_ROLE,
+              value: null
+            },
+            ...g.roles
+              .filter(r => !r.managed && r.name !== "@everyone")
+              .map(r => {
+                return { text: r.name, value: r.name };
+              })
+          ];
+          g.channelRoleValues = [
+            {
+              text: (this.lang.config || {}).DEFAULT_SERVER,
+              value: null
+            },
+            ...g.roles
+              .filter(r => !r.managed && r.name !== "@everyone")
+              .map(r => {
+                return { text: r.name, value: r.name };
+              })
+          ];
+          g.config.escape = g.config.escape || "!";
+          g.config.gameTemplates.forEach(gt => {
+            this.colorMenus[gt.id] = false;
+          });
+          g.csv = gamesCSV(g);
+          return {
+            ...g,
+            collapsed: false,
+            filtered: false
+          };
+        });
     },
     search($event) {
       if (!$event || $event.key != "Enter") return;

@@ -535,7 +535,9 @@ export default {
       handler: async function(newVal) {
         this.account = newVal;
         if (newVal) {
-          this.guilds = this.account.guilds
+          const guilds = cloneDeep(this.account.guilds);
+          guilds.sort((a, b) => (a.config.password ? 1 : -1));
+          this.guilds = guilds
             .filter(
               guild =>
                 (guild.permission || guild.isAdmin) &&
@@ -696,16 +698,30 @@ export default {
   },
   methods: {
     async selectGuild(event) {
+      const guilds = this.account.guilds;
+      const guild = guilds.find(g => g.id === this.game.s);
+      if (guild.config.password && guild.config.password.length > 0) {
+        const pass = prompt("Password?", "");
+        if (pass !== guild.config.password) {
+          const nonPass = guilds.find(g => !g.config.password);
+          if (nonPass) {
+            setTimeout(() => {
+              this.game.s =
+                this.lastGuildSelected != this.game.s
+                  ? this.lastGuildSelected
+                  : nonPass.id;
+              this.selectGuild();
+            }, 100);
+            return;
+          } else
+            return this.$router.replace(this.config.urls.game.dashboard.path);
+        }
+      }
       this.modGame(this.game);
       if (event) this.changed();
       if (this.guilds.length > 0 && this.lastGuildSelected != this.game.s) {
         this.lastGuildSelected = this.game.s;
         await this.fetchGameChannels();
-        // if (this.game.c) {
-        // }
-        // else {
-        //   // this.fetchGame("s", this.game.s);
-        // }
         this.selectTemplate();
       }
     },
@@ -1045,7 +1061,9 @@ export default {
           });
         });
     },
-    getTZUrls() {
+    getTZUrls(event) {
+      const dateChanged =
+        typeof event == "string" && /\d{4}-\d{2}-\d{2}/.test(event);
       if (!this.game) return {};
       const date = this.game.date || "";
       const time = this.game.time || "";
@@ -1082,7 +1100,8 @@ export default {
           .slice(0, 13);
 
         const days = ["SU", "MO", "TU", "WE", "TH", "FR", "SA"];
-        if (!this.game.weekdays) this.game.weekdays = Array(7).fill(false);
+        if (!this.game.weekdays || dateChanged)
+          this.game.weekdays = Array(7).fill(false);
         const weekdays = this.game.weekdays
           .map((w, i) => w && days[i])
           .filter(w => w);
@@ -1090,6 +1109,7 @@ export default {
         if (weekdays.length == 0) {
           const wd = moment(date).weekday();
           this.game.weekdays[wd] = true;
+          this.weekdays = [wd];
         }
 
         if (frequency == 1) {
@@ -1137,8 +1157,8 @@ export default {
         };
       }
     },
-    dateTimeLinks() {
-      const link = this.getTZUrls();
+    dateTimeLinks(event) {
+      const link = this.getTZUrls(event);
       this.convertLink = link.convert;
       // $("#gcalLink").html(
       //   `<a href="${link.gcal}" target="_blank" rel="nofollow"><%= lang.game.ADD_TO_CALENDAR %></a>`

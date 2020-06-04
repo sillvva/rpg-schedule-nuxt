@@ -542,14 +542,15 @@ export default {
                 guild.announcementChannels.length > 0
             )
             .map(g => ({ text: g.name, value: g.id }));
-
           if (this.guilds.length > 0) {
-            if (!this.game) {
-              this.game = { s: this.guilds[0].value };
-              await this.$fetch();
-            } else this.game.s = this.guilds[0].value;
-            await this.selectGuild();
-            this.modGame(this.game);
+            if (!this.gameId) {
+              if (!this.game) {
+                this.game = { s: this.guilds[0].value };
+                await this.$fetch();
+              } else this.game.s = this.guilds[0].value;
+              await this.selectGuild();
+              this.modGame(this.game);
+            }
           } else if (!this.gameId) {
             this.$router.replace(`/games/${this.lastListingPage}`);
           }
@@ -754,7 +755,8 @@ export default {
       return await this.$store
         .dispatch("fetchGame", {
           param: param,
-          value: value
+          value: value,
+          app: this
         })
         .then(game => {
           this.finishFetchGame(game);

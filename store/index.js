@@ -250,6 +250,20 @@ export const actions = {
               vuexContext.commit("setUserSettings", authResult.user);
               vuexContext.dispatch("setSelectedLang", authResult.user.lang);
             }
+            if (authResult.version) {
+              const newVersion = authResult.version.split(".");
+              const oldVersion = (localStorage.getItem("apiVersion") || "2.0.0").split(".");
+              localStorage.setItem("apiVersion", authResult.version);
+              if (parseInt(newVersion[0]) > parseInt(oldVersion[0]) || parseInt(newVersion[1]) > parseInt(oldVersion[1])) {
+                vuexContext.dispatch("signOut").then(() => {
+                  this.$cookies.remove("token", { path: "/" });
+                  this.$cookies.remove("token", { path: "/games" });
+                  this.$router.push("/", () => {
+                    // window.location.reload(true);
+                  });
+                });
+              }
+            }
             break;
           } else if (result.data.status == "error") {
             // aux.log(tokenCookies[i]);
@@ -436,17 +450,59 @@ export const actions = {
       }
     });
   },
-  async fetchGame(vuexContext, { param, value }) {
-    return this.$axios
-      .get(`${this.getters.env.apiUrl}/api/game?${param}=${value}`)
-      .then(result => {
-        if (result.data.status == "error")
-          throw new Error(result.data && result.data.message);
-        return result.data.game;
-      })
-      .catch(err => {
-        aux.log(err);
-      });
+  async fetchGame(vuexContext, { app, param, value }) {
+    const cookies = [];
+    const hCookies = app.$cookies.getAll();
+    for (const name in hCookies) {
+      cookies.push({ name: name, value: hCookies[name] });
+    }
+
+    const tokenCookies = [];
+    for (const cookie of cookies) {
+      if (cookie.name == "token") tokenCookies.push(cookie.value);
+    }
+
+    if (process.env.NODE_ENV === "development")
+      aux.log("fetchGame", tokenCookies);
+
+    return new Promise(async (resolve, reject) => {
+      let savedResult,
+        successes = 0,
+        reauthenticated = 0;
+      for (let i = 0; i < tokenCookies.length; i++) {
+        try {
+          const result = await this.$axios.get(
+            `${this.getters.env.apiUrl}/auth-api/game?${param}=${value}`,
+            {
+              headers: {
+                Authorization: `Bearer ${tokenCookies[i]}`,
+                "Content-Type": "application/json"
+              }
+            }
+          );
+
+          const authResult = result.data;
+          if (authResult.token && authResult.token != tokenCookies[i]) {
+            // aux.log(1, authResult.token, tokenCookies[i]);
+            await authAux.setToken(app, authResult.token);
+          }
+          if (authResult.status == "success") {
+            successes++;
+            savedResult = authResult;
+          } else if (authResult.status == "error") {
+            if (authResult.reauthenticate) reauthenticated++;
+            throw new Error(authResult && authResult.message);
+          }
+        } catch (err) {
+          aux.log(3, err);
+        }
+      }
+      if (successes > 0) resolve(savedResult.game);
+      else {
+        if (reauthenticated > 0) reauthenticate(commit, this, route.path);
+        reject();
+      }
+    });
   },
   async saveGame(vuexContext, { gameData, app }) {
     const cookies = [];

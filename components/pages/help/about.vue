@@ -19,18 +19,12 @@
       |
       <a href="/r/cashapp" target="_blank" style="white-space: nowrap;">Cash App</a>
     </h4>
-    <h4>
+    <h4 class="mb-4">
       Need assistance?
       <span style="white-space: nowrap;">
         Join my
         <a href="https://discord.gg/mazZEe3" target="_blank">Discord server</a>.
       </span>
-    </h4>
-    <h4 class="mb-4">
-      <a
-        href="https://github.com/sillvva/rpg-schedule/blob/master/CHANGELOG.md"
-        target="_blank"
-      >Change Log</a>
     </h4>
 
     <v-card class="mb-4" color="grey darken-3">

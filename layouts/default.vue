@@ -532,7 +532,8 @@ export default {
       this.$store
         .dispatch("fetchGame", {
           param: "g",
-          value: gameId
+          value: gameId,
+          app: this
         })
         .then(game => {
           const guild = account.guilds.find(g => g.id === guildId);
@@ -561,7 +562,7 @@ export default {
         })
         .catch(err => {
           this.$store.dispatch("addSnackBar", {
-            message: (err && err.message) || err || "An error occured!",
+            message:"An error occured!",
             color: "error darken-1"
           });
         });
@@ -650,7 +651,8 @@ export default {
         this.settingMaintenanceDuration = 0;
         this.maintenanceBarColor = "discord";
         if (prevM && this.settings.maintenanceDuration === 0) {
-          return this.signOut();
+          this.signOut();
+          return window.location.reload();
         }
         if (this.settings && this.settings.maintenanceTime > 0) {
           if (

@@ -137,6 +137,18 @@
             </td>
           </tr>
           <tr>
+            <td>
+              !schedule embed-user-tags-above
+              <code>on/off</code>
+            </td>
+            <td>
+              <code>on</code>
+            </td>
+            <td>
+              Add mentions above announcement embeds
+            </td>
+          </tr>
+          <tr>
             <td>!schedule emoji-sign-up ➕</td>
             <td>➕</td>
             <td>Set the emoji used for automated sign up</td>

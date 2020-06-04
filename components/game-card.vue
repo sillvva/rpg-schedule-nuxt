@@ -158,10 +158,10 @@ export default {
       immediate: true
     }
   },
-  created() {
+  mounted() {
     this.populateColumns();
     this.parseDateInterval = setInterval(() => {
-      this.parseDates();
+      this.populateColumns();
     }, 30 * 1000);
   },
   onDestroy() {
@@ -211,7 +211,7 @@ export default {
             class: game.moment.state,
             value: this.lang.game.labels.TBD,
           });
-        } else {
+        } else if (game.moment) {
           const tdiff = game.timestamp - moment().valueOf();
           items.push({
             id: "when",

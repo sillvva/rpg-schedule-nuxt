@@ -1,10 +1,10 @@
 <template>
-  <v-app v-if="$fetchState.pending">
+  <!-- <v-app v-if="$fetchState.pending">
     <v-flex class="d-flex" justify-center align-center style="height: 100%;">
       <v-progress-circular :size="100" :width="7" color="discord" indeterminate></v-progress-circular>
     </v-flex>
-  </v-app>
-  <v-container fluid v-else>
+  </v-app> -->
+  <v-container fluid>
     <v-text-field
       v-model="searchQuery"
       @keyup="search"
@@ -38,7 +38,7 @@
       >Collapse All</v-btn>
     </v-app-bar>
     <v-card
-      v-for="(guild, g) in guilds.filter(g => !g.filtered)"
+      v-for="(guild, g) in guilds.filter(g => !g.filtered && (g.permission || g.games.length > 0))"
       v-bind:key="g"
       max-width="100%"
       class="mb-3"
@@ -154,6 +154,18 @@ export default {
       handler: function(newVal) {
         this.guilds = cloneDeep(newVal).map(g => ({
           ...g,
+          games: g.games.filter(game => {
+            let show = false;
+            if (game.dm.id === this.account.user.id) show = true;
+            if (game.dm.tag === this.account.user.tag) show = true;
+            if (game.author.id === this.account.user.id) show = true;
+            if (game.author.tag === this.account.user.tag) show = true;
+            game.reserved.forEach(r => {
+              if (r.id === this.account.user.id) show = true;
+              if (r.tag === this.account.user.tag) show = true;
+            });
+            return show;
+          }),
           collapsed: false
         }));
         this.searchGuild();
@@ -167,24 +179,24 @@ export default {
       immediate: true
     }
   },
-  fetchOnServer: false,
-  async fetch() {
-    updateToken(this);
-    // if (
-    //   this.$store.getters.lastListingPage !== "my-games" ||
-    //   (await this.$store.dispatch("isMobile"))
-    // ) {
-      this.$store.dispatch("emptyGuilds");
-      await this.$store.dispatch("fetchGuilds", {
-        page: "my-games",
-        games: true,
-        app: this
-      });
-    // }
-  },
-  activated() {
-    this.$fetch();
-  },
+  // fetchOnServer: false,
+  // async fetch() {
+  //   updateToken(this);
+  //   // if (
+  //   //   this.$store.getters.lastListingPage !== "my-games" ||
+  //   //   (await this.$store.dispatch("isMobile"))
+  //   // ) {
+  //     this.$store.dispatch("emptyGuilds");
+  //     await this.$store.dispatch("fetchGuilds", {
+  //       page: "my-games",
+  //       games: true,
+  //       app: this
+  //     });
+  //   // }
+  // },
+  // activated() {
+  //   this.$fetch();
+  // },
   methods: {
     collapseAll() {
       this.guilds = this.guilds.map(g => {

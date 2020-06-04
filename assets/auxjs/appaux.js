@@ -19,19 +19,20 @@ const parseConfigURLs = paths => {
   return urls;
 };
 
+const zeroPad = (n, width, z = "0") => {
+  n = n + "";
+  return n.length >= width ? n : new Array(width - n.length + 1).join(z) + n;
+};
+
 const parseTimeZoneISO = (timezone) => {
   const tz = Math.abs(timezone);
   const hours = Math.floor(tz);
   const minutes = (tz - hours) * 60;
-  const zeroPad = (n, width, z = "0") => {
-    n = n + "";
-    return n.length >= width ? n : new Array(width - n.length + 1).join(z) + n;
-  };
   return zeroPad(hours, 2) + zeroPad(minutes, 2);
 };
 
 const parseEventTimes = (event, options = {}) => {
-  const raw = `${event.date} ${event.time} UTC${event.timezone < 0 ? "-" : "+"}${Math.abs(event.timezone)}`;
+  const raw = `${event.date}T${event.time}:00.000${event.timezone < 0 ? "-" : "+"}${parseTimeZoneISO(event.timezone)}`;
   const isoutcStart = `${new Date(raw)
     .toISOString()
     .replace(/[^0-9T]/gi, "")
@@ -42,8 +43,7 @@ const parseEventTimes = (event, options = {}) => {
     .toISOString()
     .replace(/[^0-9T]/gi, "")
     .slice(0, 13)}00Z`;
-  const rawDate = `${event.date} ${event.time} UTC${event.timezone < 0 ? "-" : "+"}${parseTimeZoneISO(event.timezone)}`;
-  const d = new Date(rawDate)
+  const d = new Date(raw)
     .toISOString()
     .replace(/[^0-9T]/gi, "")
     .slice(0, 13);
@@ -85,7 +85,6 @@ const parseEventTimes = (event, options = {}) => {
 
   return {
     raw: raw,
-    rawDate: rawDate,
     isoutc: isoutcStart,
     isoutcStart: isoutcStart,
     isoutcEnd: isoutcEnd,
@@ -96,9 +95,9 @@ const parseEventTimes = (event, options = {}) => {
     countdown: `https://www.timeanddate.com/countdown/generic?iso=${d}&p0=1440${convert2Extras.join("")}`,
     googleCal: `http://www.google.com/calendar/render?action=TEMPLATE&dates=${isoutcStart}/${isoutcEnd}&trp=true${googleCalExtras.join("")}`,
     iso: date,
-    date: moment(date).utcOffset(parseInt(event.timezone)).format('llll'),
-    calendar: moment(date).utcOffset(parseInt(event.timezone)).calendar(),
-    from: moment(date).utcOffset(parseInt(event.timezone)).fromNow(),
+    date: moment(date).format('llll'),
+    calendar: moment(date).calendar(),
+    from: moment(date).fromNow(),
   };
 };
 

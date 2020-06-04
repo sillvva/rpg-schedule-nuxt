@@ -1,10 +1,10 @@
 <template>
-  <v-app v-if="$fetchState.pending">
+  <!-- <v-app v-if="$fetchState.pending">
     <v-flex class="d-flex" justify-center align-center style="height: 100%;">
       <v-progress-circular :size="100" :width="7" color="discord" indeterminate></v-progress-circular>
     </v-flex>
-  </v-app>
-  <v-container fluid v-else style="height: 100%;" class="cal-cont">
+  </v-app>-->
+  <v-container fluid style="height: 100%;" class="cal-cont">
     <v-card style="height: 100%;">
       <v-toolbar color="discord" v-if="lang.game && baseDate && moment">
         <v-toolbar-title class="d-none d-md-flex mb-0 align-center">
@@ -94,7 +94,7 @@
 
 <script>
 import { updateToken } from "../../../assets/auxjs/auth";
-import { checkRSVP } from "../../../assets/auxjs/appaux";
+import { checkRSVP, parseEventTimes } from "../../../assets/auxjs/appaux";
 import GameCard from "../../../components/game-card";
 import { cloneDeep } from "lodash";
 import moment from "moment";
@@ -159,25 +159,18 @@ export default {
       immediate: true
     }
   },
-  fetchOnServer: false,
-  async fetch() {
-    updateToken(this);
-    // if (this.$store.getters.lastListingPage !== "calendar" || await this.$store.dispatch("isMobile")) {
-      this.$store.dispatch("emptyGuilds");
-      await this.$store.dispatch("fetchGuilds", {
-        page: "calendar",
-        games: true,
-        app: this
-      });
-    // }
-  },
-  activated() {
-    this.$fetch();
-  },
   methods: {
     allGames() {
       if (!this.account.guilds) return;
       this.games = this.account.guilds
+        .map(guild => {
+          return {
+            ...guild,
+            games: guild.games.filter(game => {
+              return game.timestamp >= new Date().getTime();
+            })
+          };
+        })
         .filter(guild => guild.games.length > 0)
         .reduce((acc, guild) => {
           return acc.concat(
@@ -222,9 +215,19 @@ export default {
             curMonth: curmonth,
             md: md,
             dx: dx,
-            games: curmonth ? this.games.filter(g => g.date === dx) : [],
+            games: curmonth
+              ? this.games.filter(g => {
+                  const parsedDates = parseEventTimes(g);
+                  const date = moment(parsedDates.iso).format("YYYY-MM-DD");
+                  return date === dx;
+                })
+              : [],
             reserved: this.games
-              .filter(g => g.date === dx)
+              .filter(g => {
+                const parsedDates = parseEventTimes(g);
+                const date = moment(parsedDates.iso).format("YYYY-MM-DD");
+                return date === dx;
+              })
               .find(
                 g =>
                   checkRSVP(g.dm, this.account.user) ||
@@ -241,15 +244,28 @@ export default {
     moment(val) {
       return moment(val);
     },
+    updateUrl() {
+      const url = `${this.config.urls.game.calendar.path}?y=${
+        this.selYear
+      }&m=${this.selMonth + 1}&d=${this.selDate}`;
+      if (
+        this.$route.path === this.config.urls.game.calendar.path &&
+        this.$route.fullPath === url
+      )
+        return;
+      this.$router.replace(url);
+    },
     selectDate(date) {
       if (!date.curMonth) return;
       this.selDate = moment(`${date.dx}T00:00:00`).date();
+      this.updateUrl();
       this.renderCalendarMonth();
     },
     selectToday() {
       this.selYear = moment().year();
       this.selMonth = moment().month();
       this.selDate = moment().date();
+      this.updateUrl();
       this.renderCalendarMonth();
     },
     incrementMonth() {
@@ -258,6 +274,7 @@ export default {
         this.selMonth = 1;
         this.selYear += 1;
       }
+      this.updateUrl();
       this.renderCalendarMonth();
     },
     decrementMonth() {
@@ -266,6 +283,7 @@ export default {
         this.selMonth = 12;
         this.selYear -= 1;
       }
+      this.updateUrl();
       this.renderCalendarMonth();
     }
   }

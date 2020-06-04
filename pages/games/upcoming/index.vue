@@ -1,11 +1,5 @@
 <template>
-  <v-app v-if="$fetchState.pending">
-    <v-flex class="d-flex" justify-center align-center style="height: 100%;">
-      <v-progress-circular :size="100" :width="7" color="discord" indeterminate></v-progress-circular>
-      <nuxt />
-    </v-flex>
-  </v-app>
-  <v-container fluid v-else>
+  <v-container fluid>
     <v-text-field
       v-model="searchQuery"
       @keyup="search"
@@ -131,6 +125,9 @@ export default {
       handler: function(newVal) {
         this.guilds = cloneDeep(newVal).map(g => ({
           ...g,
+          games: g.games.filter(game => {
+            return game.timestamp >= new Date().getTime()
+          }),
           collapsed: false
         }));
         this.searchGuild();
@@ -144,21 +141,20 @@ export default {
       immediate: true
     }
   },
-  fetchOnServer: false,
-  async fetch() {
-    updateToken(this);
-    // if (this.$store.getters.lastListingPage !== "upcoming" || await this.$store.dispatch("isMobile")) {
-      this.$store.dispatch("emptyGuilds");
-      await this.$store.dispatch("fetchGuilds", {
-        page: "upcoming",
-        games: true,
-        app: this
-      });
-    // }
-  },
-  activated() {
-    this.$fetch();
-  },
+  // fetchOnServer: false,
+  // async fetch() {
+  //   updateToken(this);
+  //   // if (this.$store.getters.lastListingPage !== "upcoming" || await this.$store.dispatch("isMobile")) {
+  //     this.$store.dispatch("emptyGuilds");
+  //     await this.$store.dispatch("fetchGuilds", {
+  //       page: "upcoming",
+  //       games: true,
+  //       app: this
+  //     });
+  //   // }
+  // },
+  // activated() {
+  //   this.$f
   methods: {
     collapseAll() {
       this.guilds = this.guilds.map(g => {

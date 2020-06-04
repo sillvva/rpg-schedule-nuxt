@@ -1,10 +1,10 @@
 <template>
-  <v-app v-if="$fetchState.pending">
+  <!-- <v-app v-if="$fetchState.pending">
     <v-flex class="d-flex" justify-center align-center style="height: 100%;">
       <v-progress-circular :size="100" :width="7" color="discord" indeterminate></v-progress-circular>
     </v-flex>
-  </v-app>
-  <v-container fluid v-else>
+  </v-app> -->
+  <v-container fluid>
     <v-text-field
       v-model="searchQuery"
       @keyup="search"
@@ -96,15 +96,15 @@
                 <v-tabs-items v-model="tab">
                   <v-tab-item>
                     <v-list dense>
-                      <!-- <v-list-item class="px-4 mb-2">
+                      <v-list-item class="px-4 mb-2" v-if="!guild.userRoles.includes(guild.config.managerRole)">
                         <v-select
-                          :label="lang.config.ROLE"
-                          v-model="guild.config.role"
-                          :hint="lang.config.desc.ROLE"
+                          :label="lang.config.MANAGER_ROLE"
+                          v-model="guild.config.managerRole"
+                          :hint="lang.config.desc.MANAGER_ROLE"
                           persistent-hint
                           :items="guild.roleValues"
                         ></v-select>
-                      </v-list-item>-->
+                      </v-list-item>
 
                       <v-list-item class="px-4 mb-2">
                         <v-text-field
@@ -202,6 +202,23 @@
                         <v-list-item-content>
                           <v-list-item-title>{{lang.config.EMBED_USER_TAGS}}</v-list-item-title>
                           <v-list-item-subtitle>{{lang.config.desc.EMBED_USER_TAGS}}</v-list-item-subtitle>
+                        </v-list-item-content>
+                      </v-list-item>
+
+                      <v-list-item
+                        @click="guild.config.embedMentionsAbove = !guild.config.embedMentionsAbove"
+                      >
+                        <v-list-item-action>
+                          <v-checkbox
+                            v-model="guild.config.embedMentionsAbove"
+                            color="discord"
+                            @click.stop="guild.config.embedMentionsAbove = !guild.config.embedMentionsAbove"
+                          ></v-checkbox>
+                        </v-list-item-action>
+
+                        <v-list-item-content>
+                          <v-list-item-title>{{lang.config.EMBED_USER_TAGS_ABOVE}}</v-list-item-title>
+                          <v-list-item-subtitle>{{lang.config.desc.EMBED_USER_TAGS_ABOVE}}</v-list-item-subtitle>
                         </v-list-item-content>
                       </v-list-item>
 
@@ -657,24 +674,24 @@ export default {
       immediate: true
     }
   },
-  fetchOnServer: false,
-  async fetch() {
-    updateToken(this);
-    // if (
-    //   this.$store.getters.lastListingPage !== "manage-server" ||
-    //   (await this.$store.dispatch("isMobile"))
-    // ) {
-      this.$store.dispatch("emptyGuilds");
-      await this.$store.dispatch("fetchGuilds", {
-        page: "manage-server",
-        games: true,
-        app: this
-      });
-    // }
-  },
-  activated() {
-    this.$fetch();
-  },
+  // fetchOnServer: false,
+  // async fetch() {
+  //   updateToken(this);
+  //   // if (
+  //   //   this.$store.getters.lastListingPage !== "manage-server" ||
+  //   //   (await this.$store.dispatch("isMobile"))
+  //   // ) {
+  //     this.$store.dispatch("emptyGuilds");
+  //     await this.$store.dispatch("fetchGuilds", {
+  //       page: "manage-server",
+  //       games: true,
+  //       app: this
+  //     });
+  //   // }
+  // },
+  // activated() {
+  //   this.$fetch();
+  // },
   methods: {
     saveGuildConfiguration() {
       const index = this.guilds.findIndex(g => g.editing);

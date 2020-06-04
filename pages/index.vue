@@ -1,15 +1,34 @@
 <template>
-  <v-container d-flex flex-column align-center style="height: 100vh;">
-    <v-img src="/images/logo.png" :max-height="windowWidth < 600 || windowHeight < 600 ? windowHeight <= 568 ? 100 : 200 : 264" max-width="300px" contain class="mb-3" />
+  <v-app v-if="loading">
+    <v-flex class="d-flex" justify-center align-center style="height: 100%;">
+      <v-progress-circular :size="100" :width="7" color="discord" indeterminate></v-progress-circular>
+    </v-flex>
+  </v-app>
+  <v-container v-else d-flex flex-column align-center style="height: 100vh;">
+    <v-img
+      src="/images/logo.png"
+      :max-height="windowWidth < 600 || windowHeight < 600 ? windowHeight <= 568 ? 100 : 200 : 264"
+      max-width="300px"
+      contain
+      class="mb-3"
+    />
     <v-row justify="center">
       <v-col cols="6" class="text-right">
-        <v-btn :href="$store.getters.env.inviteUrl" target="_blank" @click="invited">{{lang.nav.INVITE}}</v-btn>
+        <v-btn
+          :href="$store.getters.env.inviteUrl"
+          target="_blank"
+          @click="invited"
+        >{{lang.nav.INVITE}}</v-btn>
       </v-col>
       <v-col cols="6">
         <v-btn :href="$store.getters.env.authUrl" class="bg-discord">{{lang.nav.LOGIN}}</v-btn>
       </v-col>
     </v-row>
-    <v-carousel :show-arrows="false" cycle :height="windowWidth < 600 || windowHeight < 600 ? `calc(100vh - ${windowHeight <= 568 ? 204 : 284}px)` : 600">
+    <v-carousel
+      :show-arrows="false"
+      cycle
+      :height="windowWidth < 600 || windowHeight < 600 ? `calc(100vh - ${windowHeight <= 568 ? 204 : 284}px)` : 600"
+    >
       <v-carousel-item reverse-transition="fade-transition" transition="fade-transition">
         <v-sheet height="100%" style="background-color:rgba(0, 0, 0, 0.5);">
           <v-row class="fill-height" align="center" justify="center">
@@ -99,12 +118,12 @@ import lang from "../assets/lang/en.json";
 
 export default {
   layout: "noframe",
-  middleware: ["authenticated"],
   data() {
     return {
       lang: lang,
       windowWidth: 0,
       windowHeight: 0,
+      loading: true,
       onResize: () => {
         this.windowWidth = window.innerWidth;
         this.windowHeight = window.innerHeight;
@@ -134,9 +153,37 @@ export default {
   created() {
     this.lang = lang;
   },
-  mounted() {
+  async mounted() {
     window.addEventListener("resize", this.onResize);
     this.onResize();
+
+    const cookies = [];
+    const hCookies = this.$cookies.getAll();
+    for (const name in hCookies) {
+      cookies.push({ name: name, value: hCookies[name] });
+    }
+    let redirectToken = null;
+    const tokenCookies = [];
+    for (const cookie of cookies) {
+      if (cookie.name == "redirect") redirectToken = cookie.value;
+      if (cookie.name == "token") tokenCookies.push(cookie.value);
+    }
+    if (tokenCookies.length > 0) {
+      await this.$store
+        .dispatch("fetchGuilds", {
+          app: this
+        })
+        .then(result => {
+          if (result.status === "success") {
+            this.account = result.account;
+            if (this.$route.path === "/")
+              this.$router.replace(redirectToken || "/games/upcoming");
+          }
+          return result;
+        });
+    }
+
+    this.loading = false;
   },
   beforeDestroy() {
     window.removeEventListener("resize", this.onResize);

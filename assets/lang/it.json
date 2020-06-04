@@ -138,6 +138,9 @@
     "EMBED_USER_TAGS": "Incorporare i tag utente",
     "EMBED_USER_TAGS_ON": "I tag utente incorporati sono stati attivati!",
     "EMBED_USER_TAGS_OFF": "I tag utente incorporati sono stati disattivati!",
+    "EMBED_USER_TAGS_ABOVE": "Menzioni sopra incorporate",
+    "EMBED_USER_TAGS_ABOVE_ON": "Sono state attivate le menzioni sopra gli incorporamenti!",
+    "EMBED_USER_TAGS_ABOVE_OFF": "Le menzioni sopra gli incorporamenti sono state disattivate!",
     "EMOJI_JOIN": "Emoji (registrati)",
     "EMOJI_LEAVE": "Emoji (cancellati)",
     "EMOJI_JOIN_SET": "emoji di iscrizione aggiornata!",
@@ -176,6 +179,7 @@
       "PRUNE_INTERVAL_DISCORD": "Gli annunci di gioco verranno eliminati da Discord ogni X giorni",
       "EMBEDS": "Usa gli incorporamenti di discord per gli annunci",
       "EMBED_USER_TAGS": "Includi tag utente negli incorporamenti degli annunci (può occasionalmente glitch)",
+      "EMBED_USER_TAGS_ABOVE": "Ajouter des mentions au-dessus des annonces intégrées",
       "EMBED_COLOR": "Imposta un colore di incorporamento discord",
       "EMBED_COLOR_ERROR": "Il colore di incorporamento deve usare un formato esadecimale. Esempio: `#2196f3` Vedi https://www.color-hex.com/ per maggiori informazioni.",
       "EMOJI": "Imposta l'emoji utilizzata per la registrazione automatica",
@@ -192,8 +196,11 @@
     }
   },
   "other": {
+    "DM_WAITLIST": "Attualmente sei nello slot :NUM della lista d'attesa.",
+    "DM_INSTRUCTIONS": "Un messaggio di :DM per :EVENT",
     "MAINTENANCE": "Il sito sarà in manutenzione :TIME per circa :DURATION ora / e.",
     "UNDER_MAINTENANCE": "è in manutenzione",
+    "YOURE_IN": "You're in! You've secured a spot for **:GAME** in **:SERVER**.",
     "BACK_SOON": "Tornerà presto!"
   }
 }

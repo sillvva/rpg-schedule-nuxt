@@ -118,7 +118,7 @@
 
     <v-navigation-drawer
       v-model="drawer"
-      v-if="!['/','/maintenace'].includes(this.$route.path) && !maintenanceMode"
+      v-if="!['/','/maintenace'].includes(this.$route.path) && !maintenanceMode && !(['/help', '/games/edit'].includes($route.path) && !account && !loadingAccount)"
       fixed
       clipped
       app
@@ -215,8 +215,14 @@
         <v-spacer></v-spacer>
       </v-system-bar>
 
+      <v-app v-if="/^\/games\//.test($route.path) && !account">
+        <v-flex class="d-flex" justify-center align-center style="height: 100%;">
+          <v-progress-circular :size="100" :width="7" color="discord" indeterminate></v-progress-circular>
+        </v-flex>
+      </v-app>
       <nuxt
         keep-alive
+        v-else
         :key="!urlConfig || urlConfig.refreshOnParamsChange ? $route.fullPath : $route.path"
       />
     </v-content>
@@ -234,7 +240,7 @@ import { cloneDeep } from "lodash";
 let lastGuildRefresh = new Date().getTime();
 
 export default {
-  middleware: ["check-auth"],
+  // middleware: ["check-auth"],
   components: {
     SnackBars: SnackBars
   },
@@ -293,7 +299,8 @@ export default {
       onResize: () => {
         this.windowWidth = window.innerWidth;
       },
-      socket: null
+      socket: null,
+      loadingAccount: false
     };
   },
   computed: {
@@ -392,54 +399,52 @@ export default {
             path
           );
 
-          if (gamesPage) {
-            if (["new"].includes(data.action)) {
-              this.socketAddGame(
-                account,
-                data.gameId,
-                data.guildId,
-                data.authorId
+          if (["new"].includes(data.action)) {
+            this.socketAddGame(
+              account,
+              data.gameId,
+              data.guildId,
+              data.authorId
+            );
+          } else if (
+            data.action == "updated" &&
+            guilds.find(g => g.id == data.guildId)
+          ) {
+            // An existing game has been updated, update the store if it belongs to one of current user's guilds
+            let updated = false;
+            // const match = !!guilds.find(g =>
+            //   g.games.find(ga => ga._id == data.gameId)
+            // );
+            // if (!match)
+            //   this.socketAddGame(account, data.gameId, data.guildId);
+            guilds = guilds.map(guild => {
+              const index = guild.games.findIndex(
+                game => game._id == data.gameId
               );
-            } else if (
-              data.action == "updated" &&
-              guilds.find(g => g.id == data.guildId)
-            ) {
-              // An existing game has been updated, update the store if it belongs to one of current user's guilds
-              let updated = false;
-              const match = !!guilds.find(g =>
-                g.games.find(ga => ga._id == data.gameId)
-              );
-              if (!match)
-                this.socketAddGame(account, data.gameId, data.guildId);
-              guilds = guilds.map(guild => {
-                const index = guild.games.findIndex(
-                  game => game._id == data.gameId
+              if (index >= 0) {
+                for (const prop in data.game) {
+                  updated = true;
+                  guild.games[index][prop] = data.game[prop];
+                }
+              }
+              return guild;
+            });
+            if (updated) this.$store.commit("setGuilds", guilds);
+          } else if (
+            data.action == "deleted" &&
+            guilds.find(g => g.id == data.guildId)
+          ) {
+            // An existing game has been deleted, update the store if it belongs to one of current user's guilds
+            guilds = guilds.map(guild => {
+              if (guild.games.find(game => game._id == data.gameId)) {
+                guild.games.splice(
+                  guild.games.findIndex(game => game._id == data.gameId),
+                  1
                 );
-                if (index >= 0) {
-                  for (const prop in data.game) {
-                    updated = true;
-                    guild.games[index][prop] = data.game[prop];
-                  }
-                }
-                return guild;
-              });
-              if (updated) this.$store.commit("setGuilds", guilds);
-            } else if (
-              data.action == "deleted" &&
-              guilds.find(g => g.id == data.guildId)
-            ) {
-              // An existing game has been deleted, update the store if it belongs to one of current user's guilds
-              guilds = guilds.map(guild => {
-                if (guild.games.find(game => game._id == data.gameId)) {
-                  guild.games.splice(
-                    guild.games.findIndex(game => game._id == data.gameId),
-                    1
-                  );
-                }
-                return guild;
-              });
-              this.$store.commit("setGuilds", guilds);
-            }
+              }
+              return guild;
+            });
+            this.$store.commit("setGuilds", guilds);
           }
         }
       }
@@ -457,6 +462,8 @@ export default {
     }
   },
   async mounted() {
+    this.loadingAccount = true;
+
     window.addEventListener("resize", this.onResize);
     this.onResize();
 
@@ -464,13 +471,13 @@ export default {
     this.$store.commit("setSnackBars", []);
     this.setSettings();
 
-    if (
-      !/^\/games\/(upcoming|my-games|calendar|manage-server|past-events)/.test(
-        this.$route.path
-      )
-    ) {
-      await this.$store.dispatch("fetchGuilds", {});
-    }
+    await this.$store.dispatch("fetchGuilds", {
+      app: this,
+      page: "manage-server",
+      games: true
+    });
+
+    this.loadingAccount = false;
 
     await this.$store.dispatch("fetchSiteSettings");
     let isMobile = await this.$store.dispatch("isMobile");
@@ -499,7 +506,7 @@ export default {
   methods: {
     setup() {
       if (localStorage.getItem("invited") && this.$store.getters.account) {
-        this.$router.push("/help?tab=setup");
+        this.$router.push("/help/setup");
         localStorage.removeItem("invited");
       }
     },
@@ -543,7 +550,11 @@ export default {
               });
             }
             this.$store.commit("setGuilds", account.guilds);
-            if (game && game.dm.id !== account.user.id) {
+            if (
+              game &&
+              game.author.id !== account.user.id &&
+              game.timestamp > new Date().getTime()
+            ) {
               this.playNotification();
             }
           }

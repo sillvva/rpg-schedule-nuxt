@@ -32,8 +32,9 @@
         class="ml-4"
       >Collapse All</v-btn>
     </v-app-bar>
+
     <v-card
-      v-for="(guild, g) in guilds.filter(g => !g.filtered).filter(g => g.games.length > 0)"
+      v-for="(guild, g) in guilds.filter(g => !g.filtered).filter(g => g.games.filter(gm => !gm.filtered).length > 0)"
       v-bind:key="g"
       max-width="100%"
       class="mb-3"
@@ -89,7 +90,6 @@
 </template>
 
 <script>
-import { updateToken } from "../../../assets/auxjs/auth";
 import GameCard from "../../../components/game-card";
 import { cloneDeep } from "lodash";
 
@@ -141,20 +141,6 @@ export default {
       immediate: true
     }
   },
-  // fetchOnServer: false,
-  // async fetch() {
-  //   updateToken(this);
-  //   // if (this.$store.getters.lastListingPage !== "upcoming" || await this.$store.dispatch("isMobile")) {
-  //     this.$store.dispatch("emptyGuilds");
-  //     await this.$store.dispatch("fetchGuilds", {
-  //       page: "upcoming",
-  //       games: true,
-  //       app: this
-  //     });
-  //   // }
-  // },
-  // activated() {
-  //   this.$f
   methods: {
     collapseAll() {
       this.guilds = this.guilds.map(g => {

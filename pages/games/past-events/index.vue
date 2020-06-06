@@ -86,7 +86,6 @@
 </template>
 
 <script>
-import { updateToken } from "../../../assets/auxjs/auth";
 import { gamesCSV } from "../../../assets/auxjs/appaux";
 import GameCard from "../../../components/game-card";
 import { cloneDeep } from "lodash";
@@ -208,24 +207,6 @@ export default {
       immediate: true
     }
   },
-  // fetchOnServer: false,
-  // async fetch() {
-  //   updateToken(this);
-  //   // if (
-  //   //   this.$store.getters.lastListingPage !== "past-events" ||
-  //   //   (await this.$store.dispatch("isMobile"))
-  //   // ) {
-  //     this.$store.dispatch("emptyGuilds");
-  //     await this.$store.dispatch("fetchGuilds", {
-  //       page: "past-events",
-  //       games: true,
-  //       app: this
-  //     });
-  //   // }
-  // },
-  // activated() {
-  //   this.$fetch();
-  // },
   methods: {
     saveGuildConfiguration() {
       const guild = this.guilds.find(g => g.editing);
@@ -262,14 +243,16 @@ export default {
             .then(result => {
               this.$store.dispatch("addSnackBar", {
                 message: "Configuration saved successfully" || err,
-                color: "success darken-2"
+                color: "success",
+                timeout: 10
               });
               guild.editing = false;
             })
             .catch(err => {
               this.$store.dispatch("addSnackBar", {
                 message: (err && err.message) || err || "An error occured!",
-                color: "error"
+                color: "error",
+                timeout: 10
               });
             });
         }

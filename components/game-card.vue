@@ -94,7 +94,7 @@
         class="pt-3"
         style="height: 90vh; max-height: 500px;"
         v-html="mdParse(`
-        **${lang.game.DATE}:** ${game.hideDate ? this.lang.game.labesl.TBD : game.moment && game.moment.date}
+        **${lang.game.DATE}:** ${game.hideDate ? this.lang.game.labels.TBD : game.moment && game.moment.date}
         **${lang.game.RUN_TIME}:** ${game.runtime} ${lang.game.labels.HOURS}
         **${lang.game.WHERE}:** ${game.where}
         ${game.description.trim().length > 0 ? `**${lang.game.DESCRIPTION}:**
@@ -184,6 +184,7 @@ export default {
       });
     },
     populateColumns() {
+      this.game = cloneDeep(this.game);
       const game = cloneDeep(this.parseDates(this.game));
       let items = [];
       if (game && game.adventure) {

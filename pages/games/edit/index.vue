@@ -145,6 +145,7 @@
                         :label="lang.game.CUSTOM_SIGNUP_INSTRUCTIONS"
                         v-model="game.customSignup"
                         :hint="game.method === enums.GameMethod.CUSTOM ? '' : lang.game.SIGNUP_INSTRUCTIONS_DESC"
+                        :rules="[v => game.method === 'automated' || !!v]"
                         persistent-hint
                         auto-grow
                         no-resize
@@ -438,7 +439,6 @@
 </template>
 
 <script>
-import { updateToken } from "../../../assets/auxjs/auth";
 import { parseEventTimes } from "../../../assets/auxjs/appaux";
 import lang from "../../../assets/lang/en.json";
 import ws from "../../../store/socket";
@@ -664,7 +664,8 @@ export default {
         this.$router.replace(`/games/${this.lastListingPage}`);
         this.$store.dispatch("addSnackBar", {
           message: "You do not have permission to edit this game",
-          color: "error darken-1"
+          color: "error",
+          timeout: 10
         });
       }
     }
@@ -898,13 +899,20 @@ export default {
           "Are you sure you want to delete the game? This cannot be undone."
         )
       ) {
-        this.$store.dispatch("deleteGame", this.gameId).then(result => {
-          if (this.$store.getters.account) {
-            this.$router.replace(`/games/${this.lastListingPage}`);
-          } else {
-            this.$router.replace(`/`);
-          }
-        });
+        this.$store
+          .dispatch("deleteGame", {
+            app: this,
+            route: this.$route,
+            gameId: this.gameId
+          })
+          .then(result => {
+            if (this.$store.getters.account) {
+              this.$router.replace(`/games/${this.lastListingPage}`);
+            } else {
+              this.$router.replace(`/`);
+            }
+          })
+          .catch(() => {});
       }
     },
     saveCopy() {
@@ -944,7 +952,8 @@ export default {
         this.saveResult = "error";
         this.$store.dispatch("addSnackBar", {
           message: "Invalid guild/channel selection",
-          color: "error darken-1"
+          color: "error",
+          timeout: 10
         });
         return;
       }
@@ -1057,7 +1066,8 @@ export default {
           this.saveResult = "error";
           this.$store.dispatch("addSnackBar", {
             message: (err && err.message) || err || "An error occured!",
-            color: "error darken-1"
+            color: "error",
+            timeout: 10
           });
         });
     },

@@ -93,7 +93,6 @@
 </template>
 
 <script>
-import { updateToken } from "../../../assets/auxjs/auth";
 import { checkRSVP, parseEventTimes } from "../../../assets/auxjs/appaux";
 import GameCard from "../../../components/game-card";
 import { cloneDeep } from "lodash";

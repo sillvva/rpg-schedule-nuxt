@@ -44,7 +44,6 @@
 </template>
 
 <script>
-import { updateToken } from "../../assets/auxjs/auth";
 import AboutPage from "../../components/pages/help/about";
 import CreditsPage from "../../components/pages/help/credits";
 import CommandsPage from "../../components/pages/help/commands";
@@ -101,8 +100,6 @@ export default {
     this.tab = null;
   },
   mounted() {
-    updateToken(this);
-
     window.addEventListener("resize", this.onResize);
     this.onResize();
 

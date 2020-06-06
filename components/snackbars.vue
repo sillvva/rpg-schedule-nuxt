@@ -3,8 +3,8 @@
     <v-snackbar
       v-for="(bar, b) in snackBars"
       :key="b"
-      :color="bar.color || `discord`"
-      :timeout="0"
+      :color="`${bar.color} darken-2` || `discord`"
+      :timeout="bar.timeout * 1000 || 0"
       multi-line
       v-model="snackBar"
       style="position: static;"

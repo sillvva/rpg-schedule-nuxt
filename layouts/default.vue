@@ -152,7 +152,7 @@
         </v-list-item>
       </template>
 
-      <v-list nav dense v-if="!account && routePath.startsWith(config.urls.game.create.path)">
+      <v-list nav dense v-if="!account">
         <v-list-item-group>
           <v-list-item
             :href="`${config.urls.login.path}?redirect=${encodeURIComponent($route.fullPath)}`"
@@ -164,7 +164,7 @@
 
       <v-divider></v-divider>
 
-      <v-list nav dense>
+      <v-list nav dense v-if="account">
         <v-list-item-group>
           <v-list-item :to="config.urls.game.games.path">
             <v-list-item-title>{{lang.nav.UPCOMING_GAMES}}</v-list-item-title>
@@ -511,12 +511,8 @@ export default {
       }
     },
     signOut() {
-      this.$store.dispatch("signOut").then(() => {
-        this.$cookies.remove("token", { path: "/" });
-        this.$cookies.remove("token", { path: "/games" });
-        this.$router.push("/", () => {
-          // window.location.reload(true);
-        });
+      this.$store.dispatch("signOut", this).then(() => {
+        this.$router.push("/");
       });
     },
     socketAddGame(account, gameId, guildId, authorId) {
@@ -562,8 +558,8 @@ export default {
         })
         .catch(err => {
           this.$store.dispatch("addSnackBar", {
-            message:"An error occured!",
-            color: "error darken-1"
+            message:"An error occured when fetching a new game",
+            color: "error"
           });
         });
     },
@@ -604,6 +600,11 @@ export default {
               "setSelectedLang",
               this.selectedUserSettings.lang
             );
+            this.$store.dispatch("addSnackBar", {
+              message: "Settings saved successfully!",
+              color: "success",
+              timeout: 5
+            });
           } else {
             throw new Error(result.message);
           }
@@ -611,7 +612,7 @@ export default {
         .catch(err => {
           this.$store.dispatch("addSnackBar", {
             message: (err && err.message) || err || "An error occured!",
-            color: "error darken-1"
+            color: "error"
           });
         });
     },

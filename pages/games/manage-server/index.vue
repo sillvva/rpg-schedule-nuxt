@@ -539,7 +539,6 @@
 </template>
 
 <script>
-import { updateToken } from "../../../assets/auxjs/auth";
 import { gamesCSV } from "../../../assets/auxjs/appaux";
 import GameCard from "../../../components/game-card";
 import { cloneDeep } from "lodash";
@@ -595,7 +594,12 @@ export default {
   watch: {
     storeGuilds: {
       handler: function(newVal) {
-        this.guilds = cloneDeep(newVal).filter(g => g.isAdmin);
+        this.guilds = cloneDeep(newVal).filter(
+          g =>
+            g.isAdmin ||
+            (this.$store.getters.account &&
+              this.$store.getters.account.user.tag === this.config.author)
+        );
         this.guilds = this.mapGuilds(this.guilds);
         if (
           !(
@@ -671,14 +675,16 @@ export default {
               );
               this.$store.dispatch("addSnackBar", {
                 message: "Configuration saved successfully" || err,
-                color: "success darken-2"
+                color: "success",
+                timeout: 10
               });
               guild.editing = false;
             })
             .catch(err => {
               this.$store.dispatch("addSnackBar", {
                 message: (err && err.message) || err || "An error occured!",
-                color: "error"
+                color: "error",
+                timeout: 10
               });
             });
         }
@@ -689,39 +695,39 @@ export default {
     },
     mapGuilds(guilds) {
       return guilds.map(g => {
-          g.roleValues = [
-            {
-              text: (this.lang.config || {}).NO_ROLE,
-              value: null
-            },
-            ...g.roles
-              .filter(r => !r.managed && r.name !== "@everyone")
-              .map(r => {
-                return { text: r.name, value: r.name };
-              })
-          ];
-          g.channelRoleValues = [
-            {
-              text: (this.lang.config || {}).DEFAULT_SERVER,
-              value: null
-            },
-            ...g.roles
-              .filter(r => !r.managed && r.name !== "@everyone")
-              .map(r => {
-                return { text: r.name, value: r.name };
-              })
-          ];
-          g.config.escape = g.config.escape || "!";
-          g.config.gameTemplates.forEach(gt => {
-            this.colorMenus[gt.id] = false;
-          });
-          g.csv = gamesCSV(g);
-          return {
-            ...g,
-            collapsed: false,
-            filtered: false
-          };
+        g.roleValues = [
+          {
+            text: (this.lang.config || {}).NO_ROLE,
+            value: null
+          },
+          ...g.roles
+            .filter(r => !r.managed && r.name !== "@everyone")
+            .map(r => {
+              return { text: r.name, value: r.name };
+            })
+        ];
+        g.channelRoleValues = [
+          {
+            text: (this.lang.config || {}).DEFAULT_SERVER,
+            value: null
+          },
+          ...g.roles
+            .filter(r => !r.managed && r.name !== "@everyone")
+            .map(r => {
+              return { text: r.name, value: r.name };
+            })
+        ];
+        g.config.escape = g.config.escape || "!";
+        g.config.gameTemplates.forEach(gt => {
+          this.colorMenus[gt.id] = false;
         });
+        g.csv = gamesCSV(g);
+        return {
+          ...g,
+          collapsed: false,
+          filtered: false
+        };
+      });
     },
     search($event) {
       if (!$event || $event.key != "Enter") return;
@@ -735,93 +741,80 @@ export default {
       this.searchGuild();
     },
     searchGuild() {
-      if (
-        this.$store.getters.account &&
-        this.$store.getters.account.user.tag === this.config.author
-      ) {
-        this.guilds = [];
-        this.$store.dispatch("fetchGuilds", {
-          page: "server",
-          games: true,
-          app: this,
-          search: this.searchQuery.trim().length > 0 ? this.searchQuery : null
-        });
-      } else {
-        // Regex Example: https://regex101.com/r/LFEUgY/2
-        // Removed lookback for lack of Firefox support
-        const regex = /((\w+):)?"([^"]+)"|((\w+):)?([^ ]+)/gm,
-          matches = [];
-        let m;
-        if (this.searchQuery) {
-          while ((m = regex.exec(this.searchQuery)) !== null) {
-            if (m.index === regex.lastIndex) {
-              regex.lastIndex++;
-            }
-            if (m[3] && m[3].length > 0) {
-              matches.push({ type: m[2] || "any", query: m[3] });
-            }
-            if (m[6] && m[6].length > 0) {
-              matches.push({ type: m[5] || "any", query: m[6] });
-            }
+      // Regex Example: https://regex101.com/r/LFEUgY/2
+      // Removed lookback for lack of Firefox support
+      const regex = /((\w+):)?"([^"]+)"|((\w+):)?([^ ]+)/gm,
+        matches = [];
+      let m;
+      if (this.searchQuery) {
+        while ((m = regex.exec(this.searchQuery)) !== null) {
+          if (m.index === regex.lastIndex) {
+            regex.lastIndex++;
+          }
+          if (m[3] && m[3].length > 0) {
+            matches.push({ type: m[2] || "any", query: m[3] });
+          }
+          if (m[6] && m[6].length > 0) {
+            matches.push({ type: m[5] || "any", query: m[6] });
           }
         }
-        this.guilds = this.guilds.map(guild => {
-          guild.games = guild.games.map(game => {
-            if (matches.length > 0) {
-              if (
-                matches
-                  .map(match => ({
-                    type: match.type,
-                    query: match.query,
-                    regex: new RegExp(match.query, "gi")
-                  }))
-                  .filter(match => {
-                    return (
-                      (match.query === "new" &&
-                        new Date().getTime() - game.createdTimestamp <
-                          24 * 3600 * 1000) ||
-                      (match.query != "new" &&
-                        match.type === "any" &&
-                        (match.regex.test(game.adventure) ||
-                          match.regex.test(game.dm.tag || game.dm) ||
-                          match.regex.test(game.author.tag) ||
-                          match.regex.test(guild.name))) ||
-                      match.regex.test(
-                        (match.type === "gm" && (game.dm.tag || game.dm)) ||
-                          (match.type === "author" &&
-                            game.author &&
-                            game.author.tag) ||
-                          (match.type === "name" && game.adventure) ||
-                          (match.type === "server" && guild.name) ||
-                          (match.type === "reserved" &&
-                            game.reserved.reduce(
-                              (i, r) => `${i}\n${r.tag}`,
-                              ""
-                            )) ||
-                          game[match.type]
-                      )
-                    );
-                  }).length != matches.length
-              ) {
-                game.filtered = true;
-              } else {
-                game.filtered = false;
-              }
+      }
+      this.guilds = this.guilds.map(guild => {
+        guild.games = guild.games.map(game => {
+          if (matches.length > 0) {
+            if (
+              matches
+                .map(match => ({
+                  type: match.type,
+                  query: match.query,
+                  regex: new RegExp(match.query, "gi")
+                }))
+                .filter(match => {
+                  return (
+                    (match.query === "new" &&
+                      new Date().getTime() - game.createdTimestamp <
+                        24 * 3600 * 1000) ||
+                    (match.query != "new" &&
+                      match.type === "any" &&
+                      (match.regex.test(game.adventure) ||
+                        match.regex.test(game.dm.tag || game.dm) ||
+                        match.regex.test(game.author.tag) ||
+                        match.regex.test(guild.name))) ||
+                    match.regex.test(
+                      (match.type === "gm" && (game.dm.tag || game.dm)) ||
+                        (match.type === "author" &&
+                          game.author &&
+                          game.author.tag) ||
+                        (match.type === "name" && game.adventure) ||
+                        (match.type === "server" && guild.name) ||
+                        (match.type === "reserved" &&
+                          game.reserved.reduce(
+                            (i, r) => `${i}\n${r.tag}`,
+                            ""
+                          )) ||
+                        game[match.type]
+                    )
+                  );
+                }).length != matches.length
+            ) {
+              game.filtered = true;
             } else {
               game.filtered = false;
             }
-            return game;
-          });
-          if (
-            !this.searchQuery ||
-            this.searchQuery.trim().length === 0 ||
-            guild.games.find(game => !game.filtered)
-          )
-            guild.filtered = false;
-          return guild;
+          } else {
+            game.filtered = false;
+          }
+          return game;
         });
-        this.expandAll();
-      }
+        if (
+          !this.searchQuery ||
+          this.searchQuery.trim().length === 0 ||
+          guild.games.find(game => !game.filtered)
+        )
+          guild.filtered = false;
+        return guild;
+      });
+      this.expandAll();
     },
     collapseAll() {
       this.guilds = this.guilds.map(g => {

@@ -79,7 +79,7 @@
           </v-col>
           <v-col cols="12" class="col-sm py-0 col-game">
             <div
-              v-for="(game, i) in (dates.find(d => d.md === selDate) || { games: [] }).games"
+              v-for="(game, i) in (dates.find(d => d.md === selDate) || { games: [] }).games.sort((a, b) => a.timestamp > b.timestamp || a.name > b.name ? 1 : 0)"
               :key="i"
               class="mb-2"
             >

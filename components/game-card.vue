@@ -73,6 +73,7 @@
                   v-if="item.secondHTML || item.secondValue"
                   v-html="item.secondHTML || item.secondValue"
                   :class="item.secondClass"
+                  style="margin-left: 5px;"
                 ></span>
               </p>
             </v-col>
@@ -91,14 +92,15 @@
       <v-divider></v-divider>
       <v-card-text
         v-if="game"
-        class="pt-3"
-        style="height: 90vh; max-height: 500px;"
+        class="pt-4 game-info"
         v-html="mdParse(`
         **${lang.game.DATE}:** ${game.hideDate ? this.lang.game.labels.TBD : game.moment && game.moment.date}
         **${lang.game.RUN_TIME}:** ${game.runtime} ${lang.game.labels.HOURS}
         **${lang.game.WHERE}:** ${game.where}
         ${game.description.trim().length > 0 ? `**${lang.game.DESCRIPTION}:**
         ${game.description}` : ''}
+        ${game.reserved.length > 0 ? `#### ${lang.game.RESERVED}
+        ${game.reserved.slice(0, parseInt(game.players)).map((r, i) => `${i+1}. ${r.tag}`).join('\n')}` : ''}
         `)"
       ></v-card-text>
     </v-card>
@@ -210,7 +212,7 @@ export default {
             id: "when",
             label: this.lang.game.WHEN,
             class: game.moment.state,
-            value: this.lang.game.labels.TBD,
+            value: this.lang.game.labels.TBD
           });
         } else if (game.moment) {
           const tdiff = game.timestamp - moment().valueOf();
@@ -381,5 +383,16 @@ export default {
 }
 .card-item .card-label {
   margin-right: 5px;
+}
+
+.game-info > *:last-child {
+  margin: 0;
+}
+
+@media (max-width: 767px) {
+  .game-info {
+    height: 90vh;
+    max-height: 500px;
+  }
 }
 </style>

@@ -175,6 +175,7 @@
                             v-model="game.date"
                             @change="dateTimeLinks"
                             :hint="nextDate && `Next: ${nextDate}`"
+                            ref="gameDate"
                             prepend-inner-icon="mdi-calendar"
                             persistent-hint
                             @click:prepend-inner="dateMenu = true"
@@ -348,6 +349,15 @@
                   </v-row>
                 </v-col>
                 <v-col cols="12" lg="5" class="py-0">
+                  <v-row dense>
+                    <v-col cols="12">
+                      <v-switch
+                        v-model="game.hideDate"
+                        :label="lang.game.HIDE_DATE"
+                        style="margin: 0;"
+                      ></v-switch>
+                    </v-col>
+                  </v-row>
                   <v-row dense class="game-textareas">
                     <v-col cols="12" sm="5" lg="12" class="py-0">
                       <v-textarea
@@ -536,7 +546,9 @@ export default {
         this.account = newVal;
         if (newVal) {
           const guilds = cloneDeep(this.account.guilds);
-          guilds.sort((a, b) => (a.config.password ? 1 : -1));
+          guilds.sort((a, b) =>
+            a.config.password || a.id == "532564186023329792" ? 1 : -1
+          );
           this.guilds = guilds
             .filter(
               guild =>
@@ -1011,6 +1023,14 @@ export default {
         updatedGame.dm = {
           tag: this.game.dmTag
         };
+      }
+
+      if (updatedGame.hideDate) {
+        if (updatedGame.date == moment().format("YYYY-MM-DD")) {
+          updatedGame.date = moment()
+            .add(14, "days")
+            .format("YYYY-MM-DD");
+        }
       }
 
       updatedGame.weekdays = [

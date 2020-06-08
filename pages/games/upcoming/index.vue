@@ -126,7 +126,7 @@ export default {
         this.guilds = cloneDeep(newVal).map(g => ({
           ...g,
           games: g.games.filter(game => {
-            return game.timestamp >= new Date().getTime()
+            return game.timestamp >= new Date().getTime();
           }),
           collapsed: false
         }));

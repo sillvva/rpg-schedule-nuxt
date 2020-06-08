@@ -105,9 +105,13 @@ export const mutations = {
       })
       .sort((a, b) => {
         if (a.games.length === 0 && b.games.length === 0)
-          return a.name < b.name ? -1 : 1;
+          return a.name.replace(/^the /i, "") < b.name.replace(/^the /i, "")
+            ? -1
+            : 1;
         if (a.games.length > 0 && b.games.length > 0)
-          return a.name < b.name ? -1 : 1;
+          return a.name.replace(/^the /i, "") < b.name.replace(/^the /i, "")
+            ? -1
+            : 1;
         if (a.games.length === 0) return 1;
         if (b.games.length === 0) return -1;
       });
@@ -148,9 +152,13 @@ export const mutations = {
       })
       .sort((a, b) => {
         if (a.games.length === 0 && b.games.length === 0)
-          return a.name < b.name ? -1 : 1;
+          return a.name.replace(/^the /i, "") < b.name.replace(/^the /i, "")
+            ? -1
+            : 1;
         if (a.games.length > 0 && b.games.length > 0)
-          return a.name < b.name ? -1 : 1;
+          return a.name.replace(/^the /i, "") < b.name.replace(/^the /i, "")
+            ? -1
+            : 1;
         if (a.games.length === 0) return 1;
         if (b.games.length === 0) return -1;
       });
@@ -203,7 +211,7 @@ export const actions = {
   },
   async signOut(vuexContext, app) {
     vuexContext.commit("resetState", resetItems);
-    vuexContext.dispatch("removeToken", app.$cookies);
+    vuexContext.dispatch("removeToken", app && app.$cookies);
   },
   authenticate(vuexContext, code) {
     return this.$axios

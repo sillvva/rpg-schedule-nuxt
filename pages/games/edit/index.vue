@@ -1025,14 +1025,6 @@ export default {
         };
       }
 
-      if (updatedGame.hideDate) {
-        if (updatedGame.date == moment().format("YYYY-MM-DD")) {
-          updatedGame.date = moment()
-            .add(14, "days")
-            .format("YYYY-MM-DD");
-        }
-      }
-
       updatedGame.weekdays = [
         false,
         false,

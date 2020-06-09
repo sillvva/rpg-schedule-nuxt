@@ -179,11 +179,21 @@ export default {
       );
     },
     rsvp() {
-      this.$store.dispatch("rsvpGame", {
-        gameId: this.rsvpGameId,
-        route: this.$route,
-        app: this
-      });
+      this.$store
+        .dispatch("rsvpGame", {
+          gameId: this.rsvpGameId,
+          route: this.$route,
+          app: this
+        })
+        .then(result => {
+          if (result.past) {
+            this.$store.dispatch("addSnackBar", {
+              message: "This game already started!",
+              color: "error",
+              timeout: 5
+            });
+          }
+        });
     },
     populateColumns() {
       this.game = cloneDeep(this.game);

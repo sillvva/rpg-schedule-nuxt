@@ -116,13 +116,7 @@
       </v-btn>
     </v-app-bar>
 
-    <v-navigation-drawer
-      v-model="drawer"
-      v-if="!['/','/maintenace'].includes(this.$route.path) && !maintenanceMode && !(['/help', '/games/edit'].includes($route.path) && !account && !loadingAccount)"
-      fixed
-      clipped
-      app
-    >
+    <v-navigation-drawer v-model="drawer" v-if="showMenu()" fixed clipped app>
       <template v-slot:prepend v-if="account">
         <v-list-item two-line style="position: relative;">
           <v-list-item-avatar>
@@ -558,7 +552,7 @@ export default {
         })
         .catch(err => {
           this.$store.dispatch("addSnackBar", {
-            message:"An error occured when fetching a new game",
+            message: "An error occured when fetching a new game",
             color: "error"
           });
         });
@@ -706,6 +700,20 @@ export default {
     },
     invited() {
       localStorage.setItem("invited", 1);
+    },
+    showMenu() {
+      if (
+        !this.loadingAccount &&
+        !["/", "/maintenace"].includes(this.$route.path) &&
+        !this.maintenanceMode &&
+        !(
+          ["/help", "/games/edit"].includes(this.$route.path) &&
+          !this.account &&
+          !this.loadingAccount
+        )
+      )
+        return true;
+      return false;
     }
   }
 };

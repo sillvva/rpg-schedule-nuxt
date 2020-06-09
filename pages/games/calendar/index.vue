@@ -1,9 +1,4 @@
 <template>
-  <!-- <v-app v-if="$fetchState.pending">
-    <v-flex class="d-flex" justify-center align-center style="height: 100%;">
-      <v-progress-circular :size="100" :width="7" color="discord" indeterminate></v-progress-circular>
-    </v-flex>
-  </v-app>-->
   <v-container fluid style="height: 100%;" class="cal-cont">
     <v-card style="height: 100%;">
       <v-toolbar color="discord" v-if="lang.game && baseDate && moment">
@@ -79,7 +74,7 @@
           </v-col>
           <v-col cols="12" class="col-sm py-0 col-game">
             <div
-              v-for="(game, i) in (dates.find(d => d.md === selDate) || { games: [] }).games.sort((a, b) => a.timestamp > b.timestamp || a.name > b.name ? 1 : 0)"
+              v-for="(game, i) in (dates.find(d => d.md === selDate) || { games: [] }).games"
               :key="i"
               class="mb-2"
             >
@@ -215,11 +210,15 @@ export default {
             md: md,
             dx: dx,
             games: curmonth
-              ? this.games.filter(g => {
-                  const parsedDates = parseEventTimes(g);
-                  const date = moment(parsedDates.iso).format("YYYY-MM-DD");
-                  return date === dx;
-                })
+              ? this.games
+                  .filter(g => {
+                    const parsedDates = parseEventTimes(g);
+                    const date = moment(parsedDates.iso).format("YYYY-MM-DD");
+                    return date === dx;
+                  })
+                  .sort((a, b) =>
+                    a.timestamp > b.timestamp || a.name > b.name ? 1 : 0
+                  )
               : [],
             reserved: this.games
               .filter(g => {

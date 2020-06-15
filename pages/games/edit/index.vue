@@ -798,10 +798,10 @@ export default {
         });
     },
     finishFetchGame(game) {
-      if (this.$route.query.fetch === "true") {
+      if (this.gameId) {
         const account = cloneDeep(this.account);
         const guild = account.guilds.find(g => g.id === game.s);
-        if (guild) {
+        if (guild && !guild.games.find(g => g._id === this.gameId)) {
           game.moment = parseEventTimes(game);
           game.reserved = game.reserved.filter(r => r.tag);
           game.slot =
@@ -846,7 +846,8 @@ export default {
       }
     },
     async modGame(game, force) {
-      if (!this.gameId && this.gameLoaded && !force && this.game && this.game.s) return;
+      if (!this.gameId && this.gameLoaded && !force && this.game && this.game.s)
+        return;
       this.game = cloneDeep(game);
       if (!this.game) return;
       if (this.$refs.game) this.$refs.game.resetValidation();

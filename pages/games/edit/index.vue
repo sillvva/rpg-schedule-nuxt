@@ -1,11 +1,11 @@
 <template>
-  <v-container fluid>
-    <v-app v-if="$fetchState.pending">
-      <v-flex class="d-flex" justify-center align-center style="height: 100%;">
-        <v-progress-circular :size="100" :width="7" color="discord" indeterminate></v-progress-circular>
-      </v-flex>
-    </v-app>
-    <v-row dense v-else>
+  <v-app v-if="!gameLoaded">
+    <v-flex class="d-flex" justify-center align-center style="height: 100%;">
+      <v-progress-circular :size="100" :width="7" color="discord" indeterminate></v-progress-circular>
+    </v-flex>
+  </v-app>
+  <v-container fluid v-else>
+    <v-row dense>
       <v-spacer></v-spacer>
       <v-col cols="12" xl="8" class="py-0">
         <v-form v-if="game" ref="game" v-model="valid">
@@ -545,27 +545,23 @@ export default {
       handler: async function(newVal) {
         this.account = newVal;
         if (newVal) {
-          const guilds = cloneDeep(this.account.guilds);
-          guilds.sort((a, b) =>
-            a.config.password || a.id == "532564186023329792" ? 1 : -1
-          );
-          this.guilds = guilds
-            .filter(
-              guild =>
-                (guild.permission || guild.isAdmin) &&
-                guild.announcementChannels.length > 0
-            )
-            .map(g => ({ text: g.name, value: g.id }));
-          if (this.guilds.length > 0) {
-            if (!this.gameId) {
-              if (!this.game) {
-                this.game = { s: this.guilds[0].value };
-                await this.$fetch();
-              } else this.game.s = this.guilds[0].value;
-              await this.selectGuild();
-              this.modGame(this.game);
-            }
-          } else if (!this.gameId) {
+          if (!this.gameLoaded) {
+            const guilds = cloneDeep(this.account.guilds);
+            guilds.sort((a, b) =>
+              a.config.password || a.id == "532564186023329792" ? 1 : -1
+            );
+            this.guilds = guilds
+              .filter(
+                guild =>
+                  (guild.permission || guild.isAdmin) &&
+                  guild.announcementChannels.length > 0
+              )
+              .map(g => ({ text: g.name, value: g.id }));
+          }
+          if (this.guilds.length > 0 && !this.game.s) {
+            this.game.s = this.guilds[0].id;
+          }
+          if (this.guilds.length === 0 && !this.gameId) {
             this.$router.replace(`/games/${this.lastListingPage}`);
           }
         }
@@ -575,6 +571,7 @@ export default {
     storeSocketData: {
       handler: function(socket) {
         const data = socket.data;
+        if (!this.gameId) return;
         if (socket.type === "game") {
           if (data.gameId != this.gameId) return;
           if (data.action === "rescheduled") {
@@ -614,14 +611,34 @@ export default {
       }
     }
   },
-  async fetch() {
+  async mounted() {
+    setTimeout(() => {
+      localStorage.removeItem("rescheduled");
+    }, 5000);
+
+    this.updateSelectItems();
+
+    this.gameLoaded = false;
+    window.addEventListener("beforeunload", this.verifyUnload);
+
+    if (!this.account) {
+      await this.$store.dispatch("fetchGuilds", {
+        app: this,
+        page: this.lastListingPage || "my-games"
+      });
+    }
+
+    const guilds = cloneDeep(this.account.guilds);
+    guilds.sort((a, b) =>
+      a.config.password || a.id == "532564186023329792" ? 1 : -1
+    );
+
     if (this.account) {
-      const guild = this.account.guilds.find(g => g.id === this.game.s);
+      const guild = guilds.find(g => g.id === this.game.s);
       if (guild && this.gameId) {
         const game = guild.games.find(g => g._id === this.gameId);
         if (game) {
-          this.game = cloneDeep(game);
-          this.modGame(this.game);
+          this.modGame(game);
           this.gameLoaded = true;
         }
       }
@@ -631,9 +648,8 @@ export default {
       if (this.gameId) await this.fetchGame("g", this.gameId);
       else if (this.guildId) await this.fetchGame("s", this.guildId);
       else {
-        const guild = this.account.guilds.find(
-          g => g.id === (this.guildId || this.game.s)
-        );
+        const guild =
+          guilds.find(g => g.id === (this.guildId || this.game.s)) || guilds[0];
 
         let data = {
           s: guild.id,
@@ -661,8 +677,8 @@ export default {
           clearReservedOnRepeat: false
         };
 
-        this.finishFetchGame(data);
         this.game.s = guild.id;
+        this.finishFetchGame(data);
         this.selectGuild();
       }
     }
@@ -682,34 +698,23 @@ export default {
       }
     }
   },
-  async mounted() {
-    setTimeout(() => {
-      localStorage.removeItem("rescheduled");
-    }, 5000);
-
-    if (!this.account) {
-      await this.$store.dispatch("fetchGuilds", {
-        app: this,
-        page: this.lastListingPage || "my-games"
-      });
-    }
-
-    this.updateSelectItems();
-
-    window.onbeforeunload = () => {
-      if (this.isChanged && !confirm(this.lang.game.UNSAVED)) {
-        return false;
-      }
-    };
+  beforeDestroy() {
+    window.removeEventListener("beforeunload", this.verifyUnload);
   },
   beforeRouteLeave(to, from, next) {
-    if (this.isChanged && confirm(this.lang.game.UNSAVED)) {
+    if (this.verifyUnload()) {
       next();
     } else {
       next();
     }
   },
   methods: {
+    verifyUnload() {
+      if (this.isChanged && !confirm(this.lang.game.UNSAVED)) {
+        return false;
+      }
+      return true;
+    },
     async selectGuild(event) {
       const guilds = this.account.guilds;
       const guild = guilds.find(g => g.id === this.game.s);
@@ -730,17 +735,18 @@ export default {
             return this.$router.replace(this.config.urls.game.dashboard.path);
         }
       }
-      this.modGame(this.game);
+      this.modGame(this.game, !!event);
       if (event) this.changed();
       if (this.guilds.length > 0 && this.lastGuildSelected != this.game.s) {
         this.lastGuildSelected = this.game.s;
         await this.fetchGameChannels();
-        this.selectTemplate();
+        this.selectTemplate(!!event);
       }
     },
-    selectChannel() {
+    selectChannel(event) {
       this.changed();
-      this.modGame(this.game);
+      this.selectTemplate(event);
+      this.modGame(this.game, !!event);
     },
     selectTemplate(event) {
       if (this.guild && !this.gameId && this.game) {
@@ -774,7 +780,7 @@ export default {
     fetchGameChannels() {
       if (this.account) {
         const guild = this.account.guilds.find(g => g.id === this.game.s);
-        if (guild) {
+        if (guild && guild.announcementChannels[0]) {
           this.game.c = guild.announcementChannels[0].id;
           this.game.channel = guild.announcementChannels[0].name;
         }
@@ -823,7 +829,10 @@ export default {
         }
       }
       this.modGame(cloneDeep(game));
-      this.isChanged = false;
+      this.gameLoaded = true;
+      setTimeout(() => {
+        this.isChanged = false;
+      }, 500);
       if (this.game && this.game.guildConfig) {
         if (
           this.game.guildConfig.password &&
@@ -836,7 +845,8 @@ export default {
         }
       }
     },
-    async modGame(game) {
+    async modGame(game, force) {
+      if (!this.gameId && this.gameLoaded && !force && this.game && this.game.s) return;
       this.game = cloneDeep(game);
       if (!this.game) return;
       if (this.$refs.game) this.$refs.game.resetValidation();
@@ -853,7 +863,7 @@ export default {
       if (this.game.dm) {
         this.game.dmTag = this.game.dm.tag;
       }
-      if (this.game.channels) {
+      if (this.game.channels && this.game.channels.length > 0) {
         if (!game.c) {
           this.game.c = this.game.channels[0].id;
           this.game.channel = this.game.channels[0].name;
@@ -898,7 +908,6 @@ export default {
         this.setDefaultDates();
       }
       this.dateTimeLinks();
-      this.isChanged = false;
     },
     setDefaultDates() {
       this.game.date = moment().format("YYYY-MM-DD");

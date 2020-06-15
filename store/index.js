@@ -58,7 +58,8 @@ const baseState = {
   snackBars: [],
   socketData: {},
   pushEnabled: false,
-  lastListingPage: null
+  lastListingPage: null,
+  lastAuthed: 0
 };
 
 const reauthenticate = async (vuexContext, app, redirect) => {
@@ -195,6 +196,9 @@ export const mutations = {
   },
   setLastListingPage(state, listingPage) {
     state.lastListingPage = listingPage;
+  },
+  setLastAuthed(state, lastAuthed) {
+    state.lastAuthed = lastAuthed;
   }
 };
 
@@ -887,5 +891,8 @@ export const getters = {
   },
   lastListingPage(state) {
     return state.lastListingPage;
+  },
+  lastAuthed(state) {
+    return state.lastAuthed;
   }
 };

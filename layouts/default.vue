@@ -294,7 +294,8 @@ export default {
         this.windowWidth = window.innerWidth;
       },
       socket: null,
-      loadingAccount: false
+      loadingAccount: false,
+      refetchInterval: null
     };
   },
   computed: {
@@ -424,10 +425,7 @@ export default {
               return guild;
             });
             if (updated) this.$store.commit("setGuilds", guilds);
-          } else if (
-            data.action == "deleted" &&
-            guilds.find(g => g.id == data.guildId)
-          ) {
+          } else if (data.action == "deleted") {
             // An existing game has been deleted, update the store if it belongs to one of current user's guilds
             guilds = guilds.map(guild => {
               if (guild.games.find(game => game._id == data.gameId)) {
@@ -465,11 +463,10 @@ export default {
     this.$store.commit("setSnackBars", []);
     this.setSettings();
 
-    await this.$store.dispatch("fetchGuilds", {
-      app: this,
-      page: "manage-server",
-      games: true
-    });
+    await this.fetchGuilds();
+    this.refetchInterval = setInterval(() => {
+      this.fetchGuilds();
+    }, 3 * 60 * 60 * 1000);
 
     this.loadingAccount = false;
 
@@ -496,6 +493,7 @@ export default {
   beforeDestroy() {
     window.removeEventListener("resize", this.onResize);
     window.removeEventListener("focus", this.setup);
+    clearInterval(this.refetchInterval);
   },
   methods: {
     setup() {
@@ -503,6 +501,14 @@ export default {
         this.$router.push("/help/setup");
         localStorage.removeItem("invited");
       }
+    },
+    async fetchGuilds() {
+      this.$store.commit("setLastAuthed", new Date().getTime());
+      await this.$store.dispatch("fetchGuilds", {
+        app: this,
+        page: "manage-server",
+        games: true
+      });
     },
     signOut() {
       this.$store.dispatch("signOut", this).then(() => {

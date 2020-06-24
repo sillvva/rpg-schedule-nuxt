@@ -164,7 +164,7 @@ export default {
     this.populateColumns();
     this.parseDateInterval = setInterval(() => {
       this.populateColumns();
-    }, 30 * 1000);
+    }, 60 * 1000);
   },
   onDestroy() {
     clearInterval(this.parseDateInterval);

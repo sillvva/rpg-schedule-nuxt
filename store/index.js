@@ -69,8 +69,8 @@ const reauthenticate = async (vuexContext, app, redirect) => {
   }
   vuexContext.commit("resetState", resetItems);
   if (app && app.$router) {
-    app.$router.replace("/");
-    // if (window) window.location.reload(true);
+    if (app.$router) app.$router.replace("/");
+    else window.location = "/";
   }
 };
 
@@ -83,41 +83,47 @@ export const mutations = {
     state.account = resetItems.account;
   },
   setAccount(state, account) {
-    const guilds = account.guilds
-      .map(guild => {
-        guild.games = guild.games
-          .map(game => {
-            const reserved = game.reserved;
-            const players = parseInt(game.players);
-            game.guildAccount = guild;
-            game.slot = Array.isArray(reserved)
-              ? reserved.findIndex(r => aux.checkRSVP(r, account.user)) + 1
-              : 0;
-            game.waitlisted = false;
-            game.signedup = false;
-            if (game.slot > players) game.waitlisted = true;
-            else if (game.slot > 0) game.signedup = true;
-            return game;
-          })
-          .sort((a, b) => {
-            return a.timestamp < b.timestamp ? -1 : 1;
-          });
-        return guild;
-      })
-      .sort((a, b) => {
-        if (a.games.length === 0 && b.games.length === 0)
-          return a.name.replace(/^the /i, "") < b.name.replace(/^the /i, "")
-            ? -1
-            : 1;
-        if (a.games.length > 0 && b.games.length > 0)
-          return a.name.replace(/^the /i, "") < b.name.replace(/^the /i, "")
-            ? -1
-            : 1;
-        if (a.games.length === 0) return 1;
-        if (b.games.length === 0) return -1;
-      });
-    account.guilds = guilds;
-    state.account = account;
+    try {
+      const guilds = account.guilds
+        .map(guild => {
+          guild.games = guild.games
+            .map(game => {
+              const reserved = game.reserved;
+              const players = parseInt(game.players);
+              game.guildAccount = guild;
+              game.slot = Array.isArray(reserved)
+                ? reserved.findIndex(r => aux.checkRSVP(r, account.user)) + 1
+                : 0;
+              game.waitlisted = false;
+              game.signedup = false;
+              if (game.slot > players) game.waitlisted = true;
+              else if (game.slot > 0) game.signedup = true;
+              return game;
+            })
+            .sort((a, b) => {
+              return a.timestamp < b.timestamp ? -1 : 1;
+            });
+          return guild;
+        })
+        .sort((a, b) => {
+          if (a.games.length === 0 && b.games.length === 0)
+            return (a.name || "").replace(/^the /i, "") <
+              (b.name || "").replace(/^the /i, "")
+              ? -1
+              : 1;
+          if (a.games.length > 0 && b.games.length > 0)
+            return (a.name || "").replace(/^the /i, "") <
+              (b.name || "").replace(/^the /i, "")
+              ? -1
+              : 1;
+          if (a.games.length === 0) return 1;
+          if (b.games.length === 0) return -1;
+        });
+      account.guilds = guilds;
+      state.account = account;
+    } catch (err) {
+      aux.log("setAccount", err.message);
+    }
   },
   setToken(state, sessionToken) {
     state.sessionToken = sessionToken;
@@ -153,11 +159,13 @@ export const mutations = {
       })
       .sort((a, b) => {
         if (a.games.length === 0 && b.games.length === 0)
-          return a.name.replace(/^the /i, "") < b.name.replace(/^the /i, "")
+          return (a.name || "").replace(/^the /i, "") <
+            (b.name || "").replace(/^the /i, "")
             ? -1
             : 1;
         if (a.games.length > 0 && b.games.length > 0)
-          return a.name.replace(/^the /i, "") < b.name.replace(/^the /i, "")
+          return (a.name || "").replace(/^the /i, "") <
+            (b.name || "").replace(/^the /i, "")
             ? -1
             : 1;
         if (a.games.length === 0) return 1;
@@ -218,6 +226,7 @@ export const actions = {
     vuexContext.dispatch("removeToken", app && app.$cookies);
   },
   authenticate(vuexContext, code) {
+    vuexContext.commit("setAuthenticating", true);
     return this.$axios
       .get(`${this.getters.env.apiUrl}/api/login?code=${code}`)
       .then(async result => {
@@ -227,7 +236,8 @@ export const actions = {
       });
   },
   async initAuth(vuexContext, app) {
-    vuexContext.commit("setToken", null);
+    if (process.server) vuexContext.commit("setToken", null);
+
     const tokenCookies = await vuexContext.dispatch(
       "getToken",
       this.$cookies.getAll()
@@ -273,13 +283,13 @@ export const actions = {
             }
             if (authResult.version) {
               const newVersion = authResult.version.split(".");
-              const oldVersion = (
-                localStorage.getItem("apiVersion") || "2.0.0"
-              ).split(".");
+              const storedVersion = localStorage.getItem("apiVersion");
+              const oldVersion = (storedVersion || "2.0.0").split(".");
               localStorage.setItem("apiVersion", authResult.version);
               if (
-                parseInt(newVersion[0]) > parseInt(oldVersion[0]) ||
-                parseInt(newVersion[1]) > parseInt(oldVersion[1])
+                storedVersion &&
+                (parseInt(newVersion[0]) > parseInt(oldVersion[0]) ||
+                  parseInt(newVersion[1]) > parseInt(oldVersion[1]))
               ) {
                 vuexContext.dispatch("signOut").then(() => {
                   vuexContext.dispatch("removeToken", this.$cookies);
@@ -333,18 +343,22 @@ export const actions = {
     }
   },
   setSelectedLang(vuexContext, selectedLang) {
-    const langCookie = localStorage.getItem("lang");
-    const lang = require(`../assets/lang/${selectedLang}.json`);
+    try {
+      const langCookie = localStorage.getItem("lang");
+      const lang = require(`../assets/lang/${selectedLang}.json`);
 
-    vuexContext.commit("setLang", lang);
+      vuexContext.commit("setLang", lang);
 
-    const userSettings = cloneDeep(vuexContext.getters.userSettings);
-    userSettings.lang = selectedLang;
-    vuexContext.commit("setUserSettings", userSettings);
+      const userSettings = cloneDeep(vuexContext.getters.userSettings);
+      userSettings.lang = selectedLang;
+      vuexContext.commit("setUserSettings", userSettings);
 
-    const d = new Date();
-    d.setFullYear(d.getFullYear() + 1);
-    localStorage.setItem("lang", selectedLang);
+      const d = new Date();
+      d.setFullYear(d.getFullYear() + 1);
+      localStorage.setItem("lang", selectedLang);
+    } catch (err) {
+      aux.log("setSelectedLang", err.message);
+    }
   },
   async fetchGuilds(vuexContext, { page, games, search, app }) {
     const tokenCookies = await vuexContext.dispatch(
@@ -357,11 +371,11 @@ export const actions = {
         await vuexContext.dispatch("initAuth", app);
     } catch (err) {
       vuexContext.dispatch("signOut");
-      app.$router.replace(
-        `${store.getters.config.urls.login.path}?redirect=${encodeURIComponent(
-          route.fullPath
-        )}`
-      );
+      const url = `${
+        store.getters.config.urls.login.path
+      }?redirect=${encodeURIComponent(route.fullPath)}`;
+      if (app.$router) app.$router.replace(url);
+      else window.location = url;
     }
 
     return new Promise(async (resolve, reject) => {

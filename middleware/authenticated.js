@@ -7,14 +7,14 @@ export default async function({ store, redirect, route }) {
     route.path === config.urls.game.calendar.path
   )
     return;
-  if (new Date().getTime() - store.getters.lastAuthed > 15 * 60 * 1000) {
+  if (new Date().getTime() - store.getters.lastAuthed > 60 * 60 * 1000) {
     store.commit("setLastAuthed", new Date().getTime());
   } else return;
   try {
     await store.dispatch("initAuth", {
       $store: store,
       $route: route
-    });
+    }).catch(err => {});
     if (!store.state.sessionToken) {
       return redirect(
         `${store.getters.config.urls.login.path}?redirect=${encodeURIComponent(

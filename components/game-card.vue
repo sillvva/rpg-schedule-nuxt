@@ -9,7 +9,12 @@
           <div class="game-title">{{game && game.adventure}}</div>
         </v-card-title>
         <v-divider></v-divider>
-        <v-card-text style="position: relative;">
+        <v-card-text v-if="loading">
+          <v-flex class="d-flex" justify-center align-center style="height: 100%;">
+            <v-progress-circular :size="100" :width="7" color="discord" indeterminate></v-progress-circular>
+          </v-flex>
+        </v-card-text>
+        <v-card-text v-else style="position: relative;">
           <v-btn
             @click.stop="rsvpGameId = game._id; rsvp();"
             v-if="!edit && game && account && !checkRSVP(game.dm, account.user) && game.method === 'automated' && game.slot === 0"
@@ -123,7 +128,8 @@ export default {
       parseDateInterval: null,
       columns: [],
       cardDialog: false,
-      md: new Remarkable()
+      md: new Remarkable(),
+      loading: false
     };
   },
   computed: {
@@ -179,11 +185,11 @@ export default {
       );
     },
     rsvp() {
+      this.loading = true;
       this.$store
         .dispatch("rsvpGame", {
           gameId: this.rsvpGameId,
-          route: this.$route,
-          app: this
+          guildId: this.game.guildAccount.id
         })
         .then(result => {
           if (result.past) {
@@ -192,6 +198,9 @@ export default {
               color: "error",
               timeout: 5
             });
+          }
+          else {
+            this.game.reserved = result.reserved;
           }
         });
     },
@@ -297,6 +306,8 @@ export default {
           ]
         });
       }
+
+      this.loading = false;
     },
     parseDates(game) {
       try {

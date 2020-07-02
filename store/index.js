@@ -59,7 +59,8 @@ const baseState = {
   socketData: {},
   pushEnabled: false,
   lastListingPage: null,
-  lastAuthed: 0
+  lastAuthed: 0,
+  lastGuildFetch: 0,
 };
 
 const reauthenticate = async (vuexContext, app, redirect) => {
@@ -207,6 +208,9 @@ export const mutations = {
   },
   setLastAuthed(state, lastAuthed) {
     state.lastAuthed = lastAuthed;
+  },
+  setLastGuildFetch(state, time) {
+    state.lastGuildFetch = time;
   }
 };
 
@@ -246,7 +250,7 @@ export const actions = {
     return new Promise(async (resolve, reject) => {
       let savedAuthResult = {
           message: "No session tokens found",
-          noTokens: true
+          reauthenticate: true
         },
         successes = 0;
       try {
@@ -258,9 +262,10 @@ export const actions = {
           return resolve({ status: "success" });
         }
 
+        const guildFetch = vuexContext.getters.lastGuildFetch === 0;
         for (let i = 0; i < tokenCookies.length; i++) {
           let result = await this.$axios.get(
-            `${this.getters.env.apiUrl}/auth-api/user`,
+            `${this.getters.env.apiUrl}/auth-api/${guildFetch ? 'guilds?page=manage-server&games=true' : 'user'}`,
             {
               headers: {
                 authorization: `Bearer ${tokenCookies[i]}`,
@@ -270,6 +275,7 @@ export const actions = {
           );
           const authResult = result.data;
           savedAuthResult = authResult;
+          if (guildFetch) vuexContext.commit("setLastGuildFetch", moment().unix());
           if (authResult.status == "success") {
             successes++;
             vuexContext.dispatch(
@@ -277,6 +283,9 @@ export const actions = {
               authResult.token || tokenCookies[i]
             );
             vuexContext.commit("setLastRefreshed", moment().unix());
+            if (guildFetch) {
+              vuexContext.commit("setAccount", authResult.account);
+            }
             if (authResult.user) {
               vuexContext.commit("setUserSettings", authResult.user);
               vuexContext.dispatch("setSelectedLang", authResult.user.lang);
@@ -307,6 +316,7 @@ export const actions = {
       }
       if (successes > 0) resolve(savedAuthResult);
       else {
+        aux.log(savedAuthResult);
         if (savedAuthResult && savedAuthResult.reauthenticate) {
           reauthenticate(
             vuexContext,
@@ -361,6 +371,13 @@ export const actions = {
     }
   },
   async fetchGuilds(vuexContext, { page, games, search, app }) {
+    if (
+      (moment().unix() - vuexContext.getters.lastGuildFetch) / (60 * 60) < 2
+    ) {
+      return resolve({ status: "success" });
+    }
+
+    vuexContext.commit("setLastGuildFetch", moment().unix());
     const tokenCookies = await vuexContext.dispatch(
       "getToken",
       this.$cookies.getAll()
@@ -405,12 +422,10 @@ export const actions = {
         if (authResult.status == "success") {
           // console.log(2, authResult);
           vuexContext.commit("setAccount", authResult.account);
+          vuexContext.commit("setLastGuildFetch", moment().unix());
           if (authResult.user) {
             vuexContext.commit("setUserSettings", authResult.user);
             vuexContext.dispatch("setSelectedLang", authResult.user.lang);
-          }
-          if (games) {
-            vuexContext.commit("setLastListingPage", page);
           }
         } else if (result.data.status == "error") {
           // console.log(3, authResult);
@@ -441,7 +456,40 @@ export const actions = {
       );
     }
   },
-  async rsvpGame(vuexContext, { gameId, route, app }) {
+  async rsvpGame(vuexContext, { gameId, guildId }) {
+    try {
+      return await this.$axios.post(
+        `${this.getters.env.apiUrl}/api/rsvp`,
+        {
+          guild: guildId,
+          game: gameId,
+          id: vuexContext.getters.account.user.id,
+        },
+        {
+          headers: {
+            Authorization: `Bearer ${localStorage.getItem('token')}`,
+            locale: localStorage.getItem("lang") || "en",
+            "Content-Type": "application/json"
+          }
+        }
+      ).then(response => {
+        const result = response.data;
+        if (result.status === "error") {
+          vuexContext.dispatch("addSnackBar", {
+            message: result.message,
+            color: "error",
+            timeout: 5
+          });
+          return false;
+        }
+        return result;
+      });
+    } catch (err) {
+      console.log(err);
+      return false;
+    }
+  },
+  async rsvpGameOld(vuexContext, { gameId, route, app }) {
     const tokenCookies = await vuexContext.dispatch(
       "getToken",
       this.$cookies.getAll()
@@ -908,5 +956,8 @@ export const getters = {
   },
   lastAuthed(state) {
     return state.lastAuthed;
+  },
+  lastGuildFetch(state) {
+    return state.lastGuildFetch;
   }
 };

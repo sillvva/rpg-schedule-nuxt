@@ -153,6 +153,9 @@ export default {
       immediate: true
     }
   },
+  mounted() {
+    this.$store.commit("setLastListingPage", 'calendar');
+  },
   methods: {
     allGames() {
       if (!this.account.guilds) return;

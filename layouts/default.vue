@@ -463,10 +463,10 @@ export default {
     this.$store.commit("setSnackBars", []);
     this.setSettings();
 
-    await this.fetchGuilds();
+    this.$store.dispatch("initAuth", this).catch(err => {});
     this.refetchInterval = setInterval(() => {
       this.fetchGuilds();
-    }, 3 * 60 * 60 * 1000);
+    }, 1 * 60 * 60 * 1000);
 
     this.loadingAccount = false;
 
@@ -716,7 +716,8 @@ export default {
           ["/help", "/games/edit"].includes(this.$route.path) &&
           !this.account &&
           !this.loadingAccount
-        )
+        ) &&
+        this.$store.getters.lastGuildFetch
       )
         return true;
       return false;

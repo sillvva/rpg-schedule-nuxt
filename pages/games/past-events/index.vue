@@ -207,6 +207,9 @@ export default {
       immediate: true
     }
   },
+  mounted() {
+    this.$store.commit("setLastListingPage", 'past-events');
+  },
   methods: {
     saveGuildConfiguration() {
       const guild = this.guilds.find(g => g.editing);

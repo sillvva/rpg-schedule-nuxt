@@ -178,6 +178,9 @@ export default {
       immediate: true
     }
   },
+  mounted() {
+    this.$store.commit("setLastListingPage", 'my-games');
+  },
   methods: {
     collapseAll() {
       this.guilds = this.guilds.map(g => {

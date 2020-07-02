@@ -83,7 +83,7 @@
                         id="runtime"
                         :label="lang.game.RUN_TIME"
                         v-model="game.runtime"
-                        type="number"
+                        type="text"
                         :suffix="lang.game.labels.HOURS"
                         @change="changed"
                       ></v-text-field>
@@ -450,6 +450,7 @@
 
 <script>
 import { parseEventTimes } from "../../../assets/auxjs/appaux";
+import config from "../../../assets/auxjs/config";
 import lang from "../../../assets/lang/en.json";
 import ws from "../../../store/socket";
 import { cloneDeep } from "lodash";
@@ -624,8 +625,13 @@ export default {
     if (!this.account) {
       await this.$store.dispatch("fetchGuilds", {
         app: this,
-        page: this.lastListingPage || "my-games"
+        page: "manage-server"
       });
+    }
+
+    if (!this.account) {
+      await this.$store.dispatch("signOut");
+      return this.$router.replace("/");
     }
 
     const guilds = cloneDeep(this.account.guilds);
@@ -633,14 +639,15 @@ export default {
       a.config.password || a.id == "532564186023329792" ? 1 : -1
     );
 
-    if (this.account) {
-      const guild = guilds.find(g => g.id === this.game.s);
-      if (guild && this.gameId) {
-        const game = guild.games.find(g => g._id === this.gameId);
-        if (game) {
-          this.modGame(game);
-          this.gameLoaded = true;
-        }
+    if (this.gameId) {
+      const guild = guilds.find(g =>
+        g.games.find(gm => gm._id === this.gameId)
+      );
+      const game = guild && guild.games.find(g => g._id === this.gameId);
+      if (game) {
+        game.guildConfig = guild.config;
+        this.finishFetchGame(game);
+        this.gameLoaded = true;
       }
     }
 
@@ -683,19 +690,21 @@ export default {
       }
     }
 
-    if (this.account && this.gameId) {
-      const guild = this.account.guilds.find(g => g.id === this.game.s);
-      if (
-        !guild ||
-        (this.game.dm.id !== this.account.user.id && guild && !guild.isAdmin)
-      ) {
-        this.$router.replace(`/games/${this.lastListingPage}`);
-        this.$store.dispatch("addSnackBar", {
-          message: "You do not have permission to edit this game",
-          color: "error",
-          timeout: 10
-        });
-      }
+    const guild = this.account.guilds.find(g => g.id === this.game.s);
+    if (
+      this.gameId &&
+      (!guild ||
+        (this.game.dm.id !== this.account.user.id &&
+          !guild.isAdmin &&
+          this.account.user.tag !== config.author))
+    ) {
+      this.isChanged = false;
+      this.$router.replace(`/games/${this.lastListingPage}`);
+      this.$store.dispatch("addSnackBar", {
+        message: "You do not have permission to edit this game",
+        color: "error",
+        timeout: 10
+      });
     }
   },
   beforeDestroy() {
@@ -704,7 +713,7 @@ export default {
   beforeRouteLeave(to, from, next) {
     if (this.verifyUnload()) {
       next();
-    } else {
+    } else if (!this.isChanged) {
       next();
     }
   },
@@ -752,7 +761,8 @@ export default {
       if (this.guild && !this.gameId && this.game) {
         const templates = this.guild.config.gameTemplates.filter(
           gt =>
-            gt && (this.gameId ||
+            gt &&
+            (this.gameId ||
               this.guild.isAdmin ||
               !gt.role ||
               this.guild.userRoles.includes(gt.role)) &&
@@ -798,9 +808,10 @@ export default {
         });
     },
     finishFetchGame(game) {
+      const account = cloneDeep(this.account);
+      const guild = account.guilds.find(g => g.id === game.s);
+
       if (this.gameId) {
-        const account = cloneDeep(this.account);
-        const guild = account.guilds.find(g => g.id === game.s);
         if (guild && !guild.games.find(g => g._id === this.gameId)) {
           game.moment = parseEventTimes(game);
           game.reserved = game.reserved.filter(r => r.tag);
@@ -828,11 +839,14 @@ export default {
           this.$store.commit("setGuilds", account.guilds);
         }
       }
+
       this.modGame(cloneDeep(game));
+
       this.gameLoaded = true;
       setTimeout(() => {
         this.isChanged = false;
       }, 500);
+
       if (this.game && this.game.guildConfig) {
         if (
           this.game.guildConfig.password &&
@@ -840,9 +854,18 @@ export default {
         ) {
           const pass = prompt("Password?", "");
           if (pass !== this.game.guildConfig.password) {
-            return this.$router.replace(this.config.urls.game.dashboard.path);
+            this.isChanged = false;
+            return this.$router.replace(`/games/${this.lastListingPage}`);
           }
         }
+      }
+
+      if (this.gameId) {
+        this.guilds = [guild].map(g => ({ text: g.name, value: g.id }));
+        const channel = guild.channels.find(c => c.id === game.c);
+        if (!channel)
+          return this.$router.replace(`/games/${this.lastListingPage}`);
+        this.channels = [channel];
       }
     },
     async modGame(game, force) {
@@ -851,6 +874,8 @@ export default {
       this.game = cloneDeep(game);
       if (!this.game) return;
       if (this.$refs.game) this.$refs.game.resetValidation();
+      this.repeatOptions = [];
+      if (this.game.clearReservedOnRepeat) this.repeatOptions.push("clearReservedOnRepeat");
       if (this.game.weekdays) {
         if (!Array.isArray(this.game.weekdays)) {
           this.game.weekdays = Array(7)
@@ -879,7 +904,8 @@ export default {
           this.channels = this.guild.announcementChannels;
           const templates = this.guild.config.gameTemplates.filter(
             gt =>
-              gt && (this.$route.query.g ||
+              gt &&
+              (this.$route.query.g ||
                 this.guild.isAdmin ||
                 !gt.role ||
                 this.guild.userRoles.includes(gt.role)) &&
@@ -984,7 +1010,6 @@ export default {
         updatedGame.frequency = "0";
       }
 
-      updatedGame.runtime = Math.abs(updatedGame.runtime).toString();
       updatedGame.minPlayers = Math.abs(updatedGame.minPlayers).toString();
       updatedGame.players = Math.abs(updatedGame.players).toString();
 
@@ -1044,6 +1069,7 @@ export default {
         false,
         false
       ].map((w, i) => this.weekdays.includes(i));
+
       delete updatedGame.title;
       delete updatedGame.guildConfig;
       delete updatedGame.errors;
@@ -1074,10 +1100,18 @@ export default {
         })
         .then(async result => {
           if (!this.gameId || (result._id && this.gameId != result._id)) {
+            const account = cloneDeep(this.account);
+            account.guilds = account.guilds.map(guild => {
+              if (guild.id === this.game.s) {
+                updatedGame._id = result._id;
+                updatedGame.createdTimestamp = new Date().getTime();
+                guild.games.push(updatedGame);
+              }
+              return guild;
+            });
+            this.$store.commit("setAccount", account);
             return this.$router.replace(
-              `${this.config.urls.game.create.path}?g=${
-                result._id
-              }&fetch=${!this.gameId}`
+              `${this.config.urls.game.create.path}?g=${result._id}`
             );
           }
           await this.modGame(cloneDeep(result.game));

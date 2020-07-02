@@ -628,6 +628,9 @@ export default {
       immediate: true
     }
   },
+  mounted() {
+    this.$store.commit("setLastListingPage", 'manage-server');
+  },
   methods: {
     saveGuildConfiguration() {
       const index = this.guilds.findIndex(g => g.editing);

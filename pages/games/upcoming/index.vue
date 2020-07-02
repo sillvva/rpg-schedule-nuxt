@@ -141,6 +141,9 @@ export default {
       immediate: true
     }
   },
+  mounted() {
+    this.$store.commit("setLastListingPage", 'upcoming');
+  },
   methods: {
     collapseAll() {
       this.guilds = this.guilds.map(g => {

@@ -199,9 +199,6 @@ export default {
               timeout: 5
             });
           }
-          else {
-            this.game.reserved = result.reserved;
-          }
         });
     },
     populateColumns() {

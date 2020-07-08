@@ -23,6 +23,7 @@
                         id="guild"
                         :label="lang.game.SERVER"
                         v-model="game.s"
+                        :rules="[v => !!v]"
                         :items="guilds.filter(c => !gameId || c.value === game.s)"
                         @change="selectGuild"
                       ></v-select>
@@ -37,7 +38,7 @@
                         :label="lang.game.CHANNEL"
                         id="channel"
                         v-model="game.c"
-                        required
+                        :rules="[v => !!v]"
                         :items="channels.map(c => ({ text: c.name, value: c.id })).filter(c => !gameId || c.value === game.c)"
                         @change="selectChannel"
                       ></v-select>
@@ -47,7 +48,7 @@
                         :label="lang.config.TEMPLATE_CONFIGURATION"
                         id="template"
                         v-model="game.template"
-                        required
+                        :rules="[v => !!v]"
                         :items="guild.config.gameTemplates.filter(gt => gt && ($route.query.g || guild.isAdmin || !gt.role || guild.userRoles.includes(gt.role)) && guild.config.channel.find(c => c.channelId === game.c) && guild.config.channel.find(c => c.channelId === game.c).gameTemplates.includes(gt.id)).map(gt => ({ text: gt.name, value: gt.id }))"
                         @change="selectTemplate"
                       ></v-select>
@@ -116,7 +117,6 @@
                         id="where"
                         :label="lang.game.WHERE"
                         v-model="game.where"
-                        :rules="[v => !!v]"
                         @change="changed"
                       ></v-text-field>
                     </v-col>
@@ -126,7 +126,7 @@
                         :label="lang.game.WHEN"
                         v-model="game.when"
                         :items="whenItems"
-                        @change="changed"
+                        @change="whenSelected"
                       ></v-select>
                     </v-col>
                     <v-col cols="12" sm="3" v-if="guildId || !gameId" class="py-0">
@@ -356,6 +356,11 @@
                         :label="lang.game.HIDE_DATE"
                         style="margin: 0;"
                       ></v-switch>
+                      <v-switch
+                        v-model="game.pastSignups"
+                        :label="lang.game.PAST_SIGNUPS"
+                        style="margin: 0;"
+                      ></v-switch>
                     </v-col>
                   </v-row>
                   <v-row dense class="game-textareas">
@@ -579,7 +584,7 @@ export default {
             this.isChanged = false;
             localStorage.setItem("rescheduled", 1);
             this.$store.dispatch("addSnackBar", {
-              message: "The game has been rescheduled",
+              message: this.lang.other.RESCHEDULED,
               color: "info"
             });
             this.$router.replace(
@@ -594,7 +599,7 @@ export default {
             this.isChanged = false;
             localStorage.setItem("rescheduled", 1);
             this.$store.dispatch("addSnackBar", {
-              message: "The game has been deleted",
+              message: this.lang.other.DELETED,
               color: "error darken-1"
             });
             this.$router.replace(`/games/${this.lastListingPage}`);
@@ -701,7 +706,7 @@ export default {
       this.isChanged = false;
       this.$router.replace(`/games/${this.lastListingPage}`);
       this.$store.dispatch("addSnackBar", {
-        message: "You do not have permission to edit this game",
+        message: this.lang.other.EDIT_PERMISSION,
         color: "error",
         timeout: 10
       });
@@ -1443,6 +1448,15 @@ export default {
           value: this.enums.MonthlyType.DATE
         }
       ];
+    },
+    whenSelected() {
+      if (this.game.when === this.enums.GameWhen.NOW) {
+        this.game.pastSignups = true;
+      }
+      else {
+        this.game.pastSignups = false;
+      }
+      this.changed();
     }
   }
 };

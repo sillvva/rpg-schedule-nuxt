@@ -374,7 +374,7 @@ export const actions = {
     if (
       (moment().unix() - vuexContext.getters.lastGuildFetch) / (60 * 60) < 2
     ) {
-      return resolve({ status: "success" });
+      return { status: "success" };
     }
 
     vuexContext.commit("setLastGuildFetch", moment().unix());

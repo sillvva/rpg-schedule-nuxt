@@ -52,7 +52,13 @@
           style="border-radius: 50%;"
         ></v-img>
         <v-toolbar-title>{{guild.name}}</v-toolbar-title>
+
         <v-spacer></v-spacer>
+
+        <v-btn icon :href="`${env && env.apiUrl}/rss/${account.user.id}/${guild.id}`" target="_blank" title="RSS" class="hidden-xs-only">
+          <v-icon dark>mdi-rss</v-icon>
+        </v-btn>
+
         <v-btn
           :to="`${config.urls.game.create.path}?s=${guild.id}`"
           :title="lang.buttons.NEW_GAME"
@@ -62,10 +68,37 @@
         >
           <v-icon>mdi-plus</v-icon>
         </v-btn>
+
         <v-btn icon @click="guild.collapsed = !guild.collapsed">
           <v-icon v-if="!guild.collapsed">mdi-chevron-down</v-icon>
           <v-icon v-if="guild.collapsed">mdi-chevron-up</v-icon>
         </v-btn>
+
+        <v-menu left offset-y>
+          <template v-slot:activator="{ on, attrs }">
+            <v-btn class="hidden-sm-and-up" icon v-on="on" v-bind="attrs">
+              <v-icon>mdi-dots-vertical</v-icon>
+            </v-btn>
+          </template>
+          <v-list>
+            <v-list-item :to="`${config.urls.game.create.path}?s=${guild.id}`" v-if="(guild.permission || guild.isAdmin) && guild.announcementChannels.length > 0">
+              <v-list-item-icon>
+                <v-icon dark>mdi-plus</v-icon>
+              </v-list-item-icon>
+              <v-list-item-content style="white-space: nowrap;">
+                {{lang.buttons.NEW_GAME}}
+              </v-list-item-content>
+            </v-list-item>
+            <v-list-item :href="`${env && env.apiUrl}/rss/${account.user.id}/${guild.id}`" target="_blank">
+              <v-list-item-icon>
+                <v-icon dark>mdi-rss</v-icon>
+              </v-list-item-icon>
+              <v-list-item-content>
+                RSS
+              </v-list-item-content>
+            </v-list-item>
+          </v-list>
+        </v-menu>
       </v-toolbar>
 
       <v-container fluid v-if="!guild.collapsed">
@@ -126,6 +159,7 @@ export default {
       lang: {},
       config: this.$store.getters.config,
       account: this.$store.getters.account || {},
+      env: this.$store.getters.env,
       searchQuery: this.$route.query.s
     };
   },

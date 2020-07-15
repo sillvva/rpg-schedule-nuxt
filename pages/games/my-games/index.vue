@@ -5,14 +5,34 @@
     </v-flex>
   </v-app> -->
   <v-container fluid>
-    <v-text-field
-      v-model="searchQuery"
-      @keyup="search"
-      flat
-      solo
-      prepend-inner-icon="mdi-magnify"
-      class="hidden-sm-and-up mb-n4"
-    ></v-text-field>
+    <v-app-bar dense class="mb-3 hidden-sm-and-up">
+      <v-text-field
+        v-model="searchQuery"
+        @keyup="search"
+        flat
+        solo
+        prepend-inner-icon="mdi-magnify"
+        style="height: 48px; margin-left: -16px;"
+      ></v-text-field>
+      <v-btn
+        text
+        small
+        v-if="guilds.filter(g => g.collapsed).length == guilds.length"
+        @click="expandAll"
+        class="ml-4"
+      >
+        <v-icon>mdi-chevron-double-up</v-icon>
+      </v-btn>
+      <v-btn
+        text
+        small
+        v-if="guilds.filter(g => !g.collapsed).length > 0"
+        @click="collapseAll"
+        class="ml-4"
+      >
+        <v-icon>mdi-chevron-double-down</v-icon>
+      </v-btn>
+    </v-app-bar>
     <v-app-bar dense class="mb-3 hidden-xs-only">
       <v-text-field
         v-model="searchQuery"

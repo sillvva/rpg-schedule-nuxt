@@ -51,7 +51,7 @@
       </v-btn>
       <v-dialog v-model="settingsDialog" scrollable max-width="400px">
         <template v-slot:activator="{ on }">
-          <v-btn outlined fab small v-on="on" class="discord">
+          <v-btn text fab small v-on="on">
             <v-icon dark>mdi-cog</v-icon>
           </v-btn>
         </template>

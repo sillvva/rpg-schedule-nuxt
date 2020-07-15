@@ -263,7 +263,7 @@
                         style="font-size: smaller;"
                       ></v-autocomplete>
                       <small :style="`${hintStyle}; white-space: nowrap;`">
-                        {{moment().tz(game.tz) ? moment().tz(game.tz).format('z (Z)') : ""}}
+                        {{moment(`${game.date} ${game.time}`).tz(game.tz) ? moment(`${game.date} ${game.time}`).tz(game.tz).format('z (Z)') : ""}}
                         <a
                           :href="convertLink"
                           class="discord--text"
@@ -510,7 +510,7 @@ export default {
       repeatOptionItems: [],
       monthlyTypeItems: [],
       weekdayItems: [],
-      tzItems: moment.tz.names(),
+      tzItems: moment.tz.names().filter(tz => !tz.startsWith("Etc/") && !tz.startsWith("GMT")),
       hintStyle:
         "color: rgba(255,255,255,0.7); font-size: 12px; min-height: 14px; position: absolute; bottom: 0;",
       socket: null,
@@ -1092,7 +1092,7 @@ export default {
         false
       ].map((w, i) => this.weekdays.includes(i));
 
-      const offset = moment.tz(updatedGame.tz).format("Z").split(":");
+      const offset = moment(`${updatedGame.date} ${updatedGame.time}`).tz(updatedGame.tz).format("Z").split(":");
       const offsetVal = parseInt(offset[0]) + parseInt(`${offset[1]}/60`);
       updatedGame.timezone = offsetVal;
 

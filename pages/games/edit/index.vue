@@ -239,10 +239,10 @@
                       class="py-0"
                       style="position: relative;"
                     >
-                      <v-text-field
+                      <!-- <v-text-field
                         id="timezone"
                         type="number"
-                        :label="lang.game.TIMEZONE"
+                        :label="lang.game.TIME_ZONE"
                         v-model="game.timezone"
                         min="-12"
                         max="14"
@@ -250,8 +250,20 @@
                         prefix="UTC"
                         @change="dateTimeLinks"
                         @keyup="dateTimeLinks"
-                      ></v-text-field>
-                      <small :style="hintStyle">
+                      ></v-text-field> -->
+                      <v-autocomplete
+                        ref="timezone"
+                        id="timezone"
+                        :label="lang.game.TIME_ZONE"
+                        :rules="[() => game.tz !== '' && game.tz !== null]"
+                        v-model="game.tz"
+                        :items="tzItems"
+                        @change="dateTimeLinks"
+                        @keyup="dateTimeLinks"
+                        style="font-size: smaller;"
+                      ></v-autocomplete>
+                      <small :style="`${hintStyle}; white-space: nowrap;`">
+                        {{moment().tz(game.tz).format('z (Z)')}}
                         <a
                           :href="convertLink"
                           class="discord--text"
@@ -270,6 +282,7 @@
                         :label="lang.game.REMINDER"
                         v-model="game.reminder"
                         :items="reminderItems"
+                        class="reminder"
                       ></v-select>
                     </v-col>
                     <v-col
@@ -459,7 +472,7 @@ import config from "../../../assets/auxjs/config";
 import lang from "../../../assets/lang/en.json";
 import ws from "../../../store/socket";
 import { cloneDeep } from "lodash";
-import moment from "moment";
+import moment from "moment-timezone";
 import "moment-recur";
 
 export default {
@@ -497,6 +510,7 @@ export default {
       repeatOptionItems: [],
       monthlyTypeItems: [],
       weekdayItems: [],
+      tzItems: moment.tz.names(),
       hintStyle:
         "color: rgba(255,255,255,0.7); font-size: 12px; min-height: 14px; position: absolute; bottom: 0;",
       socket: null,
@@ -939,6 +953,9 @@ export default {
       if (!this.gameId) {
         this.setDefaultDates();
       }
+      if (!this.game.tz) {
+        this.game.tz = moment.tz.guess();
+      }
       this.dateTimeLinks();
     },
     setDefaultDates() {
@@ -1074,6 +1091,10 @@ export default {
         false,
         false
       ].map((w, i) => this.weekdays.includes(i));
+
+      const offset = moment.tz(updatedGame.tz).format("Z").split(":");
+      const offsetVal = parseInt(offset[0]) + parseInt(`${offset[1]}/60`);
+      updatedGame.timezone = offsetVal;
 
       delete updatedGame.title;
       delete updatedGame.guildConfig;
@@ -1230,10 +1251,10 @@ export default {
     },
     dateTimeLinks(event) {
       const link = this.getTZUrls(event);
+      const offset = moment.tz(this.game.tz).format("Z").split(":");
+      const offsetVal = parseInt(offset[0]) + parseInt(`${offset[1]}/60`);
+      this.game.timezone = offsetVal;
       this.convertLink = link.convert;
-      // $("#gcalLink").html(
-      //   `<a href="${link.gcal}" target="_blank" rel="nofollow"><%= lang.game.ADD_TO_CALENDAR %></a>`
-      // );
       this.getRecurrenceDate();
       this.changed();
     },
@@ -1457,6 +1478,9 @@ export default {
         this.game.pastSignups = false;
       }
       this.changed();
+    },
+    moment(inp, format, strict) {
+      return moment(inp, format, strict);
     }
   }
 };
@@ -1474,5 +1498,8 @@ export default {
 }
 .game-textareas textarea {
   min-height: 196px;
+}
+.reminder .v-text-field__details {
+  display: none;
 }
 </style>

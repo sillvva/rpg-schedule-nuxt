@@ -263,7 +263,7 @@
                         style="font-size: smaller;"
                       ></v-autocomplete>
                       <small :style="`${hintStyle}; white-space: nowrap;`">
-                        {{moment().tz(game.tz).format('z (Z)')}}
+                        {{moment().tz(game.tz) ? moment().tz(game.tz).format('z (Z)') : ""}}
                         <a
                           :href="convertLink"
                           class="discord--text"
@@ -1251,9 +1251,12 @@ export default {
     },
     dateTimeLinks(event) {
       const link = this.getTZUrls(event);
-      const offset = moment.tz(this.game.tz).format("Z").split(":");
-      const offsetVal = parseInt(offset[0]) + parseInt(`${offset[1]}/60`);
-      this.game.timezone = offsetVal;
+      const m = moment.tz(this.game.tz);
+      if (m) {
+        const offset = m.format("Z").split(":");
+        const offsetVal = parseInt(offset[0]) + parseInt(`${offset[1]}/60`);
+        this.game.timezone = offsetVal;
+      }
       this.convertLink = link.convert;
       this.getRecurrenceDate();
       this.changed();

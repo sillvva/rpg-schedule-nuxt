@@ -1,4 +1,4 @@
-const moment = require("moment");
+const moment = require("moment-timezone");
 const { toPairs, cloneDeep } = require("lodash");
 
 const log = (...content) => {
@@ -122,7 +122,7 @@ const parseEventTimes = (event, options = {}) => {
         ""
       )}`,
       iso: date,
-      date: moment(date).format("llll"),
+      date: event.tz ? moment(date).tz(event.tz).format("llll z") : moment(date).format("llll"),
       calendar: moment(date).calendar(),
       from: moment(date).fromNow()
     };

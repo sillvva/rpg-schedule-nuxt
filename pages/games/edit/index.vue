@@ -250,7 +250,7 @@
                         prefix="UTC"
                         @change="dateTimeLinks"
                         @keyup="dateTimeLinks"
-                      ></v-text-field> -->
+                      ></v-text-field>-->
                       <v-autocomplete
                         ref="timezone"
                         id="timezone"
@@ -326,7 +326,18 @@
                         :label="lang.game.WEEKDAYS"
                         multiple
                         @change="dateTimeLinks"
-                      ></v-select>
+                        class="fixed-size"
+                      >
+                        <template v-slot:selection="{ item, index }">
+                          <v-chip v-if="index < 2">
+                            <span>{{ item.text }}</span>
+                          </v-chip>
+                          <span
+                            v-if="index === 2"
+                            class="grey--text caption"
+                          >(+{{ weekdays.length - 2 }} others)</span>
+                        </template>
+                      </v-select>
                     </v-col>
                     <v-col
                       cols="12"
@@ -361,19 +372,17 @@
                     </v-col>
                   </v-row>
                 </v-col>
-                <v-col cols="12" lg="5" class="py-0">
+                <v-col cols="12" lg="5" class="py-0" style="margin-top: -14px;">
                   <v-row dense>
                     <v-col cols="12">
-                      <v-switch
-                        v-model="game.hideDate"
-                        :label="lang.game.HIDE_DATE"
-                        style="margin: 0;"
-                      ></v-switch>
-                      <v-switch
-                        v-model="game.pastSignups"
-                        :label="lang.game.PAST_SIGNUPS"
-                        style="margin: 0;"
-                      ></v-switch>
+                      <v-select
+                        v-model="gameOptions"
+                        :items="gameOptionItems"
+                        :label="lang.game.GAME_OPTIONS"
+                        multiple
+                        chips
+                      >
+                      </v-select>
                     </v-col>
                   </v-row>
                   <v-row dense class="game-textareas">
@@ -502,15 +511,19 @@ export default {
       nextDate: "",
       weekdays: [],
       repeatOptions: [],
+      gameOptions: [],
       lang: lang,
       whenItems: [],
       methodItems: [],
       reminderItems: [],
       frequencyItems: [],
       repeatOptionItems: [],
+      gameOptionItems: [],
       monthlyTypeItems: [],
       weekdayItems: [],
-      tzItems: moment.tz.names().filter(tz => !tz.startsWith("Etc/") && !tz.startsWith("GMT")),
+      tzItems: moment.tz
+        .names()
+        .filter(tz => !tz.startsWith("Etc/") && !tz.startsWith("GMT")),
       hintStyle:
         "color: rgba(255,255,255,0.7); font-size: 12px; min-height: 14px; position: absolute; bottom: 0;",
       socket: null,
@@ -616,7 +629,7 @@ export default {
               message: this.lang.other.DELETED,
               color: "error darken-1"
             });
-            this.$router.replace(`/games/${this.lastListingPage}`);
+            this.$router.replace(`/games/${this.lastListingPage || 'my-games'}`);
           } else if (data.action === "updated") {
             for (const prop in data.game) {
               this.game[prop] = data.game[prop];
@@ -894,7 +907,8 @@ export default {
       if (!this.game) return;
       if (this.$refs.game) this.$refs.game.resetValidation();
       this.repeatOptions = [];
-      if (this.game.clearReservedOnRepeat) this.repeatOptions.push("clearReservedOnRepeat");
+      if (this.game.clearReservedOnRepeat)
+        this.repeatOptions.push("clearReservedOnRepeat");
       if (this.game.weekdays) {
         if (!Array.isArray(this.game.weekdays)) {
           this.game.weekdays = Array(7)
@@ -1032,6 +1046,10 @@ export default {
         updatedGame.frequency = "0";
       }
 
+      updatedGame.hideDate = this.gameOptions.includes("hideDate");
+      updatedGame.pastSignups = this.gameOptions.includes("pastSignups");
+      updatedGame.disableWaitlist = this.gameOptions.includes("disableWaitlist");
+
       updatedGame.minPlayers = Math.abs(updatedGame.minPlayers).toString();
       updatedGame.players = Math.abs(updatedGame.players).toString();
 
@@ -1092,7 +1110,10 @@ export default {
         false
       ].map((w, i) => this.weekdays.includes(i));
 
-      const offset = moment(`${updatedGame.date} ${updatedGame.time}`).tz(updatedGame.tz).format("Z").split(":");
+      const offset = moment(`${updatedGame.date} ${updatedGame.time}`)
+        .tz(updatedGame.tz)
+        .format("Z")
+        .split(":");
       const offsetVal = parseInt(offset[0]) + parseInt(`${offset[1]}/60`);
       updatedGame.timezone = offsetVal;
 
@@ -1462,6 +1483,20 @@ export default {
           value: "clearReservedOnRepeat"
         }
       ];
+      this.gameOptionItems = [
+        {
+          text: this.lang.game.HIDE_DATE,
+          value: "hideDate"
+        },
+        {
+          text: this.lang.game.DISABLE_WAITLIST,
+          value: "disableWaitlist"
+        },
+        {
+          text: this.lang.game.PAST_SIGNUPS,
+          value: "pastSignups"
+        }
+      ];
       this.monthlyTypeItems = [
         {
           text: this.lang.game.options.WEEKDAY,
@@ -1476,8 +1511,7 @@ export default {
     whenSelected() {
       if (this.game.when === this.enums.GameWhen.NOW) {
         this.game.pastSignups = true;
-      }
-      else {
+      } else {
         this.game.pastSignups = false;
       }
       this.changed();
@@ -1490,7 +1524,7 @@ export default {
 </script>
 
 <style>
-.v-select.v-select--chips .v-input__slot {
+.v-select.fixed-size.v-select--chips .v-input__slot {
   height: 32px !important;
 }
 .v-chip.v-size--default {

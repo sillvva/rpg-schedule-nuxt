@@ -17,7 +17,7 @@
         x-small
         :href="config.urls.twitter.path"
         target="_blank"
-        class="hidden-sm-and-down discord--text"
+        class="hidden-sm-and-down"
       >
         <v-icon dark>mdi-twitter</v-icon>
       </v-btn>
@@ -29,7 +29,7 @@
         v-if="account"
         :href="`${env && env.apiUrl}/rss/${account.user.id}`"
         target="_blank"
-        class="hidden-sm-and-down discord--text"
+        class="hidden-sm-and-down"
       >
         <v-icon dark>mdi-rss</v-icon>
       </v-btn>
@@ -40,12 +40,12 @@
         small
         :href="config.urls.donate.path"
         target="_blank"
-        class="hidden-xs-only hidden-md-and-up discord--text"
+        class="hidden-xs-only hidden-md-and-up"
       >
         <v-icon dark>mdi-gift-outline</v-icon>
       </v-btn>
       <span class="hidden-xs-only hidden-md-and-up">&nbsp;&nbsp;</span>
-      <v-btn text href="/r/donate" target="_blank" class="hidden-sm-and-down discord--text">
+      <v-btn text href="/r/donate" target="_blank" outlined class="hidden-sm-and-down mr-2">
         <v-icon left dark>mdi-gift-outline</v-icon>
         <span>{{lang.nav.DONATE}}</span>
       </v-btn>

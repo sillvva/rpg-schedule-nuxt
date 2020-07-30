@@ -75,15 +75,6 @@
 
         <v-spacer></v-spacer>
 
-        <v-btn
-          icon
-          :href="guild.csv"
-          :download="`manage-server-${new Date().getFullYear()}-${new Date().getMonth()+1 < 10 ? '0' : ''}${new Date().getMonth()+1}-${new Date().getDate() < 10 ? '0' : ''}${new Date().getDate()}.csv`"
-          v-if="guild.games.length > 0"
-        >
-          <v-icon>mdi-download</v-icon>
-        </v-btn>
-
         <v-dialog
           v-model="guild.editing"
           scrollable
@@ -527,6 +518,43 @@
           <v-icon v-if="!guild.collapsed">mdi-chevron-down</v-icon>
           <v-icon v-if="guild.collapsed">mdi-chevron-up</v-icon>
         </v-btn>
+
+        <v-menu left offset-y>
+          <template v-slot:activator="{ on, attrs }">
+            <v-btn icon v-on="on" v-bind="attrs">
+              <v-icon>mdi-dots-vertical</v-icon>
+            </v-btn>
+          </template>
+          <v-list>
+            <v-list-item
+              :href="guild.csv"
+              :download="`manage-server-${new Date().getFullYear()}-${new Date().getMonth()+1 < 10 ? '0' : ''}${new Date().getMonth()+1}-${new Date().getDate() < 10 ? '0' : ''}${new Date().getDate()}.csv`"
+              target="_blank"
+              v-if="guild.games.length > 0"
+            >
+              <v-list-item-icon>
+                <v-icon dark>mdi-download</v-icon>
+              </v-list-item-icon>
+              <v-list-item-content>Download</v-list-item-content>
+            </v-list-item>
+            <v-list-item :href="`${env && env.apiUrl}/guild-rss/${guild.id}`" target="_blank">
+              <v-list-item-icon>
+                <v-icon dark>mdi-rss</v-icon>
+              </v-list-item-icon>
+              <v-list-item-content>RSS</v-list-item-content>
+            </v-list-item>
+            <v-list-item
+              v-if="storeAccount.apiKey"
+              :href="`${env && env.apiUrl}/patron-api/games?key=${storeAccount.apiKey}&guildId=${guild.id}`"
+              target="_blank"
+            >
+              <v-list-item-icon>
+                <v-icon dark>mdi-key-variant</v-icon>
+              </v-list-item-icon>
+              <v-list-item-content>API</v-list-item-content>
+            </v-list-item>
+          </v-list>
+        </v-menu>
       </v-toolbar>
 
       <v-container fluid v-if="!guild.collapsed">
@@ -601,6 +629,9 @@ export default {
     };
   },
   computed: {
+    storeAccount() {
+      return this.$store.getters.account;
+    },
     storeGuilds() {
       return this.$store.getters.account
         ? cloneDeep(this.$store.getters.account.guilds).map(g => {
@@ -654,7 +685,7 @@ export default {
     }
   },
   mounted() {
-    this.$store.commit("setLastListingPage", 'manage-server');
+    this.$store.commit("setLastListingPage", "manage-server");
   },
   methods: {
     saveGuildConfiguration() {

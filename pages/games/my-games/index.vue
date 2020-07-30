@@ -75,10 +75,6 @@
 
         <v-spacer></v-spacer>
 
-        <v-btn icon :href="`${env && env.apiUrl}/rss/${account.user.id}/${guild.id}`" target="_blank" title="RSS" class="hidden-xs-only">
-          <v-icon dark>mdi-rss</v-icon>
-        </v-btn>
-
         <v-btn
           :to="`${config.urls.game.create.path}?s=${guild.id}`"
           :title="lang.buttons.NEW_GAME"
@@ -96,12 +92,12 @@
 
         <v-menu left offset-y>
           <template v-slot:activator="{ on, attrs }">
-            <v-btn class="hidden-sm-and-up" icon v-on="on" v-bind="attrs">
+            <v-btn icon v-on="on" v-bind="attrs">
               <v-icon>mdi-dots-vertical</v-icon>
             </v-btn>
           </template>
           <v-list>
-            <v-list-item :to="`${config.urls.game.create.path}?s=${guild.id}`" v-if="(guild.permission || guild.isAdmin) && guild.announcementChannels.length > 0">
+            <v-list-item class="hidden-sm-and-up" :to="`${config.urls.game.create.path}?s=${guild.id}`" v-if="(guild.permission || guild.isAdmin) && guild.announcementChannels.length > 0">
               <v-list-item-icon>
                 <v-icon dark>mdi-plus</v-icon>
               </v-list-item-icon>
@@ -115,6 +111,14 @@
               </v-list-item-icon>
               <v-list-item-content>
                 RSS
+              </v-list-item-content>
+            </v-list-item>
+            <v-list-item v-if="account.apiKey" :href="`${env && env.apiUrl}/patron-api/games?key=${account.apiKey}&guildId=${guild.id}`" target="_blank">
+              <v-list-item-icon>
+                <v-icon dark>mdi-key-variant</v-icon>
+              </v-list-item-icon>
+              <v-list-item-content>
+                API
               </v-list-item-content>
             </v-list-item>
           </v-list>

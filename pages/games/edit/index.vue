@@ -15,13 +15,14 @@
               <v-toolbar-title v-if="gameId">{{lang.buttons.EDIT_GAME}}</v-toolbar-title>
             </v-toolbar>
             <v-card-text>
+              * Required
               <v-row dense>
                 <v-col cols="12" lg="7" class="py-0">
                   <v-row dense>
                     <v-col cols="12" sm="4" class="py-0">
                       <v-select
                         id="guild"
-                        :label="lang.game.SERVER"
+                        :label="`${lang.game.SERVER}*`"
                         v-model="game.s"
                         :rules="[v => !!v]"
                         :items="guilds.filter(c => !gameId || c.value === game.s)"
@@ -35,7 +36,7 @@
                       v-if="channels && channels.length > 0 && guilds.filter(c => !gameId || c.value === game.s).length > 0"
                     >
                       <v-select
-                        :label="lang.game.CHANNEL"
+                        :label="`${lang.game.CHANNEL}*`"
                         id="channel"
                         v-model="game.c"
                         :rules="[v => !!v]"
@@ -45,7 +46,7 @@
                     </v-col>
                     <v-col cols="12" sm="4" class="py-0" v-if="guild">
                       <v-select
-                        :label="lang.config.TEMPLATE_CONFIGURATION"
+                        :label="`${lang.config.TEMPLATE_CONFIGURATION}*`"
                         id="template"
                         v-model="game.template"
                         :rules="[v => !!v]"
@@ -53,16 +54,16 @@
                         @change="selectTemplate"
                       ></v-select>
                     </v-col>
-                    <v-col cols="12" sm="5" md="4" lg="6" class="py-0">
+                    <v-col cols="12" class="py-0">
                       <v-text-field
                         id="adventure"
-                        :label="lang.game.GAME_NAME"
+                        :label="`${lang.game.GAME_NAME}*`"
                         v-model="game.adventure"
                         :rules="[v => !!v]"
                         @change="changed"
                       ></v-text-field>
                     </v-col>
-                    <v-col cols="12" sm="7" md="8" lg="6" class="py-0">
+                    <v-col cols="12" sm="6" class="py-0">
                       <v-text-field
                         id="gameImage"
                         :label="lang.game.GAME_IMAGE"
@@ -70,10 +71,22 @@
                         @change="changed"
                       ></v-text-field>
                     </v-col>
+                    <v-col cols="12" sm="6" class="py-0">
+                      <v-file-input
+                        id="gameImageUpload"
+                        type="file"
+                        accept="image/jpeg, image/png, image/gif, image/webp"
+                        :label="lang.game.UPLOAD_GAME_IMAGE"
+                        :loading="imageUploading"
+                        @change="uploadeToImgur"
+                        :hint="lang.game.MAX_UPLOAD_SIZE"
+                        persistent-hint
+                      ></v-file-input>
+                    </v-col>
                     <v-col cols="12" sm="3" class="py-0">
                       <v-text-field
                         id="dm"
-                        :label="lang.game.GM"
+                        :label="`${lang.game.GM}*`"
                         v-model="game.dmTag"
                         :rules="[v => !!v]"
                         @change="changed"
@@ -92,7 +105,7 @@
                     <v-col cols="6" sm="3" class="py-0">
                       <v-text-field
                         id="minPlayers"
-                        :label="lang.game.MIN_PLAYERS"
+                        :label="`${lang.game.MIN_PLAYERS}*`"
                         v-model="game.minPlayers"
                         type="number"
                         min="1"
@@ -104,7 +117,7 @@
                     <v-col cols="6" sm="3" class="py-0">
                       <v-text-field
                         id="players"
-                        :label="lang.game.MAX_PLAYERS"
+                        :label="`${lang.game.MAX_PLAYERS}*`"
                         v-model="game.players"
                         type="number"
                         :min="game.minPlayers"
@@ -115,8 +128,9 @@
                     <v-col cols="12" sm="6" class="py-0">
                       <v-text-field
                         id="where"
-                        :label="lang.game.WHERE"
+                        :label="`${lang.game.WHERE}*`"
                         v-model="game.where"
+                        :rules="[v => !!v]"
                         @change="changed"
                       ></v-text-field>
                     </v-col>
@@ -171,7 +185,7 @@
                           <v-text-field
                             id="date"
                             type="date"
-                            :label="lang.game.DATE"
+                            :label="`${lang.game.DATE}*`"
                             v-model="game.date"
                             @change="dateTimeLinks"
                             :hint="nextDate && `Next: ${nextDate}`"
@@ -209,7 +223,7 @@
                           <v-text-field
                             id="time"
                             type="time"
-                            :label="lang.game.TIME"
+                            :label="`${lang.game.TIME}*`"
                             v-model="game.time"
                             @change="dateTimeLinks"
                             prepend-inner-icon="mdi-clock"
@@ -254,7 +268,7 @@
                       <v-autocomplete
                         ref="timezone"
                         id="timezone"
-                        :label="lang.game.TIME_ZONE"
+                        :label="`${lang.game.TIME_ZONE}*`"
                         :rules="[() => game.tz !== '' && game.tz !== null]"
                         v-model="game.tz"
                         :items="tzItems"
@@ -381,8 +395,7 @@
                         :label="lang.game.GAME_OPTIONS"
                         multiple
                         chips
-                      >
-                      </v-select>
+                      ></v-select>
                     </v-col>
                   </v-row>
                   <v-row dense class="game-textareas">
@@ -496,6 +509,7 @@ export default {
       enums: this.$store.getters.enums,
       gameId: this.$route.query.g,
       guildId: this.$route.query.s,
+      env: this.$store.getters.env,
       account: null,
       reservedList: "",
       guilds: [],
@@ -532,7 +546,8 @@ export default {
       valid: true,
       isChanged: false,
       lastGuildSelected: null,
-      gameLoaded: false
+      gameLoaded: false,
+      imageUploading: false
     };
   },
   computed: {
@@ -629,7 +644,9 @@ export default {
               message: this.lang.other.DELETED,
               color: "error darken-1"
             });
-            this.$router.replace(`/games/${this.lastListingPage || 'my-games'}`);
+            this.$router.replace(
+              `/games/${this.lastListingPage || "my-games"}`
+            );
           } else if (data.action === "updated") {
             for (const prop in data.game) {
               this.game[prop] = data.game[prop];
@@ -1048,7 +1065,9 @@ export default {
 
       updatedGame.hideDate = this.gameOptions.includes("hideDate");
       updatedGame.pastSignups = this.gameOptions.includes("pastSignups");
-      updatedGame.disableWaitlist = this.gameOptions.includes("disableWaitlist");
+      updatedGame.disableWaitlist = this.gameOptions.includes(
+        "disableWaitlist"
+      );
 
       updatedGame.minPlayers = Math.abs(updatedGame.minPlayers).toString();
       updatedGame.players = Math.abs(updatedGame.players).toString();
@@ -1518,6 +1537,58 @@ export default {
     },
     moment(inp, format, strict) {
       return moment(inp, format, strict);
+    },
+    uploadeToImgur(file) {
+      if (!file) return;
+      this.imageUploading = true;
+
+      if (file.size / 1024 / 1024 > 5) {
+        this.$store.dispatch("addSnackBar", {
+          message: "Image must be 5 MB or less",
+          color: "error",
+          timeout: 10
+        });
+        this.imageUploading = false;
+        return;
+      }
+
+      const reader = new FileReader();
+
+      reader.onloadend = () => {
+        return this.$axios
+          .post(`${this.env.apiUrl}/api/upload-to-imgur`, {
+            image: reader.result.replace(
+              /data:image\/(png|jpeg|gif);base64,/,
+              ""
+            )
+          })
+          .then(result => {
+            this.imageUploading = false;
+            return result.data;
+          })
+          .then(data => {
+            if (data.link) {
+              this.game.gameImage = data.link;
+            } else if (data.error) {
+              this.$store.dispatch("addSnackBar", {
+                message: data.error,
+                color: "error",
+                timeout: 10
+              });
+            } else {
+              this.$store.dispatch("addSnackBar", {
+                message: "Invalid file",
+                color: "error",
+                timeout: 10
+              });
+            }
+          })
+          .catch(err => {
+            this.imageUploading = false;
+          });
+      };
+
+      reader.readAsDataURL(file);
     }
   }
 };

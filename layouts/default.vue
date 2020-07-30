@@ -97,6 +97,9 @@
                   min="0"
                 ></v-text-field>
               </v-col>
+              <v-col class="py-0" cols="12" v-if="account && account.apiKey">
+                <v-text-field label="API Key" disabled="disabled" v-model="account.apiKey"></v-text-field>
+              </v-col>
             </v-row>
           </v-card-text>
           <v-divider></v-divider>

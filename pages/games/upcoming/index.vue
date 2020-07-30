@@ -71,10 +71,6 @@
 
         <v-spacer></v-spacer>
 
-        <v-btn icon :href="`${env && env.apiUrl}/guild-rss/${guild.id}`" target="_blank" title="RSS" class="hidden-xs-only">
-          <v-icon dark>mdi-rss</v-icon>
-        </v-btn>
-
         <v-btn icon @click="guild.collapsed = !guild.collapsed">
           <v-icon v-if="!guild.collapsed">mdi-chevron-down</v-icon>
           <v-icon v-if="guild.collapsed">mdi-chevron-up</v-icon>
@@ -82,7 +78,7 @@
 
         <v-menu left offset-y>
           <template v-slot:activator="{ on, attrs }">
-            <v-btn class="hidden-sm-and-up" icon v-on="on" v-bind="attrs">
+            <v-btn icon v-on="on" v-bind="attrs">
               <v-icon>mdi-dots-vertical</v-icon>
             </v-btn>
           </template>
@@ -93,6 +89,14 @@
               </v-list-item-icon>
               <v-list-item-content>
                 RSS
+              </v-list-item-content>
+            </v-list-item>
+            <v-list-item v-if="storeAccount.apiKey" :href="`${env && env.apiUrl}/patron-api/games?key=${storeAccount.apiKey}&guildId=${guild.id}`" target="_blank">
+              <v-list-item-icon>
+                <v-icon dark>mdi-key-variant</v-icon>
+              </v-list-item-icon>
+              <v-list-item-content>
+                API
               </v-list-item-content>
             </v-list-item>
           </v-list>
@@ -156,6 +160,9 @@ export default {
     };
   },
   computed: {
+    storeAccount() {
+      return this.$store.getters.account;
+    },
     storeGuilds() {
       return this.$store.getters.account
         ? this.$store.getters.account.guilds

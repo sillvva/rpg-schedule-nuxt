@@ -15,7 +15,7 @@
         <v-tab>Credits</v-tab>
         <v-tab>Commands</v-tab>
         <v-tab>Setup</v-tab>
-        <v-tab>Rescheduling</v-tab>
+        <v-tab>FAQ</v-tab>
 
         <v-tabs-items v-model="tab" touchless>
           <v-tab-item>
@@ -35,7 +35,7 @@
           </v-tab-item>
 
           <v-tab-item>
-            <ReschedulingPage />
+            <FAQ />
           </v-tab-item>
         </v-tabs-items>
       </v-tabs>
@@ -47,7 +47,7 @@
 import AboutPage from "../../components/pages/help/about";
 import CreditsPage from "../../components/pages/help/credits";
 import CommandsPage from "../../components/pages/help/commands";
-import ReschedulingPage from "../../components/pages/help/rescheduling";
+import FAQ from "../../components/pages/help/faq";
 import SetupPage from "../../components/pages/help/setup";
 
 export default {
@@ -59,7 +59,7 @@ export default {
     AboutPage: AboutPage,
     CreditsPage: CreditsPage,
     CommandsPage: CommandsPage,
-    ReschedulingPage: ReschedulingPage,
+    FAQ: FAQ,
     SetupPage: SetupPage
   },
   data() {
@@ -73,7 +73,7 @@ export default {
         credits: 1,
         commands: 2,
         setup: 3,
-        rescheduling: 4
+        faq: 4
       },
       onResize: () => {
         this.windowWidth = window.innerWidth;

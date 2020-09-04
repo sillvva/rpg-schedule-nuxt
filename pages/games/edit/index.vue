@@ -121,7 +121,8 @@
                         v-model="game.players"
                         type="number"
                         :min="game.minPlayers"
-                        :rules="[v => parseInt(v) >= game.minPlayers]"
+                        :max="60"
+                        :rules="[v => parseInt(v) >= game.minPlayers, v => parseInt(v) <= 50]"
                         @change="changed"
                       ></v-text-field>
                     </v-col>
@@ -888,6 +889,11 @@ export default {
           this.$store.commit("setGuilds", account.guilds);
         }
       }
+
+      this.gameOptions = [];
+      if (game.pastSignups) this.gameOptions.push("pastSignups");
+      if (game.hideDate) this.gameOptions.push("hideDate");
+      if (game.disableWaitlist) this.gameOptions.push("disableWaitlist");
 
       this.modGame(cloneDeep(game));
 

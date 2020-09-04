@@ -414,10 +414,19 @@
                             <v-select
                               :label="lang.config.ROLE"
                               v-model="template.role"
-                              :placeholder="lang.config.DEFAULT_SERVER"
                               :hint="lang.config.desc.ROLE"
                               persistent-hint
                               :items="template.isDefault ? guild.roleValues : guild.channelRoleValues"
+                            ></v-select>
+                          </v-list-item>
+
+                          <v-list-item class="mb-2 px-0">
+                            <v-select
+                              :label="lang.config.PLAYER_ROLE"
+                              v-model="template.playerRole"
+                              :hint="lang.config.desc.PLAYER_ROLE"
+                              persistent-hint
+                              :items="guild.roleValues"
                             ></v-select>
                           </v-list-item>
 
@@ -612,6 +621,7 @@ export default {
       lang: {},
       langs: {},
       config: this.$store.getters.config,
+      env: this.$store.getters.env,
       searchQuery: this.$route.query.s,
       colorMenu: false,
       colorMenus: {},

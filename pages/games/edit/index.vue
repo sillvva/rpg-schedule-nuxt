@@ -121,8 +121,7 @@
                         v-model="game.players"
                         type="number"
                         :min="game.minPlayers"
-                        :max="60"
-                        :rules="[v => parseInt(v) >= game.minPlayers, v => parseInt(v) <= 50]"
+                        :rules="[v => parseInt(v) >= game.minPlayers]"
                         @change="changed"
                       ></v-text-field>
                     </v-col>

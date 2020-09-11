@@ -297,8 +297,7 @@ export default {
         this.windowWidth = window.innerWidth;
       },
       socket: null,
-      loadingAccount: false,
-      refetchInterval: null
+      loadingAccount: false
     };
   },
   computed: {
@@ -470,10 +469,6 @@ export default {
       this.socketConnect();
     }).catch(err => {});
 
-    this.refetchInterval = setInterval(() => {
-      this.fetchGuilds();
-    }, 1 * 60 * 60 * 1000);
-
     this.loadingAccount = false;
 
     await this.$store.dispatch("fetchSiteSettings");
@@ -484,7 +479,6 @@ export default {
   beforeDestroy() {
     window.removeEventListener("resize", this.onResize);
     window.removeEventListener("focus", this.setup);
-    clearInterval(this.refetchInterval);
   },
   methods: {
     setup() {
@@ -493,36 +487,73 @@ export default {
         localStorage.removeItem("invited");
       }
     },
-    async socketConnect() {
-      this.socket = ws.socket(this.$store.getters.env.apiUrl, {
-        rooms: this.account.guilds.map(g => g.id)
-      });
-
-      this.socket.on("connected", data => {
-        console.log(data);
-      })
-
-      this.socket.on("game", data => {
-        this.$store.commit("setSocketData", { type: "game", data: data });
-      });
-
-      this.socket.on("site", data => {
-        if (data.action == "settings") {
-          this.$store.commit("setSiteSettings", data);
-        }
-      });
-    },
-    async fetchGuilds() {
+    async fetchGuilds(guildId) {
+      console.log('Fetching guild data...');
       this.$store.commit("setLastAuthed", new Date().getTime());
       await this.$store.dispatch("fetchGuilds", {
         app: this,
         page: "manage-server",
-        games: true
+        games: true,
+        ...(guildId && {
+          guildId: guildId
+        })
       });
     },
     signOut() {
       this.$store.dispatch("signOut", this).then(() => {
         this.$router.push("/");
+      });
+    },
+    async socketConnect() {
+      if (this.socket) return;
+
+      this.socket = ws.socket(this.$store.getters.env.apiUrl, {
+        rooms: [`u-${this.account.user.id}`, ...this.account.guilds.map(g => `g-${g.id}`)]
+      });
+
+      this.socket.on("connected", data => {
+        console.log('[WS] Connected:', data);
+      });
+
+      this.socket.on("game", data => {
+        console.log('[WS] Game:', data);
+        this.$store.commit("setSocketData", { type: "game", data: data });
+      });
+
+      this.socket.on("site", data => {
+        console.log('[WS] Site:', data);
+        if (data.action == "settings") {
+          this.$store.commit("setSiteSettings", data);
+        }
+      });
+
+      this.socket.on("refresh-guilds", data => {
+        console.log('[WS] Guilds: Refresh', data);
+        this.fetchGuilds(data === 'all' ? 'all' : data);
+      });
+
+      this.socket.on("update-user", data => {
+        console.log('[WS] Users: Update', data);
+        const account = cloneDeep(this.$store.getters.account);
+        account.user = { ...account.user, ...data };
+        this.$store.commit("setAccount", account);
+      });
+
+      this.socket.on("update-guild", data => {
+        console.log('[WS] Guilds: Update', data);
+        this.$store.commit("setGuilds", this.account.guilds.map(g => {
+          if (g.id === data.id) {
+            g = { ...g, ...data };
+          }
+          return g;
+        }));
+      });
+
+      this.socket.on("delete-guild", data => {
+        console.log('[WS] Guilds: Delete', data);
+        const guilds = cloneDeep(this.account.guilds);
+        guilds.splice(guilds.findIndex(g => g.id === data), 1);
+        this.$store.commit("setGuilds", guilds);
       });
     },
     socketAddGame(account, gameId, guildId, authorId) {

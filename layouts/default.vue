@@ -336,7 +336,7 @@ export default {
   },
   watch: {
     storeAccount: {
-      handler: function(newVal) {
+      handler: async function(newVal) {
         this.account = newVal;
         this.maintenance();
       },
@@ -466,7 +466,10 @@ export default {
     this.$store.commit("setSnackBars", []);
     this.setSettings();
 
-    this.$store.dispatch("initAuth", this).catch(err => {});
+    this.$store.dispatch("initAuth", this).then(result => {
+      this.socketConnect();
+    }).catch(err => {});
+
     this.refetchInterval = setInterval(() => {
       this.fetchGuilds();
     }, 1 * 60 * 60 * 1000);
@@ -474,21 +477,6 @@ export default {
     this.loadingAccount = false;
 
     await this.$store.dispatch("fetchSiteSettings");
-    let isMobile = await this.$store.dispatch("isMobile");
-
-    if (!isMobile) {
-      this.socket = ws.socket(this.$store.getters.env.apiUrl);
-
-      this.socket.on("game", data => {
-        this.$store.commit("setSocketData", { type: "game", data: data });
-      });
-
-      this.socket.on("site", data => {
-        if (data.action == "settings") {
-          this.$store.commit("setSiteSettings", data);
-        }
-      });
-    }
 
     this.setup();
     window.addEventListener("focus", this.setup);
@@ -504,6 +492,25 @@ export default {
         this.$router.push("/help/setup");
         localStorage.removeItem("invited");
       }
+    },
+    async socketConnect() {
+      this.socket = ws.socket(this.$store.getters.env.apiUrl, {
+        rooms: this.account.guilds.map(g => g.id)
+      });
+
+      this.socket.on("connected", data => {
+        console.log(data);
+      })
+
+      this.socket.on("game", data => {
+        this.$store.commit("setSocketData", { type: "game", data: data });
+      });
+
+      this.socket.on("site", data => {
+        if (data.action == "settings") {
+          this.$store.commit("setSiteSettings", data);
+        }
+      });
     },
     async fetchGuilds() {
       this.$store.commit("setLastAuthed", new Date().getTime());

@@ -108,6 +108,9 @@
         ${game.reserved.slice(0, parseInt(game.players)).map((r, i) => `${i+1}. ${r.tag}`).join('\n')}` : ''}
         `)"
       ></v-card-text>
+      <v-card-text>
+        <v-img :src="game.gameImage" contain></v-img>
+      </v-card-text>
     </v-card>
   </v-dialog>
 </template>
@@ -192,13 +195,7 @@ export default {
           guildId: this.game.guildAccount.id
         })
         .then(result => {
-          if (result.past) {
-            this.$store.dispatch("addSnackBar", {
-              message: "This game already started!",
-              color: "error",
-              timeout: 5
-            });
-          }
+          this.loading = false;
         });
     },
     populateColumns() {

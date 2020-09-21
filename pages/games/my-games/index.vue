@@ -58,7 +58,7 @@
       >Collapse All</v-btn>
     </v-app-bar>
     <v-card
-      v-for="(guild, g) in guilds.filter(g => !g.filtered && (g.permission || g.games.length > 0))"
+      v-for="(guild, g) in guilds.filter(g => !g.filtered && (((g.permission || g.isAdmin) && g.announcementChannels.length > 0) || g.games.length > 0))"
       v-bind:key="g"
       max-width="100%"
       class="mb-3"
@@ -139,7 +139,7 @@
             <GameCard
               :gameData="game"
               :numColumns="1"
-              :exclude="['gm', 'server']"
+              :exclude="['server']"
               :edit="checkRSVP(game.dm, account.user)"
             ></GameCard>
           </v-col>
@@ -213,13 +213,13 @@ export default {
           ...g,
           games: g.games.filter(game => {
             let show = false;
-            if (game.dm.id === this.account.user.id) show = true;
-            if (game.dm.tag === this.account.user.tag) show = true;
-            if (game.author.id === this.account.user.id) show = true;
-            if (game.author.tag === this.account.user.tag) show = true;
+            if (game.dm.id == this.account.user.id) show = true;
+            if (game.dm.tag == this.account.user.tag) show = true;
+            if (game.author.id == this.account.user.id) show = true;
+            if (game.author.tag == this.account.user.tag) show = true;
             game.reserved.forEach(r => {
-              if (r.id === this.account.user.id) show = true;
-              if (r.tag === this.account.user.tag) show = true;
+              if (r.id == this.account.user.id) show = true;
+              if (r.tag == this.account.user.tag) show = true;
             });
             return show;
           }),

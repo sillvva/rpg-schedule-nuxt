@@ -32,10 +32,10 @@ const parseTimeZoneISO = timezone => {
 };
 
 const parseEventTimes = (event, options = {}) => {
+  const raw = `${event.date}T${event.time}:00.000${
+    event.timezone < 0 ? "-" : "+"
+  }${parseTimeZoneISO(event.timezone)}`;
   try {
-    const raw = `${event.date}T${event.time}:00.000${
-      event.timezone < 0 ? "-" : "+"
-    }${parseTimeZoneISO(event.timezone)}`;
     const isoutcStart = `${new Date(raw)
       .toISOString()
       .replace(/[^0-9T]/gi, "")
@@ -127,7 +127,8 @@ const parseEventTimes = (event, options = {}) => {
       from: moment(date).fromNow()
     };
   } catch (err) {
-    console.log("parseEventDates", err);
+    console.log("parseEventTimes", err);
+    console.log(raw);
     return {
       raw: "",
       iso: "",

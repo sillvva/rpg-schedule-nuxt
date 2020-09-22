@@ -78,6 +78,9 @@
     "UPLOAD_GAME_IMAGE": "Загрузить игру Изображение",
     "UPLOAD_THUMBNAIL": "Загрузить изображение Thumbnail",
     "MAX_UPLOAD_SIZE": "Максимальный размер (5 MB)",
+    "DESCRIPTION_PANEL": "Описание",
+    "RESCHEDULING_PANEL": "Перепланирование",
+    "EXTRA_PANEL": "Дополнительные опции",
     "options": {
       "AUTOMATED_SIGNUP": "Автоматическая запись",
       "CUSTOM_SIGNUP_INSTRUCTIONS": "Свои условия записи",

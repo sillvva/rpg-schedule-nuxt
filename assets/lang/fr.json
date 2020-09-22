@@ -78,6 +78,9 @@
     "UPLOAD_GAME_IMAGE": "Télécharger Image du jeu",
     "UPLOAD_THUMBNAIL": "Télécharger Vignette",
     "MAX_UPLOAD_SIZE": "Taille maximale (10 Mo)",
+    "DESCRIPTION_PANEL": "Description",
+    "RESCHEDULING_PANEL": "Rééchelonnement",
+    "EXTRA_PANEL": "Options Supplémentaires",
     "options": {
       "AUTOMATED_SIGNUP": "Inscription automatisée",
       "CUSTOM_SIGNUP_INSTRUCTIONS": "Instructions d'inscription personnalisées",

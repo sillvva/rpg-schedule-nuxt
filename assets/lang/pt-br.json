@@ -78,6 +78,9 @@
     "UPLOAD_GAME_IMAGE": "Imagem Carregar Jogo",
     "UPLOAD_THUMBNAIL": "Imagem Carregar Miniatura",
     "MAX_UPLOAD_SIZE": "Tamanho máximo (5 MB)",
+    "DESCRIPTION_PANEL": "Descrição",
+    "RESCHEDULING_PANEL": "Reagendar",
+    "EXTRA_PANEL": "Opções Extras",
     "options": {
       "AUTOMATED_SIGNUP": "Inscrição Automática",
       "CUSTOM_SIGNUP_INSTRUCTIONS": "Instruções Customizadas para Inscrição",

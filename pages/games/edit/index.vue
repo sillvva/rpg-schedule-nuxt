@@ -285,7 +285,7 @@
                 accordion
               >
                 <v-expansion-panel @change="panel(0)">
-                  <v-expansion-panel-header color="grey darken-3">Description</v-expansion-panel-header>
+                  <v-expansion-panel-header color="grey darken-3">{{lang.game.DESCRIPTION_PANEL}}</v-expansion-panel-header>
                   <v-expansion-panel-content>
                     <v-row>
                       <v-col cols="12" sm="6">
@@ -319,7 +319,7 @@
                   </v-expansion-panel-content>
                 </v-expansion-panel>
                 <v-expansion-panel @change="panel(1)">
-                  <v-expansion-panel-header color="grey darken-3">Rescheduling</v-expansion-panel-header>
+                  <v-expansion-panel-header color="grey darken-3">{{lang.game.RESCHEDULING_PANEL}}</v-expansion-panel-header>
                   <v-expansion-panel-content>
                     <v-row>
                       <v-col
@@ -409,7 +409,7 @@
                   </v-expansion-panel-content>
                 </v-expansion-panel>
                 <v-expansion-panel @change="panel(2)">
-                  <v-expansion-panel-header color="grey darken-3">Extra</v-expansion-panel-header>
+                  <v-expansion-panel-header color="grey darken-3">{{lang.game.EXTRA_PANEL}}</v-expansion-panel-header>
                   <v-expansion-panel-content>
                     <v-row>
                       <v-col cols="12">

@@ -78,6 +78,9 @@
     "UPLOAD_GAME_IMAGE": "Upload Game Image",
     "UPLOAD_THUMBNAIL": "Upload Thumbnail",
     "MAX_UPLOAD_SIZE": "Max size (5 MB)",
+    "DESCRIPTION_PANEL": "Description",
+    "RESCHEDULING_PANEL": "Rescheduling",
+    "EXTRA_PANEL": "Extra Options",
     "options": {
       "AUTOMATED_SIGNUP": "Automated Signup",
       "CUSTOM_SIGNUP_INSTRUCTIONS": "Custom Signup Instructions",

@@ -78,6 +78,9 @@
     "UPLOAD_GAME_IMAGE": "Hochladen von Spielbild",
     "UPLOAD_THUMBNAIL": "Hochladen Minibild",
     "MAX_UPLOAD_SIZE": "Max Größe (5 MB)",
+    "DESCRIPTION_PANEL": "Beschreibung",
+    "RESCHEDULING_PANEL": "Neuterminierung",
+    "EXTRA_PANEL": "Zusätzliche Optionen",
     "options": {
       "AUTOMATED_SIGNUP": "Automatisches Eintragen",
       "CUSTOM_SIGNUP_INSTRUCTIONS": "Benutzerdefinierter Befehl zum Eintragen",

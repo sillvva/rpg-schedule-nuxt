@@ -265,11 +265,11 @@
                     </v-col>
                   </v-row>
                 </v-col>
-                <v-col cols="12" lg="5" class="py-0" style="margin-top: -14px;">
+                <v-col cols="12" lg="5" class="py-0">
                   <v-row dense class="game-textareas">
                     <v-col cols="12" class="py-0">
                       <v-textarea
-                        rows="12"
+                        rows="11"
                         :label="lang.game.RESERVED"
                         v-model="reservedList"
                         no-resize
@@ -278,9 +278,12 @@
                   </v-row>
                 </v-col>
               </v-row>
+
               <v-expansion-panels
                 multiple
                 :value="gameId && [ game.description.trim().length || game.customSignup.trim().length ? 0 : null, game.frequency > 0 ? 1 : null, gameOptions.length > 0 || game.gameImage.length > 0 || game.thumbnail.length > 0 ? 2 : null ]"
+                class="mt-4"
+                accordion
               >
                 <v-expansion-panel>
                   <v-expansion-panel-header color="grey darken-3">Description</v-expansion-panel-header>
@@ -420,12 +423,23 @@
                         ></v-select>
                       </v-col>
                     </v-row>
+                    <v-file-input
+                      id="gameImageUpload"
+                      ref="gameImageUpload"
+                      type="file"
+                      accept="image/jpeg, image/png, image/gif, image/webp"
+                      @change="uploadToImgur"
+                      v-model="uploadModel"
+                      class="d-none"
+                    ></v-file-input>
                     <v-row dense>
-                      <v-col cols="6" class="py-0">
+                      <v-col :cols="guildConfig && guildConfig.embeds ? 6 : 12" class="py-0">
                         <v-text-field
                           id="gameImage"
                           :label="lang.game.GAME_IMAGE"
                           v-model="game.gameImage"
+                          append-icon="mdi-upload"
+                          @click:append="uploadButton(lang.game.GAME_IMAGE)"
                           @change="changed"
                         ></v-text-field>
                       </v-col>
@@ -434,35 +448,10 @@
                           id="thumbnail"
                           :label="lang.game.THUMBNAIL"
                           v-model="game.thumbnail"
+                          append-icon="mdi-upload"
+                          @click:append="uploadButton(lang.game.THUMBNAIL)"
                           @change="changed"
                         ></v-text-field>
-                      </v-col>
-                      <v-col :cols="guildConfig && guildConfig.embeds ? 12 : 6" class="py-0">
-                        <div class="d-flex align-center">
-                          <div v-if="guildConfig && guildConfig.embeds">
-                            <v-btn
-                              :color="imageSelection == lang.game.GAME_IMAGE && 'discord'"
-                              @click="imageSelection = lang.game.GAME_IMAGE"
-                            >{{lang.game.GAME_IMAGE}}</v-btn>
-                            <v-btn
-                              :color="imageSelection == lang.game.THUMBNAIL && 'discord'"
-                              @click="imageSelection = lang.game.THUMBNAIL"
-                            >{{lang.game.THUMBNAIL}}</v-btn>
-                          </div>
-                          <div style="flex: 1;">
-                            <v-file-input
-                              id="gameImageUpload"
-                              type="file"
-                              accept="image/jpeg, image/png, image/gif, image/webp"
-                              :label="imageSelection == lang.game.GAME_IMAGE ? lang.game.UPLOAD_GAME_IMAGE : lang.game.UPLOAD_THUMBNAIL"
-                              :loading="imageUploading"
-                              @change="uploadeToImgur"
-                              :hint="lang.game.MAX_UPLOAD_SIZE"
-                              v-model="uploadModel"
-                              persistent-hint
-                            ></v-file-input>
-                          </div>
-                        </div>
                       </v-col>
                     </v-row>
                   </v-expansion-panel-content>
@@ -1585,7 +1574,11 @@ export default {
     moment(inp, format, strict) {
       return moment(inp, format, strict);
     },
-    uploadeToImgur(file) {
+    uploadButton(selection) {
+      this.imageSelection = selection;
+      document.getElementById('gameImageUpload').click();
+    },
+    uploadToImgur(file) {
       if (!file) return;
       this.imageUploading = true;
 
@@ -1661,5 +1654,8 @@ export default {
 }
 .reminder .v-text-field__details {
   display: none;
+}
+.v-expansion-panel--active > .v-expansion-panel-header {
+  min-height: 48px;
 }
 </style>

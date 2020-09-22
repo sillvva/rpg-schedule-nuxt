@@ -280,7 +280,7 @@
               </v-row>
               <v-expansion-panels
                 multiple
-                :value="gameId && [ game.description.trim().length || game.customSignup.trim().length ? 0 : null, game.frequency > 0 ? 1 : null ]"
+                :value="gameId && [ game.description.trim().length || game.customSignup.trim().length ? 0 : null, game.frequency > 0 ? 1 : null, gameOptions.length > 0 || game.gameImage.length > 0 || game.thumbnail.length > 0 ? 2 : null ]"
               >
                 <v-expansion-panel>
                   <v-expansion-panel-header color="grey darken-3">Description</v-expansion-panel-header>
@@ -350,7 +350,6 @@
                         cols="12"
                         :sm="game.frequency == '3' ? 4 : 6"
                         v-if="['2','3'].includes(game.frequency) && game.when === enums.GameWhen.DATETIME"
-                        class="py-0"
                       >
                         <v-select
                           v-model="weekdays"
@@ -787,7 +786,6 @@ export default {
 
         this.game.s = guild.id;
         this.finishFetchGame(data);
-        this.selectGuild();
       }
     }
 
@@ -807,7 +805,10 @@ export default {
         color: "error",
         timeout: 10,
       });
+      return;
     }
+
+    this.selectGuild();
   },
   beforeDestroy() {
     window.removeEventListener("beforeunload", this.verifyUnload);

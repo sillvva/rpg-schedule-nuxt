@@ -422,10 +422,11 @@
                           <v-list-item class="mb-2 px-0">
                             <v-select
                               :label="lang.config.PLAYER_ROLE"
-                              v-model="template.playerRole.id"
+                              v-model="template.playerRoles"
                               :hint="lang.config.desc.PLAYER_ROLE"
                               persistent-hint
-                              :items="guild.roleValues"
+                              :items="guild.roleValuesSelect"
+                              multiple chips
                             ></v-select>
                           </v-list-item>
 
@@ -722,8 +723,9 @@ export default {
             gt.gameDefaults.minPlayers = parseInt(gt.gameDefaults.minPlayers);
             gt.gameDefaults.maxPlayers = parseInt(gt.gameDefaults.maxPlayers);
             gt.role = gt.role && gt.role.id ? guild.roles.filter(r => r.id === gt.role.id).map(r => ({ id: r.id, name: r.name }))[0] : null;
-            gt.playerRole = gt.playerRole && gt.playerRole.id ? guild.roles.filter(r => r.id === gt.playerRole.id).map(r => ({ id: r.id, name: r.name }))[0] : null;
+            gt.playerRole = guild.roles.filter(r => gt.playerRoles.includes(r.id)).map(r => ({ id: r.id, name: r.name }));
             delete gt.unsaved;
+            delete gt.playerRoles;
             return gt;
           });
           config.channel = config.channel
@@ -770,6 +772,13 @@ export default {
     },
     mapGuilds(guilds) {
       return guilds.map(g => {
+        g.roleValuesSelect = [
+          ...g.roles
+            .filter(r => !r.managed && r.name !== "@everyone")
+            .map(r => {
+              return { text: r.name, value: r.id };
+            })
+        ];
         g.roleValues = [
           {
             text: (this.lang.config || {}).NO_ROLE,
@@ -813,12 +822,12 @@ export default {
             if (role) gt.role = { id: role.id, name: role.name };
             else gt.role = { id: null, name: "" };
           }
-          if (!gt.playerRole) gt.playerRole = { id: null, name: "" };
+          if (!gt.playerRole) gt.playerRole = [{ id: null, name: "" }];
           else {
-            const role = g.roles.find(r => isObject(gt.playerRole) ? gt.playerRole.id === r.id : gt.playerRole === r.name);
-            if (role) gt.playerRole = { id: role.id, name: role.name };
-            else gt.playerRole = { id: null, name: "" };
+            const roles = g.roles.filter(r => gt.playerRole.find(pr => pr.id === r.id || (!pr.id && pr.name === r.name)));
+            gt.playerRole = roles.map(r => ({ id: r.id, name: r.name }));
           }
+          gt.playerRoles = gt.playerRole.map(r => r.id);
         });
         g.csv = gamesCSV(g);
         return {

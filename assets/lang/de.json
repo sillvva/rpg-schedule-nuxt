@@ -225,6 +225,7 @@
     "EDIT_PERMISSION": "Sie haben keine Berechtigung, dieses Spiel zu bearbeiten",
     "ALREADY_STARTED": "Das Spiel hat bereits begonnen!",
     "MAX_NO_WAITLIST": "Das Spiel ist voll und keine zusätzliche Anmeldungen zu akzeptieren.",
-    "MISSING_PLAYER_ROLE": "Sie haben nicht die :ROLE Rolle erforderlich, dass die Veranstaltung zu verbinden."
+    "MISSING_PLAYER_ROLE": "Sie haben nicht die :ROLE Rolle erforderlich, dass die Veranstaltung zu verbinden.",
+    "OR": "oder"
   }
 }

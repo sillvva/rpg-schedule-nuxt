@@ -225,6 +225,7 @@
     "EDIT_PERMISSION": "You do not have permission to edit this game",
     "ALREADY_STARTED": "That game has already started.",
     "MAX_NO_WAITLIST": "That game is full and not accepting additional signups.",
-    "MISSING_PLAYER_ROLE": "You don't have the :ROLE role required to join that event."
+    "MISSING_PLAYER_ROLE": "You don't have the :ROLE role required to join that event.",
+    "OR": "or"
   }
 }

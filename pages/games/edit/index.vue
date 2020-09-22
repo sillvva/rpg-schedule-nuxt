@@ -278,10 +278,9 @@
                   </v-row>
                 </v-col>
               </v-row>
-
               <v-expansion-panels
                 multiple
-                :value="gameId && panels.map(p => p.value)"
+                :value="panels.filter(p => p.value !== null).map(p => p.value)"
                 class="mt-4"
                 accordion
               >
@@ -592,10 +591,10 @@ export default {
       imageSelection: lang.game.GAME_IMAGE,
       uploadModel: null,
       panels: [
-        { name: 'description', value: null }, 
-        { name: 'rescheduling', value: null }, 
-        { name: 'extra', value: null }
-      ]
+        { name: "description", value: null },
+        { name: "rescheduling", value: null },
+        { name: "extra", value: null },
+      ],
     };
   },
   computed: {
@@ -807,10 +806,23 @@ export default {
     }
 
     this.selectGuild();
-    this.panels = cloneDeep(this.panels).map(p => {
-      if (p.name === 'description') p.value = this.game.description.trim().length || this.game.customSignup.trim().length ? 0 : null;
-      if (p.name === 'rescheduling') p.value = this.game.frequency > 0 ? 1 : null;
-      if (p.name === 'extra') p.value = (this.gameOptions || []).length > 0 || this.game.gameImage.length > 0 || (this.game.thumbnail && this.game.thumbnail.length > 0) ? 2 : null;
+    this.panels = cloneDeep(this.panels).map((p) => {
+      if (p.name === "description")
+        p.value =
+          this.game.description.trim().length ||
+          this.game.customSignup.trim().length ||
+          !this.gameId
+            ? 0
+            : null;
+      if (p.name === "rescheduling")
+        p.value = this.game.frequency > 0 ? 1 : null;
+      if (p.name === "extra")
+        p.value =
+          (this.gameOptions || []).length > 0 ||
+          this.game.gameImage.length > 0 ||
+          (this.game.thumbnail && this.game.thumbnail.length > 0)
+            ? 2
+            : null;
       return p;
     });
   },
@@ -873,7 +885,9 @@ export default {
             (this.gameId ||
               this.guild.isAdmin ||
               !gt.role ||
-              this.guild.userRoles.includes(isObject(gt.role) ? gt.role.name : gt.role)) &&
+              this.guild.userRoles.includes(
+                isObject(gt.role) ? gt.role.name : gt.role
+              )) &&
             this.guild.config.channel.find(
               (c) => c.channelId === this.game.c
             ) &&
@@ -975,7 +989,7 @@ export default {
           }
         }
       }
-      
+
       if (this.gameId) {
         this.guilds = [guild].map((g) => ({ text: g.name, value: g.id }));
         const channel = guild.channels.find((c) => c.id === game.c);
@@ -1025,7 +1039,9 @@ export default {
               (this.$route.query.g ||
                 this.guild.isAdmin ||
                 !gt.role ||
-                this.guild.userRoles.includes(isObject(gt.role) ? gt.role.name : gt.role)) &&
+                this.guild.userRoles.includes(
+                  isObject(gt.role) ? gt.role.name : gt.role
+                )) &&
               this.guild.config.channel.find((c) => c.channelId === game.c) &&
               this.guild.config.channel
                 .find((c) => c.channelId === game.c)
@@ -1592,7 +1608,7 @@ export default {
     },
     uploadButton(selection) {
       this.imageSelection = selection;
-      document.getElementById('gameImageUpload').click();
+      document.getElementById("gameImageUpload").click();
     },
     uploadToImgur(file) {
       if (!file) return;
@@ -1656,14 +1672,13 @@ export default {
         if (i === type) {
           if (p.value !== null) {
             p.value = null;
-          }
-          else {
+          } else {
             p.value = i;
           }
         }
         return p;
       });
-    }
+    },
   },
 };
 </script>

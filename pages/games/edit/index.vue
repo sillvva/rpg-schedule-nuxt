@@ -281,7 +281,7 @@
 
               <v-expansion-panels
                 multiple
-                :value="gameId && [ game.description.trim().length || game.customSignup.trim().length ? 0 : null, game.frequency > 0 ? 1 : null, gameOptions.length > 0 || game.gameImage.length > 0 || game.thumbnail.length > 0 ? 2 : null ]"
+                :value="gameId && [ game.description.trim().length || game.customSignup.trim().length ? 0 : null, game.frequency > 0 ? 1 : null, (gameOptions || []).length > 0 || game.gameImage.length > 0 || (game.thumbnail && game.thumbnail.length > 0) ? 2 : null ]"
                 class="mt-4"
                 accordion
               >
@@ -441,6 +441,8 @@
                           append-icon="mdi-upload"
                           @click:append="uploadButton(lang.game.GAME_IMAGE)"
                           @change="changed"
+                          :hint="lang.game.MAX_UPLOAD_SIZE"
+                          persistent-hint
                         ></v-text-field>
                       </v-col>
                       <v-col cols="6" class="py-0" v-if="guildConfig && guildConfig.embeds">
@@ -451,6 +453,8 @@
                           append-icon="mdi-upload"
                           @click:append="uploadButton(lang.game.THUMBNAIL)"
                           @change="changed"
+                          :hint="lang.game.MAX_UPLOAD_SIZE"
+                          persistent-hint
                         ></v-text-field>
                       </v-col>
                     </v-row>
@@ -892,6 +896,7 @@ export default {
       }
     },
     async fetchGame(param, value) {
+      console.log(1);
       return await this.$store
         .dispatch("fetchGame", {
           param: param,
@@ -959,7 +964,7 @@ export default {
           }
         }
       }
-
+      
       if (this.gameId) {
         this.guilds = [guild].map((g) => ({ text: g.name, value: g.id }));
         const channel = guild.channels.find((c) => c.id === game.c);

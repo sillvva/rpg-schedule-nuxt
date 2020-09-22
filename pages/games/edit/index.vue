@@ -281,11 +281,11 @@
 
               <v-expansion-panels
                 multiple
-                :value="gameId && [ game.description.trim().length || game.customSignup.trim().length ? 0 : null, game.frequency > 0 ? 1 : null, (gameOptions || []).length > 0 || game.gameImage.length > 0 || (game.thumbnail && game.thumbnail.length > 0) ? 2 : null ]"
+                :value="gameId && panels.map(p => p.value)"
                 class="mt-4"
                 accordion
               >
-                <v-expansion-panel>
+                <v-expansion-panel @change="panel(0)">
                   <v-expansion-panel-header color="grey darken-3">Description</v-expansion-panel-header>
                   <v-expansion-panel-content>
                     <v-row>
@@ -319,7 +319,7 @@
                     </v-row>
                   </v-expansion-panel-content>
                 </v-expansion-panel>
-                <v-expansion-panel>
+                <v-expansion-panel @change="panel(1)">
                   <v-expansion-panel-header color="grey darken-3">Rescheduling</v-expansion-panel-header>
                   <v-expansion-panel-content>
                     <v-row>
@@ -409,7 +409,7 @@
                     </v-row>
                   </v-expansion-panel-content>
                 </v-expansion-panel>
-                <v-expansion-panel>
+                <v-expansion-panel @change="panel(2)">
                   <v-expansion-panel-header color="grey darken-3">Extra</v-expansion-panel-header>
                   <v-expansion-panel-content>
                     <v-row>
@@ -590,7 +590,12 @@ export default {
       gameLoaded: false,
       imageUploading: false,
       imageSelection: lang.game.GAME_IMAGE,
-      uploadModel: null
+      uploadModel: null,
+      panels: [
+        { name: 'description', value: null }, 
+        { name: 'rescheduling', value: null }, 
+        { name: 'extra', value: null }
+      ]
     };
   },
   computed: {
@@ -802,6 +807,12 @@ export default {
     }
 
     this.selectGuild();
+    this.panels = cloneDeep(this.panels).map(p => {
+      if (p.name === 'description') p.value = this.game.description.trim().length || this.game.customSignup.trim().length ? 0 : null;
+      if (p.name === 'rescheduling') p.value = this.game.frequency > 0 ? 1 : null;
+      if (p.name === 'extra') p.value = (this.gameOptions || []).length > 0 || this.game.gameImage.length > 0 || (this.game.thumbnail && this.game.thumbnail.length > 0) ? 2 : null;
+      return p;
+    });
   },
   beforeDestroy() {
     window.removeEventListener("beforeunload", this.verifyUnload);
@@ -1640,6 +1651,19 @@ export default {
 
       reader.readAsDataURL(file);
     },
+    panel(type) {
+      this.panels = this.panels.map((p, i) => {
+        if (i === type) {
+          if (p.value !== null) {
+            p.value = null;
+          }
+          else {
+            p.value = i;
+          }
+        }
+        return p;
+      });
+    }
   },
 };
 </script>

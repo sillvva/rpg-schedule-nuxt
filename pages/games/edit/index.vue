@@ -50,7 +50,7 @@
                         id="template"
                         v-model="game.template"
                         :rules="[v => !!v]"
-                        :items="guild.config.gameTemplates.filter(gt => gt && ($route.query.g || guild.isAdmin || !gt.role || guild.userRoles.includes(gt.role)) && guild.config.channel.find(c => c.channelId === game.c) && guild.config.channel.find(c => c.channelId === game.c).gameTemplates.includes(gt.id)).map(gt => ({ text: gt.name, value: gt.id }))"
+                        :items="guild.config.gameTemplates.filter(gt => gt && ($route.query.g || guild.isAdmin || !gt.role || guild.userRoles.includes(isObject(gt.role) ? gt.role.name : gt.role)) && guild.config.channel.find(c => c.channelId === game.c) && guild.config.channel.find(c => c.channelId === game.c).gameTemplates.includes(gt.id)).map(gt => ({ text: gt.name, value: gt.id }))"
                         @change="selectTemplate"
                       ></v-select>
                     </v-col>
@@ -862,7 +862,7 @@ export default {
             (this.gameId ||
               this.guild.isAdmin ||
               !gt.role ||
-              this.guild.userRoles.includes(gt.role)) &&
+              this.guild.userRoles.includes(isObject(gt.role) ? gt.role.name : gt.role)) &&
             this.guild.config.channel.find(
               (c) => c.channelId === this.game.c
             ) &&
@@ -1014,7 +1014,7 @@ export default {
               (this.$route.query.g ||
                 this.guild.isAdmin ||
                 !gt.role ||
-                this.guild.userRoles.includes(gt.role)) &&
+                this.guild.userRoles.includes(isObject(gt.role) ? gt.role.name : gt.role)) &&
               this.guild.config.channel.find((c) => c.channelId === game.c) &&
               this.guild.config.channel
                 .find((c) => c.channelId === game.c)

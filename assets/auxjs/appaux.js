@@ -218,10 +218,15 @@ const gamesCSV = guild => {
   return null;
 };
 
+const isObject = (value) => {
+  return value && typeof value === 'object' && value.constructor === Object;
+};
+
 module.exports = {
   log: log,
   parseConfigURLs: parseConfigURLs,
   checkRSVP: checkRSVP,
   gamesCSV: gamesCSV,
-  parseEventTimes: parseEventTimes
+  parseEventTimes: parseEventTimes,
+  isObject: isObject
 };

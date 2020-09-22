@@ -113,11 +113,11 @@
                     <v-list dense>
                       <v-list-item
                         class="px-4 mb-2"
-                        v-if="!guild.userRoles.includes(guild.config.managerRole)"
+                        v-if="!guild.userRoles.includes(isObject(guild.config.managerRole) ? guild.config.managerRole.name : guild.config.managerRole)"
                       >
                         <v-select
                           :label="lang.config.MANAGER_ROLE"
-                          v-model="guild.config.managerRole"
+                          v-model="guild.config.managerRole.id"
                           :hint="lang.config.desc.MANAGER_ROLE"
                           persistent-hint
                           :items="guild.roleValues"
@@ -412,7 +412,7 @@
                           <v-list-item class="mb-2 px-0">
                             <v-select
                               :label="lang.config.ROLE"
-                              v-model="template.role"
+                              v-model="template.role.id"
                               :hint="lang.config.desc.ROLE"
                               persistent-hint
                               :items="template.isDefault ? guild.roleValues : guild.channelRoleValues"
@@ -422,7 +422,7 @@
                           <v-list-item class="mb-2 px-0">
                             <v-select
                               :label="lang.config.PLAYER_ROLE"
-                              v-model="template.playerRole"
+                              v-model="template.playerRole.id"
                               :hint="lang.config.desc.PLAYER_ROLE"
                               persistent-hint
                               :items="guild.roleValues"
@@ -600,7 +600,7 @@
 </template>
 
 <script>
-import { gamesCSV } from "../../../assets/auxjs/appaux";
+import { gamesCSV, isObject } from "../../../assets/auxjs/appaux";
 import GameCard from "../../../components/game-card";
 import { cloneDeep } from "lodash";
 import GraphemeSplitter from "grapheme-splitter";
@@ -659,13 +659,12 @@ export default {
   watch: {
     storeGuilds: {
       handler: function(newVal) {
-        this.guilds = cloneDeep(newVal).filter(
+        this.guilds = this.mapGuilds(cloneDeep(newVal).filter(
           g =>
             g.isAdmin ||
             (this.$store.getters.account &&
               this.$store.getters.account.user.tag === this.config.author)
-        );
-        this.guilds = this.mapGuilds(this.guilds);
+        ));
         if (
           !(
             this.$store.getters.account &&
@@ -697,39 +696,47 @@ export default {
     this.$store.commit("setLastListingPage", "manage-server");
   },
   methods: {
+    isObject(value) {
+      return isObject(value);
+    },
     saveGuildConfiguration() {
       const index = this.guilds.findIndex(g => g.editing);
       const guild = this.guilds.find(g => g.editing);
       if (guild && guild.config) {
+        const config = cloneDeep(guild.config);
         const form = this.$refs[`config${guild.id}`][0];
         if (form && form.validate()) {
-          if (guild.config.pruneIntEvents < 2) guild.config.pruneIntEvents = 2;
-          if (guild.config.pruneIntEvents > 14)
-            guild.config.pruneIntEvents = 14;
-          if (guild.config.pruneIntDiscord < 2)
-            guild.config.pruneIntDiscord = 2;
-          if (guild.config.pruneIntDiscord > 14)
-            guild.config.pruneIntDiscord = 14;
-          if (guild.config.pruneIntEvents < guild.config.pruneIntDiscord) {
-            guild.config.pruneIntEvents = guild.config.pruneIntDiscord;
+          if (config.pruneIntEvents < 2) config.pruneIntEvents = 2;
+          if (config.pruneIntEvents > 14)
+            config.pruneIntEvents = 14;
+          if (config.pruneIntDiscord < 2)
+            config.pruneIntDiscord = 2;
+          if (config.pruneIntDiscord > 14)
+            config.pruneIntDiscord = 14;
+          if (config.pruneIntEvents < config.pruneIntDiscord) {
+            config.pruneIntEvents = config.pruneIntDiscord;
           }
-          guild.config.gameTemplates = guild.config.gameTemplates.map(gt => {
+          config.role = config.role && config.role.id ? guild.roles.filter(r => r.id === config.role.id).map(r => ({ id: r.id, name: r.name }))[0] : null;
+          config.managerRole = config.managerRole && config.managerRole.id ? guild.roles.filter(r => r.id === config.managerRole.id).map(r => ({ id: r.id, name: r.name }))[0] : null;
+          config.gameTemplates = config.gameTemplates.map(gt => {
             gt.gameDefaults.minPlayers = parseInt(gt.gameDefaults.minPlayers);
             gt.gameDefaults.maxPlayers = parseInt(gt.gameDefaults.maxPlayers);
+            gt.role = gt.role && gt.role.id ? guild.roles.filter(r => r.id === gt.role.id).map(r => ({ id: r.id, name: r.name }))[0] : null;
+            gt.playerRole = gt.playerRole && gt.playerRole.id ? guild.roles.filter(r => r.id === gt.playerRole.id).map(r => ({ id: r.id, name: r.name }))[0] : null;
             delete gt.unsaved;
             return gt;
           });
-          guild.config.channel = guild.config.channel
+          config.channel = config.channel
             .filter(c => guild.channels.find(ch => ch.id === c.channelId))
             .filter(
               (c, i) =>
-                guild.config.channel.findIndex(
+                config.channel.findIndex(
                   gc => gc.channelId === c.channelId
                 ) === i
             );
           this.$store
             .dispatch("saveGuildConfig", {
-              config: guild.config,
+              config: config,
               app: this,
               route: this.$route
             })
@@ -771,7 +778,7 @@ export default {
           ...g.roles
             .filter(r => !r.managed && r.name !== "@everyone")
             .map(r => {
-              return { text: r.name, value: r.name };
+              return { text: r.name, value: r.id };
             })
         ];
         g.channelRoleValues = [
@@ -782,12 +789,36 @@ export default {
           ...g.roles
             .filter(r => !r.managed && r.name !== "@everyone")
             .map(r => {
-              return { text: r.name, value: r.name };
+              return { text: r.name, value: r.id };
             })
         ];
+        if (!g.config.role) g.config.role = { id: null, name: "" };
+        else {
+          const role = g.roles.find(r => isObject(g.config.role) ? g.config.role.id === r.id : g.config.role === r.name);
+          if (role) g.config.role = { id: role.id, name: role.name };
+          else g.config.role = { id: null, name: "" };
+        }
+        if (!g.config.managerRole) g.config.managerRole = { id: null, name: "" };
+        else {
+          const role = g.roles.find(r => isObject(g.config.managerRole) ? g.config.managerRole.id === r.id : g.config.managerRole === r.name);
+          if (role) g.config.managerRole = { id: role.id, name: role.name };
+          else g.config.managerRole = { id: null, name: "" };
+        }
         g.config.escape = g.config.escape || "!";
         g.config.gameTemplates.forEach(gt => {
           this.colorMenus[gt.id] = false;
+          if (!gt.role) gt.role = { id: null, name: "" };
+          else {
+            const role = g.roles.find(r => isObject(gt.role) ? gt.role.id === r.id : gt.role === r.name);
+            if (role) gt.role = { id: role.id, name: role.name };
+            else gt.role = { id: null, name: "" };
+          }
+          if (!gt.playerRole) gt.playerRole = { id: null, name: "" };
+          else {
+            const role = g.roles.find(r => isObject(gt.playerRole) ? gt.playerRole.id === r.id : gt.playerRole === r.name);
+            if (role) gt.playerRole = { id: role.id, name: role.name };
+            else gt.playerRole = { id: null, name: "" };
+          }
         });
         g.csv = gamesCSV(g);
         return {

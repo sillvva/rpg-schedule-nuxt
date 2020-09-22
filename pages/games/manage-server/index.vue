@@ -295,12 +295,11 @@
                   <v-tab-item>
                     <v-list dense>
                       <v-subheader class="px-4">{{lang.config.desc.CHANNEL_CONFIGURATION}}</v-subheader>
-
                       <v-list-item class="mb-6">
                         <v-select
                           :label="lang.config.CHANNELS"
                           v-model="selectedChannel"
-                          :items="guild.channels.filter(channel => channel.type === 'text' && !guild.config.channel.find(c => c.channelId === channel.id)).map(channel => {
+                          :items="guild.channels.filter(channel => (channel.type == 'text' || channel.type == 'news') && !guild.config.channel.find(c => c.channelId === channel.id)).map(channel => {
                             const category = channel.parentID ? guild.channelCategories.find(gc => gc.id === channel.parentID).name + ' - ' : '';
                             return { text: `${category}#${channel.name}`, value: channel.id };
                           })"
@@ -320,9 +319,9 @@
                           <v-col class="pr-0">
                             <h4 class="mx-4 mt-4 mb-0">
                               <span
-                                v-html="guild.channels.find(ch => ch.type === 'text' && ch.id === channel.channelId).parentID ? guild.channelCategories.find(gc => gc.id === guild.channels.find(ch => ch.type === 'text' && ch.id === channel.channelId).parentID).name + '<br />' : ''"
+                                v-html="guild.channels.find(ch => (ch.type == 'text' || ch.type == 'news') && ch.id === channel.channelId).parentID ? guild.channelCategories.find(gc => gc.id === guild.channels.find(ch => (ch.type == 'text' || ch.type == 'news') && ch.id === channel.channelId).parentID).name + '<br />' : ''"
                               ></span>
-                              #{{guild.channels.find(ch => ch.type === 'text' && ch.id === channel.channelId).name}}
+                              #{{guild.channels.find(ch => (ch.type == 'text' || ch.type == 'news') && ch.id === channel.channelId).name}}
                             </h4>
                           </v-col>
                           <v-col class="pl-0 pr-4 text-right" style="max-width: 80px;">

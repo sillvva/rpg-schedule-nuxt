@@ -528,7 +528,7 @@
 </template>
 
 <script>
-import { parseEventTimes } from "../../../assets/auxjs/appaux";
+import { parseEventTimes, isObject } from "../../../assets/auxjs/appaux";
 import config from "../../../assets/auxjs/config";
 import lang from "../../../assets/lang/en.json";
 import ws from "../../../store/socket";
@@ -914,9 +914,10 @@ export default {
     fetchGameChannels() {
       if (this.account) {
         const guild = this.account.guilds.find((g) => g.id === this.game.s);
-        if (guild && guild.announcementChannels[0]) {
-          this.game.c = guild.announcementChannels[0].id;
-          this.game.channel = guild.announcementChannels[0].name;
+        const channel = guild && guild.announcementChannels[this.gameId ? guild.announcementChannels.findIndex(ac => ac.id === this.game.c) : 0];
+        if (channel) {
+          this.game.c = channel.id;
+          this.game.channel = channel.name;
         }
       }
     },
@@ -995,7 +996,7 @@ export default {
         const channel = guild.channels.find((c) => c.id === game.c);
         if (!channel)
           return this.$router.replace(`/games/${this.lastListingPage}`);
-        this.channels = [channel];
+        // this.channels = [channel];
       }
     },
     async modGame(game, force) {
@@ -1679,6 +1680,9 @@ export default {
         return p;
       });
     },
+    isObject(value) {
+      return isObject(value);
+    }
   },
 };
 </script>

@@ -657,7 +657,7 @@ export default {
             this.game.s = this.guilds[0].id;
           }
           if (this.guilds.length === 0 && !this.gameId) {
-            this.$router.replace(`/games/${this.lastListingPage}`);
+            this.$router.replace(`/games/${this.lastListingPage || 'my-games'}`);
           }
         }
       },
@@ -796,7 +796,7 @@ export default {
           this.account.user.tag !== config.author))
     ) {
       this.isChanged = false;
-      this.$router.replace(`/games/${this.lastListingPage}`);
+      this.$router.replace(`/games/${this.lastListingPage || 'my-games'}`);
       this.$store.dispatch("addSnackBar", {
         message: this.lang.other.EDIT_PERMISSION,
         color: "error",
@@ -986,7 +986,7 @@ export default {
           const pass = prompt("Password?", "");
           if (pass !== this.game.guildConfig.password) {
             this.isChanged = false;
-            return this.$router.replace(`/games/${this.lastListingPage}`);
+            return this.$router.replace(`/games/${this.lastListingPage || 'my-games'}`);
           }
         }
       }
@@ -995,7 +995,7 @@ export default {
         this.guilds = [guild].map((g) => ({ text: g.name, value: g.id }));
         const channel = guild.channels.find((c) => c.id === game.c);
         if (!channel)
-          return this.$router.replace(`/games/${this.lastListingPage}`);
+          return this.$router.replace(`/games/${this.lastListingPage || 'my-games'}`);
         // this.channels = [channel];
       }
     },
@@ -1092,7 +1092,7 @@ export default {
           })
           .then((result) => {
             if (this.$store.getters.account) {
-              this.$router.replace(`/games/${this.lastListingPage}`);
+              this.$router.replace(`/games/${this.lastListingPage || 'my-games'}`);
             } else {
               this.$router.replace(`/`);
             }

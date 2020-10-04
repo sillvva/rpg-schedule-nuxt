@@ -280,6 +280,7 @@ export default {
       lang: lang,
       selectedUserSettings: cloneDeep(this.$store.getters.userSettings),
       userSettings: cloneDeep(this.$store.getters.userSettings),
+      lastGuildRefresh: {},
       langOptions: [],
       notification: null,
       notificationOptions: [
@@ -528,6 +529,10 @@ export default {
       });
 
       this.socket.on("refresh-guilds", data => {
+        const t = new Date().getTime();
+        if (data === 'all' && this.lastGuildRefresh[data] && t - this.lastGuildRefresh[data] < 60 * 60 * 1000) return;
+        if (data !== 'all' && this.lastGuildRefresh[data] && t - this.lastGuildRefresh[data] < 5 * 60 * 1000) return;
+        this.lastGuildRefresh[data] = t;
         console.log('[WS] Guilds: Refresh', data);
         this.fetchGuilds(data === 'all' ? 'all' : data);
       });

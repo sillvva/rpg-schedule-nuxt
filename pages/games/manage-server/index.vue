@@ -772,6 +772,8 @@ export default {
     },
     mapGuilds(guilds) {
       return guilds.map(g => {
+        const cGuild = this.guilds.find(cg => cg.id === g.id);
+        if (cGuild) g.editing = cGuild.editing;
         g.roleValuesSelect = [
           ...g.roles
             .filter(r => !r.managed && r.name !== "@everyone")

@@ -1156,6 +1156,7 @@ export default {
       updatedGame.minPlayers = Math.abs(updatedGame.minPlayers).toString();
       updatedGame.players = Math.abs(updatedGame.players).toString();
 
+      delete updatedGame.copy;
       if (this.copy) updatedGame.copy = true;
 
       updatedGame.guild = guild.name;
@@ -1260,6 +1261,7 @@ export default {
               return guild;
             });
             this.$store.commit("setAccount", account);
+            this.copy = false;
             return this.$router.replace(
               `${this.config.urls.game.create.path}?g=${result._id}`
             );
@@ -1267,9 +1269,11 @@ export default {
           await this.modGame(cloneDeep(result.game));
           this.saveResult = "success";
           this.isChanged = false;
+          this.copy = false;
         })
         .catch((err) => {
           this.saveResult = "error";
+          this.copy = false;
           this.$store.dispatch("addSnackBar", {
             message: (err && err.message) || err || "An error occured!",
             color: "error",

@@ -58,7 +58,7 @@
       >Collapse All</v-btn>
     </v-app-bar>
     <v-card
-      v-for="(guild, g) in guilds.filter(g => !g.filtered && (((g.permission || g.isAdmin) && g.announcementChannels.length > 0) || g.games.length > 0))"
+      v-for="(guild, g) in guilds.filter(g => !g.filtered && !!g.games.find(game => !game.deleted) && (((g.permission || g.isAdmin) && g.announcementChannels.length > 0) || g.games.length > 0))"
       v-bind:key="g"
       max-width="100%"
       class="mb-3"
@@ -128,7 +128,7 @@
       <v-container fluid v-if="!guild.collapsed">
         <v-row dense>
           <v-col
-            v-for="(game, i) in guild.games.filter(game => game && !game.filtered && (checkRSVP(game.dm, account.user) || (game.author && checkRSVP(game.author, account.user))))"
+            v-for="(game, i) in guild.games.filter(game => game && !game.deleted && !game.filtered && (checkRSVP(game.dm, account.user) || (game.author && checkRSVP(game.author, account.user))))"
             v-bind:key="i"
             cols="12"
             sm="6"

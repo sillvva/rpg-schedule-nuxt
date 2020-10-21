@@ -1,9 +1,4 @@
 <template>
-  <!-- <v-app v-if="$fetchState.pending">
-    <v-flex class="d-flex" justify-center align-center style="height: 100%;">
-      <v-progress-circular :size="100" :width="7" color="discord" indeterminate></v-progress-circular>
-    </v-flex>
-  </v-app> -->
   <v-container fluid>
     <v-text-field
       v-model="searchQuery"
@@ -69,7 +64,7 @@
       <v-container fluid v-if="!guild.collapsed">
         <v-row dense>
           <v-col
-            v-for="(game, i) in guild.games.filter(game => !game.filtered)"
+            v-for="(game, i) in guild.games.filter(game => (game.timestamp < new Date().getTime() || game.deleted) && !game.filtered)"
             v-bind:key="i"
             cols="12"
             sm="6"
@@ -166,9 +161,6 @@ export default {
           g.csv = gamesCSV(g);
           return {
             ...g,
-            games: g.games.filter(game => {
-              return game.timestamp < new Date().getTime();
-            }),
             collapsed: false,
             filtered: false
           };
@@ -180,16 +172,16 @@ export default {
           )
         ) {
           this.searchGuild();
-          if (this.guilds) {
-            this.guilds.forEach(guild => {
-              guild.channels.forEach(channel => {
-                console.log(channel.name, channel.type);
-                if (channel.type == "category") {
-                  console.log(channel.name);
-                }
-              });
-            });
-          }
+          // if (this.guilds) {
+          //   this.guilds.forEach(guild => {
+          //     guild.channels.forEach(channel => {
+          //       console.log(channel.name, channel.type);
+          //       if (channel.type == "category") {
+          //         console.log(channel.name);
+          //       }
+          //     });
+          //   });
+          // }
         }
       },
       immediate: true

@@ -709,6 +709,51 @@ export const actions = {
       }
     });
   },
+  async restoreGame(vuexContext, { gameId, route, app }) {
+    const tokenCookies = await vuexContext.dispatch(
+      "getToken",
+      this.$cookies.getAll()
+    );
+
+    return new Promise(async (resolve, reject) => {
+      let savedAuthResult,
+        successes = 0,
+        reauthenticated = 0;
+      for (let i = 0; i < tokenCookies.length; i++) {
+        try {
+          let result = await this.$axios.get(
+            `${this.getters.env.apiUrl}/auth-api/game-restore?g=${gameId}`,
+            {
+              headers: {
+                Authorization: `Bearer ${tokenCookies[i]}`,
+                locale: localStorage.getItem("lang") || "en",
+                "Content-Type": "application/json"
+              }
+            }
+          );
+          const authResult = result.data;
+          savedAuthResult = authResult;
+          if (authResult.token && authResult.token != tokenCookies[i]) {
+            await authAux.setToken(app, authResult.token);
+          }
+          if (authResult.status == "success") {
+            successes++;
+            vuexContext.dispatch("setToken", authResult.token);
+          } else if (result.data.status == "error") {
+            if (authResult.reauthenticate) reauthenticated++;
+            throw new Error(authResult && authResult.message);
+          }
+        } catch (err) {
+          aux.log(3, err);
+        }
+      }
+      if (successes > 0) resolve(savedAuthResult);
+      else {
+        if (reauthenticated > 0) reauthenticate(commit, app, route.path);
+        reject();
+      }
+    });
+  },
   fetchSiteSettings(vuexContext) {
     return this.$axios
       .get(`${this.getters.env.apiUrl}/api/site`)

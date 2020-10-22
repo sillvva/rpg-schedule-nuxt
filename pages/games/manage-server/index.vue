@@ -58,7 +58,7 @@
       >Collapse All</v-btn>
     </v-app-bar>
     <v-card
-      v-for="(guild, g) in guilds.filter(gld => !gld.filtered && !!gld.games.find(game => !game.deleted))"
+      v-for="(guild, g) in guilds.filter(gld => !gld.filtered)"
       v-bind:key="g"
       max-width="100%"
       class="mb-3"

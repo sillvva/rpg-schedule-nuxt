@@ -2,17 +2,46 @@
   <v-dialog v-model="cardDialog" scrollable max-width="500px">
     <template v-slot:activator="{ on }">
       <v-card v-on="on" color="grey darken-3" max-width="100%" height="100%">
-        <div class="ribbon" v-if="new Date().getTime() - game.createdTimestamp < 24 * 3600 * 1000">
+        <div
+          class="ribbon"
+          v-if="new Date().getTime() - game.createdTimestamp < 24 * 3600 * 1000"
+        >
           <span>NEW</span>
         </div>
         <v-card-title class="subtitle-1">
-          <div class="game-title">{{game && game.adventure}}</div>
+          <div class="game-title">{{ game && game.adventure }}</div>
         </v-card-title>
         <v-divider></v-divider>
-        <v-card-text style="position: relative;">
+        <v-card-text v-if="loading">
+          <v-flex
+            class="d-flex"
+            justify-center
+            align-center
+            style="height: 100%"
+          >
+            <v-progress-circular
+              :size="100"
+              :width="7"
+              color="discord"
+              indeterminate
+            ></v-progress-circular>
+          </v-flex>
+        </v-card-text>
+        <v-card-text v-else style="position: relative">
           <v-btn
-            @click.stop="rsvpGameId = game._id; rsvp();"
-            v-if="!edit && game && account && !checkRSVP(game.dm, account.user) && game.method === 'automated' && game.slot === 0"
+            @click.stop="
+              rsvpGameId = game._id;
+              rsvp();
+            "
+            v-if="
+              !edit &&
+              game &&
+              account &&
+              !checkRSVP(game.dm, account.user) &&
+              game.method === 'automated' &&
+              game.slot === 0 &&
+              !game.deleted
+            "
             :title="lang.buttons.SIGN_UP"
             color="green"
             fab
@@ -24,8 +53,19 @@
             <v-icon>mdi-thumb-up</v-icon>
           </v-btn>
           <v-btn
-            @click.stop="rsvpGameId = game._id; rsvp();"
-            v-if="!edit && game && account && !checkRSVP(game.dm, account.user) && game.method === 'automated' && game.slot > 0"
+            @click.stop="
+              rsvpGameId = game._id;
+              rsvp();
+            "
+            v-if="
+              !edit &&
+              game &&
+              account &&
+              !checkRSVP(game.dm, account.user) &&
+              game.method === 'automated' &&
+              game.slot > 0 &&
+              !game.deleted
+            "
             :title="lang.buttons.DROP_OUT"
             color="red"
             fab
@@ -38,7 +78,10 @@
           </v-btn>
           <v-btn
             :to="`${config.urls.game.create.path}?g=${game._id}`"
-            v-if="edit || (game && account && checkRSVP(game.dm, account.user))"
+            v-if="
+              (edit || (game && account && checkRSVP(game.dm, account.user))) &&
+              !game.deleted
+            "
             color="info"
             @click.stop
             fab
@@ -49,6 +92,18 @@
           >
             <v-icon>mdi-pencil</v-icon>
           </v-btn>
+          <v-btn
+            v-if="game.deleted"
+            color="red"
+            @click.stop="undelete"
+            fab
+            x-small
+            absolute
+            top
+            right
+          >
+            <v-icon>mdi-delete-restore</v-icon>
+          </v-btn>
           <v-row dense>
             <v-col
               v-for="(col, c) in columns"
@@ -58,7 +113,9 @@
               :class="`${col.class} py-0`"
             >
               <p v-for="(item, i) in col.items" :key="i" class="my-0 card-item">
-                <strong class="card-label" v-if="item.label">{{item.label}}:</strong>
+                <strong class="card-label" v-if="item.label"
+                  >{{ item.label }}:</strong
+                >
                 <a
                   v-if="item.href"
                   :href="item.href"
@@ -68,11 +125,16 @@
                   @click.stop
                   v-html="item.html || item.value"
                 ></a>
-                <span v-if="!item.href" v-html="item.html || item.value" :class="item.class"></span>
+                <span
+                  v-if="!item.href"
+                  v-html="item.html || item.value"
+                  :class="item.class"
+                ></span>
                 <span
                   v-if="item.secondHTML || item.secondValue"
                   v-html="item.secondHTML || item.secondValue"
                   :class="item.secondClass"
+                  style="margin-left: 5px"
                 ></span>
               </p>
             </v-col>
@@ -82,7 +144,7 @@
     </template>
     <v-card>
       <v-card-title>
-        <span>{{game && game.adventure}}</span>
+        <span>{{ game && game.adventure }}</span>
         <v-spacer></v-spacer>
         <v-btn fab small text @click="cardDialog = false">
           <v-icon>mdi-close</v-icon>
@@ -91,16 +153,37 @@
       <v-divider></v-divider>
       <v-card-text
         v-if="game"
-        class="pt-3"
-        style="height: 90vh; max-height: 500px;"
-        v-html="mdParse(`
-        **${lang.game.DATE}:** ${game.hideDate ? this.lang.game.labesl.TBD : game.moment && game.moment.date}
+        class="pt-4 game-info"
+        v-html="
+          mdParse(`
+        **${lang.game.DATE}:** ${
+            game.hideDate
+              ? this.lang.game.labels.TBD
+              : game.moment && game.moment.date
+          }
         **${lang.game.RUN_TIME}:** ${game.runtime} ${lang.game.labels.HOURS}
         **${lang.game.WHERE}:** ${game.where}
-        ${game.description.trim().length > 0 ? `**${lang.game.DESCRIPTION}:**
-        ${game.description}` : ''}
-        `)"
+        ${
+          game.description.trim().length > 0
+            ? `**${lang.game.DESCRIPTION}:**
+        ${game.description}`
+            : ''
+        }
+        ${
+          game.reserved.length > 0
+            ? `#### ${lang.game.RESERVED}
+        ${game.reserved
+          .slice(0, parseInt(game.players))
+          .map((r, i) => `${i + 1}. ${r.tag}`)
+          .join('\n')}`
+            : ''
+        }
+        `)
+        "
       ></v-card-text>
+      <v-card-text>
+        <v-img :src="game.gameImage" contain></v-img>
+      </v-card-text>
     </v-card>
   </v-dialog>
 </template>
@@ -121,7 +204,8 @@ export default {
       parseDateInterval: null,
       columns: [],
       cardDialog: false,
-      md: new Remarkable()
+      md: new Remarkable(),
+      loading: false,
     };
   },
   computed: {
@@ -130,39 +214,39 @@ export default {
     },
     storeLang() {
       return this.$store.getters.lang;
-    }
+    },
   },
   watch: {
     storeAccount: {
-      handler: function(newVal) {
+      handler: function (newVal) {
         this.account = newVal;
         this.populateColumns();
       },
-      immediate: true
+      immediate: true,
     },
     storeLang: {
-      handler: function(newVal) {
+      handler: function (newVal) {
         if (newVal && newVal.nav) this.lang = newVal;
         setTimeout(() => {
           this.parseDates();
           this.populateColumns();
         }, 500);
       },
-      immediate: true
+      immediate: true,
     },
     gameData: {
-      handler: function(newVal) {
+      handler: function (newVal) {
         this.game = cloneDeep(newVal);
         this.populateColumns();
       },
-      immediate: true
-    }
+      immediate: true,
+    },
   },
   mounted() {
     this.populateColumns();
     this.parseDateInterval = setInterval(() => {
       this.populateColumns();
-    }, 30 * 1000);
+    }, 60 * 1000);
   },
   onDestroy() {
     clearInterval(this.parseDateInterval);
@@ -177,13 +261,18 @@ export default {
       );
     },
     rsvp() {
-      this.$store.dispatch("rsvpGame", {
-        gameId: this.rsvpGameId,
-        route: this.$route,
-        app: this
-      });
+      this.loading = true;
+      this.$store
+        .dispatch("rsvpGame", {
+          gameId: this.rsvpGameId,
+          guildId: this.game.guildAccount.id,
+        })
+        .then((result) => {
+          this.loading = false;
+        });
     },
     populateColumns() {
+      this.game = cloneDeep(this.game);
       const game = cloneDeep(this.parseDates(this.game));
       let items = [];
       if (game && game.adventure) {
@@ -192,17 +281,17 @@ export default {
           items.push({
             id: "gm",
             label: this.lang.game.GM,
-            value: game.dm.tag.split("#")[0]
+            value: game.dm.tag.split("#")[0],
           });
         items.push({
           id: "where",
           label: this.lang.game.WHERE,
-          html: this.parseURL(game.where)
+          html: this.parseURL(game.where),
         });
         items.push({
           id: "server",
           label: this.lang.game.SERVER,
-          value: game.guildAccount.name
+          value: game.guildAccount.name,
         });
         if (game.hideDate) {
           items.push({
@@ -216,20 +305,20 @@ export default {
           items.push({
             id: "when",
             label: this.lang.game.WHEN,
-            class: [game.moment.state, "nowrap"].filter(c => c).join(" "),
+            class: [game.moment.state, "nowrap"].filter((c) => c).join(" "),
             value: [
               game.moment.calendar,
-              tdiff > 0 && tdiff / 86400000 >= 6.5 && `(${game.moment.from})`
+              tdiff > 0 && tdiff / 86400000 >= 6.5 && `(${game.moment.from})`,
             ]
-              .filter(c => c)
-              .join(" ")
+              .filter((c) => c)
+              .join(" "),
           });
           items.push({
             id: "calendar",
             href: game.moment.googleCal,
             target: "_blank",
             class: "discord--text hidden-xs-only",
-            value: this.lang.buttons.ADD_TO_GOOGLE_CALENDAR
+            value: this.lang.buttons.ADD_TO_GOOGLE_CALENDAR,
           });
         }
         items.push({
@@ -240,7 +329,7 @@ export default {
           }`,
           secondValue: game.signedup
             ? `(${this.lang.game.SLOT} #${game.slot})`
-            : null
+            : null,
         });
         items.push({
           id: "waitlisted",
@@ -250,40 +339,42 @@ export default {
             Math.min(game.reserved.length, parseInt(game.players)),
           secondValue: game.waitlisted
             ? `(${this.lang.game.SLOT} #${game.slot})`
-            : null
+            : null,
         });
       }
 
       if (Array.isArray(this.filter)) {
-        items = items.filter(i => this.filter.includes(i.id));
+        items = items.filter((i) => this.filter.includes(i.id));
       }
 
       if (Array.isArray(this.exclude)) {
-        items = items.filter(i => !this.exclude.includes(i.id));
+        items = items.filter((i) => !this.exclude.includes(i.id));
       }
 
       this.columns = [];
       if (this.numColumns === 1) {
         this.columns.push({
-          items: items
+          items: items,
         });
       } else if (this.numColumns === 2) {
         this.columns.push({
           items: [
-            items.find(i => i.id === "when"),
-            items.find(i => i.id === "calendar"),
-            items.find(i => i.id === "where"),
-            items.find(i => i.id === "server")
-          ]
+            items.find((i) => i.id === "when"),
+            items.find((i) => i.id === "calendar"),
+            items.find((i) => i.id === "where"),
+            items.find((i) => i.id === "server"),
+          ],
         });
         this.columns.push({
           items: [
-            items.find(i => i.id === "gm"),
-            items.find(i => i.id === "reserved"),
-            items.find(i => i.id === "waitlisted")
-          ]
+            items.find((i) => i.id === "gm"),
+            items.find((i) => i.id === "reserved"),
+            items.find((i) => i.id === "waitlisted"),
+          ],
         });
       }
+
+      this.loading = false;
     },
     parseDates(game) {
       try {
@@ -298,13 +389,26 @@ export default {
     mdParse(string) {
       const parsedString = string
         .split("\n")
-        .map(line => this.md.render(line.trim()));
+        .map((line) => this.md.render(line.trim()));
       return parsedString.join("\n");
     },
     checkRSVP(rsvp, user) {
       return checkRSVP(rsvp, user);
-    }
-  }
+    },
+    undelete() {
+      this.$store.dispatch("restoreGame", {
+        app: this,
+        route: this.$route,
+        gameId: this.game._id
+      })
+      .then(result => {
+        console.log(result);
+      })
+      .catch(err => {
+        console.log(err);
+      });
+    },
+  },
 };
 </script>
 
@@ -380,5 +484,16 @@ export default {
 }
 .card-item .card-label {
   margin-right: 5px;
+}
+
+.game-info > *:last-child {
+  margin: 0;
+}
+
+@media (max-width: 767px) {
+  .game-info {
+    height: 90vh;
+    max-height: 500px;
+  }
 }
 </style>

@@ -1,4 +1,4 @@
-const moment = require("moment");
+const moment = require("moment-timezone");
 const { toPairs, cloneDeep } = require("lodash");
 
 const log = (...content) => {
@@ -24,7 +24,7 @@ const zeroPad = (n, width, z = "0") => {
   return n.length >= width ? n : new Array(width - n.length + 1).join(z) + n;
 };
 
-const parseTimeZoneISO = (timezone) => {
+const parseTimeZoneISO = timezone => {
   const tz = Math.abs(timezone);
   const hours = Math.floor(tz);
   const minutes = (tz - hours) * 60;
@@ -32,73 +32,115 @@ const parseTimeZoneISO = (timezone) => {
 };
 
 const parseEventTimes = (event, options = {}) => {
-  const raw = `${event.date}T${event.time}:00.000${event.timezone < 0 ? "-" : "+"}${parseTimeZoneISO(event.timezone)}`;
-  const isoutcStart = `${new Date(raw)
-    .toISOString()
-    .replace(/[^0-9T]/gi, "")
-    .slice(0, 13)}00Z`;
-  const endTime = new Date(raw);
-  endTime.setHours(endTime.getHours() + parseFloat(event.runtime.replace(/[^\d\.-]/g, "").trim() || "0"));
-  const isoutcEnd = `${endTime
-    .toISOString()
-    .replace(/[^0-9T]/gi, "")
-    .slice(0, 13)}00Z`;
-  const d = new Date(raw)
-    .toISOString()
-    .replace(/[^0-9T]/gi, "")
-    .slice(0, 13);
+  const raw = `${event.date}T${event.time}:00.000${
+    event.timezone < 0 ? "-" : "+"
+  }${parseTimeZoneISO(event.timezone)}`;
+  try {
+    const isoutcStart = `${new Date(raw)
+      .toISOString()
+      .replace(/[^0-9T]/gi, "")
+      .slice(0, 13)}00Z`;
+    const endTime = new Date(raw);
+    endTime.setHours(
+      endTime.getHours() +
+        parseFloat(event.runtime.replace(/[^\d\.-]/g, "").trim() || "0")
+    );
+    const isoutcEnd = `${endTime
+      .toISOString()
+      .replace(/[^0-9T]/gi, "")
+      .slice(0, 13)}00Z`;
+    const d = new Date(raw)
+      .toISOString()
+      .replace(/[^0-9T]/gi, "")
+      .slice(0, 13);
 
-  const convertExtras = [];
-  if (event.adventure) convertExtras.push(`&l=${escape(event.adventure)}`);
+    const convertExtras = [];
+    if (event.adventure) convertExtras.push(`&l=${escape(event.adventure)}`);
 
-  const convert2Extras = [];
-  if (event.adventure) convert2Extras.push(`&msg=${escape(event.adventure)}`);
+    const convert2Extras = [];
+    if (event.adventure) convert2Extras.push(`&msg=${escape(event.adventure)}`);
 
-  const googleCalExtras = [];
+    const googleCalExtras = [];
 
-  const days = ["SU", "MO", "TU", "WE", "TH", "FR", "SA"];
-  const weekdays = event.weekdays.map((w, i) => w && days[i]).filter((w) => w);
-  if (weekdays.length === 0) weekdays.push(days[moment(event.date).weekday()]);
+    const days = ["SU", "MO", "TU", "WE", "TH", "FR", "SA"];
+    const weekdays = event.weekdays.map((w, i) => w && days[i]).filter(w => w);
+    if (weekdays.length === 0)
+      weekdays.push(days[moment(event.date).weekday()]);
 
-  if (event.frequency == 1) {
-    googleCalExtras.push(`&recur=RRULE:FREQ=DAILY`);
-  }
-  if (event.frequency == 2) {
-    googleCalExtras.push(`&recur=RRULE:FREQ=WEEKLY;BYDAY=${weekdays.join(",")}`);
-  }
-  if (event.frequency == 3) {
-    googleCalExtras.push(`&recur=RRULE:FREQ=WEEKLY;INTERVAL=${event.xWeeks};BYDAY=${weekdays.join(",")}`);
-  }
-  if (event.frequency == 4) {
-    if (event.monthlyType === "date") {
-      googleCalExtras.push(`&recur=RRULE:FREQ=MONTHLY`);
-    } else if (event.monthlyType === "weekday") {
-      googleCalExtras.push(`&recur=RRULE:FREQ=MONTHLY;BYDAY=${moment(event.date).monthWeekByDay() + 1}${days[new Date(raw).getDay()]}`);
+    if (event.frequency == 1) {
+      googleCalExtras.push(`&recur=RRULE:FREQ=DAILY`);
     }
+    if (event.frequency == 2) {
+      googleCalExtras.push(
+        `&recur=RRULE:FREQ=WEEKLY;BYDAY=${weekdays.join(",")}`
+      );
+    }
+    if (event.frequency == 3) {
+      googleCalExtras.push(
+        `&recur=RRULE:FREQ=WEEKLY;INTERVAL=${
+          event.xWeeks
+        };BYDAY=${weekdays.join(",")}`
+      );
+    }
+    if (event.frequency == 4) {
+      if (event.monthlyType === "date") {
+        googleCalExtras.push(`&recur=RRULE:FREQ=MONTHLY`);
+      } else if (event.monthlyType === "weekday") {
+        googleCalExtras.push(
+          `&recur=RRULE:FREQ=MONTHLY;BYDAY=${moment(
+            event.date
+          ).monthWeekByDay() + 1}${days[new Date(raw).getDay()]}`
+        );
+      }
+    }
+
+    if (event.adventure)
+      googleCalExtras.push(`&text=${escape(event.adventure)}`);
+    if (event.where)
+      googleCalExtras.push(`&location=${escape(`${event.where}`)}`);
+    if (event.description && !options.isField)
+      googleCalExtras.push(`&details=${escape(event.description)}`);
+
+    const date = `${event.date.replace(/-/g, "")}T${event.time.replace(
+      /:/g,
+      ""
+    )}00${event.timezone >= 0 ? "+" : "-"}${parseTimeZoneISO(event.timezone)}`;
+
+    return {
+      raw: raw,
+      isoutc: isoutcStart,
+      isoutcStart: isoutcStart,
+      isoutcEnd: isoutcEnd,
+      convert: {
+        timee: `https://timee.io/${d}?${convertExtras.join("")}`,
+        timeAndDate: `https://www.timeanddate.com/worldclock/converter.html?iso=${d}&p1=1440`
+      },
+      countdown: `https://www.timeanddate.com/countdown/generic?iso=${d}&p0=1440${convert2Extras.join(
+        ""
+      )}`,
+      googleCal: `http://www.google.com/calendar/render?action=TEMPLATE&dates=${isoutcStart}/${isoutcEnd}&trp=true${googleCalExtras.join(
+        ""
+      )}`,
+      iso: date,
+      date: event.tz ? moment(date).tz(event.tz).format("llll z") : moment(date).format("llll"),
+      calendar: moment(date).calendar(),
+      from: moment(date).fromNow()
+    };
+  } catch (err) {
+    console.log("parseEventTimes", err);
+    console.log(raw);
+    return {
+      raw: "",
+      iso: "",
+      isoutc: "",
+      isoutcStart: "",
+      isoutcEnd: "",
+      convert: {},
+      date: "",
+      calendar: "",
+      from: ""
+    };
   }
-
-  if (event.adventure) googleCalExtras.push(`&text=${escape(event.adventure)}`);
-  if (event.where) googleCalExtras.push(`&location=${escape(`${event.where}`)}`);
-  if (event.description && !options.isField) googleCalExtras.push(`&details=${escape(event.description)}`);
-
-  const date = `${event.date.replace(/-/g, "")}T${event.time.replace(/:/g, "")}00${event.timezone >= 0 ? "+" : "-"}${parseTimeZoneISO(event.timezone)}`;
-
-  return {
-    raw: raw,
-    isoutc: isoutcStart,
-    isoutcStart: isoutcStart,
-    isoutcEnd: isoutcEnd,
-    convert: {
-      timee: `https://timee.io/${d}?${convertExtras.join("")}`,
-      timeAndDate: `https://www.timeanddate.com/worldclock/converter.html?iso=${d}&p1=1440`,
-    },
-    countdown: `https://www.timeanddate.com/countdown/generic?iso=${d}&p0=1440${convert2Extras.join("")}`,
-    googleCal: `http://www.google.com/calendar/render?action=TEMPLATE&dates=${isoutcStart}/${isoutcEnd}&trp=true${googleCalExtras.join("")}`,
-    iso: date,
-    date: moment(date).format('llll'),
-    calendar: moment(date).calendar(),
-    from: moment(date).fromNow(),
-  };
 };
 
 const checkRSVP = (rsvp, user) => {
@@ -176,10 +218,15 @@ const gamesCSV = guild => {
   return null;
 };
 
+const isObject = (value) => {
+  return value && typeof value === 'object' && value.constructor === Object;
+};
+
 module.exports = {
   log: log,
   parseConfigURLs: parseConfigURLs,
   checkRSVP: checkRSVP,
   gamesCSV: gamesCSV,
-  parseEventTimes: parseEventTimes
+  parseEventTimes: parseEventTimes,
+  isObject: isObject
 };

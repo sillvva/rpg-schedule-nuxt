@@ -3,16 +3,36 @@
     <v-flex class="d-flex" justify-center align-center style="height: 100%;">
       <v-progress-circular :size="100" :width="7" color="discord" indeterminate></v-progress-circular>
     </v-flex>
-  </v-app> -->
+  </v-app>-->
   <v-container fluid>
-    <v-text-field
-      v-model="searchQuery"
-      @keyup="search"
-      flat
-      solo
-      prepend-inner-icon="mdi-magnify"
-      class="hidden-sm-and-up mb-n4"
-    ></v-text-field>
+    <v-app-bar dense class="mb-3 hidden-sm-and-up">
+      <v-text-field
+        v-model="searchQuery"
+        @keyup="search"
+        flat
+        solo
+        prepend-inner-icon="mdi-magnify"
+        style="height: 48px; margin-left: -16px;"
+      ></v-text-field>
+      <v-btn
+        text
+        small
+        v-if="guilds.filter(g => g.collapsed).length == guilds.length"
+        @click="expandAll"
+        class="ml-4"
+      >
+        <v-icon>mdi-chevron-double-up</v-icon>
+      </v-btn>
+      <v-btn
+        text
+        small
+        v-if="guilds.filter(g => !g.collapsed).length > 0"
+        @click="collapseAll"
+        class="ml-4"
+      >
+        <v-icon>mdi-chevron-double-down</v-icon>
+      </v-btn>
+    </v-app-bar>
     <v-app-bar dense class="mb-3 hidden-xs-only">
       <v-text-field
         v-model="searchQuery"
@@ -52,14 +72,9 @@
           style="border-radius: 50%;"
         ></v-img>
         <v-toolbar-title>{{guild.name}}</v-toolbar-title>
+
         <v-spacer></v-spacer>
-        <v-btn
-          icon
-          :href="guild.csv"
-          :download="`manage-server-${new Date().getFullYear()}-${new Date().getMonth()+1 < 10 ? '0' : ''}${new Date().getMonth()+1}-${new Date().getDate() < 10 ? '0' : ''}${new Date().getDate()}.csv`"
-        >
-          <v-icon>mdi-download</v-icon>
-        </v-btn>
+
         <v-dialog
           v-model="guild.editing"
           scrollable
@@ -96,10 +111,13 @@
                 <v-tabs-items v-model="tab">
                   <v-tab-item>
                     <v-list dense>
-                      <v-list-item class="px-4 mb-2" v-if="!guild.userRoles.includes(guild.config.managerRole)">
+                      <v-list-item
+                        class="px-4 mb-2"
+                        v-if="!guild.userRoles.includes(isObject(guild.config.managerRole) ? guild.config.managerRole.name : guild.config.managerRole)"
+                      >
                         <v-select
                           :label="lang.config.MANAGER_ROLE"
-                          v-model="guild.config.managerRole"
+                          v-model="guild.config.managerRole.id"
                           :hint="lang.config.desc.MANAGER_ROLE"
                           persistent-hint
                           :items="guild.roleValues"
@@ -222,30 +240,6 @@
                         </v-list-item-content>
                       </v-list-item>
 
-                      <!-- <v-menu
-                        v-model="colorMenu"
-                        transition="scale-transition"
-                        offset-y
-                        min-width="290px"
-                      >
-                        <template v-slot:activator="{ on }">
-                          <v-list-item class="px-4 mb-2">
-                            <v-list-item-action>
-                              <v-btn fab small :color="guild.config.embedColor" v-on="on">&nbsp;</v-btn>
-                            </v-list-item-action>
-                            <v-list-item-content class="pt-0">
-                              <v-text-field
-                                :label="lang.config.EMBED_COLOR"
-                                v-model="guild.config.embedColor"
-                                :hint="lang.config.desc.EMBED_COLOR"
-                                persistent-hint
-                              ></v-text-field>
-                            </v-list-item-content>
-                          </v-list-item>
-                        </template>
-                        <v-color-picker v-model="guild.config.embedColor"></v-color-picker>
-                      </v-menu>-->
-
                       <v-row no-gutters>
                         <v-col cols="12" sm="6">
                           <v-list-item class="px-4 mb-2">
@@ -301,12 +295,11 @@
                   <v-tab-item>
                     <v-list dense>
                       <v-subheader class="px-4">{{lang.config.desc.CHANNEL_CONFIGURATION}}</v-subheader>
-
                       <v-list-item class="mb-6">
                         <v-select
                           :label="lang.config.CHANNELS"
                           v-model="selectedChannel"
-                          :items="guild.channels.filter(channel => channel.type === 'text' && !guild.config.channel.find(c => c.channelId === channel.id)).map(channel => {
+                          :items="guild.channels.filter(channel => (channel.type == 'text' || channel.type == 'news') && !guild.config.channel.find(c => c.channelId === channel.id)).map(channel => {
                             const category = channel.parentID ? guild.channelCategories.find(gc => gc.id === channel.parentID).name + ' - ' : '';
                             return { text: `${category}#${channel.name}`, value: channel.id };
                           })"
@@ -326,9 +319,9 @@
                           <v-col class="pr-0">
                             <h4 class="mx-4 mt-4 mb-0">
                               <span
-                                v-html="guild.channels.find(ch => ch.type === 'text' && ch.id === channel.channelId).parentID ? guild.channelCategories.find(gc => gc.id === guild.channels.find(ch => ch.type === 'text' && ch.id === channel.channelId).parentID).name + '<br />' : ''"
+                                v-html="guild.channels.find(ch => (ch.type == 'text' || ch.type == 'news') && ch.id === channel.channelId).parentID ? guild.channelCategories.find(gc => gc.id === guild.channels.find(ch => (ch.type == 'text' || ch.type == 'news') && ch.id === channel.channelId).parentID).name + '<br />' : ''"
                               ></span>
-                              #{{guild.channels.find(ch => ch.type === 'text' && ch.id === channel.channelId).name}}
+                              #{{guild.channels.find(ch => (ch.type == 'text' || ch.type == 'news') && ch.id === channel.channelId).name}}
                             </h4>
                           </v-col>
                           <v-col class="pl-0 pr-4 text-right" style="max-width: 80px;">
@@ -419,11 +412,21 @@
                           <v-list-item class="mb-2 px-0">
                             <v-select
                               :label="lang.config.ROLE"
-                              v-model="template.role"
-                              :placeholder="lang.config.DEFAULT_SERVER"
+                              v-model="template.role.id"
                               :hint="lang.config.desc.ROLE"
                               persistent-hint
                               :items="template.isDefault ? guild.roleValues : guild.channelRoleValues"
+                            ></v-select>
+                          </v-list-item>
+
+                          <v-list-item class="mb-2 px-0">
+                            <v-select
+                              :label="lang.config.PLAYER_ROLE"
+                              v-model="template.playerRoles"
+                              :hint="lang.config.desc.PLAYER_ROLE"
+                              persistent-hint
+                              :items="guild.roleValuesSelect"
+                              multiple chips
                             ></v-select>
                           </v-list-item>
 
@@ -519,16 +522,54 @@
             </v-card-actions>
           </v-card>
         </v-dialog>
+
         <v-btn icon @click="guild.collapsed = !guild.collapsed">
           <v-icon v-if="!guild.collapsed">mdi-chevron-down</v-icon>
           <v-icon v-if="guild.collapsed">mdi-chevron-up</v-icon>
         </v-btn>
+
+        <v-menu left offset-y>
+          <template v-slot:activator="{ on, attrs }">
+            <v-btn icon v-on="on" v-bind="attrs">
+              <v-icon>mdi-dots-vertical</v-icon>
+            </v-btn>
+          </template>
+          <v-list>
+            <v-list-item
+              :href="guild.csv"
+              :download="`manage-server-${new Date().getFullYear()}-${new Date().getMonth()+1 < 10 ? '0' : ''}${new Date().getMonth()+1}-${new Date().getDate() < 10 ? '0' : ''}${new Date().getDate()}.csv`"
+              target="_blank"
+              v-if="guild.games.length > 0"
+            >
+              <v-list-item-icon>
+                <v-icon dark>mdi-download</v-icon>
+              </v-list-item-icon>
+              <v-list-item-content>Download</v-list-item-content>
+            </v-list-item>
+            <v-list-item :href="`${env && env.apiUrl}/guild-rss/${guild.id}`" target="_blank">
+              <v-list-item-icon>
+                <v-icon dark>mdi-rss</v-icon>
+              </v-list-item-icon>
+              <v-list-item-content>RSS</v-list-item-content>
+            </v-list-item>
+            <v-list-item
+              v-if="storeAccount.apiKey"
+              :href="`${env && env.apiUrl}/patron-api/games?key=${storeAccount.apiKey}&guildId=${guild.id}`"
+              target="_blank"
+            >
+              <v-list-item-icon>
+                <v-icon dark>mdi-key-variant</v-icon>
+              </v-list-item-icon>
+              <v-list-item-content>API</v-list-item-content>
+            </v-list-item>
+          </v-list>
+        </v-menu>
       </v-toolbar>
 
       <v-container fluid v-if="!guild.collapsed">
         <v-row dense>
           <v-col
-            v-for="(game, i) in guild.games.filter(game => !game.filtered)"
+            v-for="(game, i) in guild.games.filter(game => !game.deleted && !game.filtered)"
             v-bind:key="i"
             cols="12"
             sm="6"
@@ -560,8 +601,7 @@
 </template>
 
 <script>
-import { updateToken } from "../../../assets/auxjs/auth";
-import { gamesCSV } from "../../../assets/auxjs/appaux";
+import { gamesCSV, isObject } from "../../../assets/auxjs/appaux";
 import GameCard from "../../../components/game-card";
 import { cloneDeep } from "lodash";
 import GraphemeSplitter from "grapheme-splitter";
@@ -581,6 +621,7 @@ export default {
       lang: {},
       langs: {},
       config: this.$store.getters.config,
+      env: this.$store.getters.env,
       searchQuery: this.$route.query.s,
       colorMenu: false,
       colorMenus: {},
@@ -598,6 +639,9 @@ export default {
     };
   },
   computed: {
+    storeAccount() {
+      return this.$store.getters.account;
+    },
     storeGuilds() {
       return this.$store.getters.account
         ? cloneDeep(this.$store.getters.account.guilds).map(g => {
@@ -616,40 +660,12 @@ export default {
   watch: {
     storeGuilds: {
       handler: function(newVal) {
-        this.guilds = cloneDeep(newVal).filter(g => g.isAdmin).map(g => {
-          g.roleValues = [
-            {
-              text: (this.lang.config || {}).NO_ROLE,
-              value: null
-            },
-            ...g.roles
-              .filter(r => !r.managed && r.name !== "@everyone")
-              .map(r => {
-                return { text: r.name, value: r.name };
-              })
-          ];
-          g.channelRoleValues = [
-            {
-              text: (this.lang.config || {}).DEFAULT_SERVER,
-              value: null
-            },
-            ...g.roles
-              .filter(r => !r.managed && r.name !== "@everyone")
-              .map(r => {
-                return { text: r.name, value: r.name };
-              })
-          ];
-          g.config.escape = g.config.escape || "!";
-          g.config.gameTemplates.forEach(gt => {
-            this.colorMenus[gt.id] = false;
-          });
-          g.csv = gamesCSV(g);
-          return {
-            ...g,
-            collapsed: false,
-            filtered: false
-          };
-        });
+        this.guilds = this.mapGuilds(cloneDeep(newVal).filter(
+          g =>
+            g.isAdmin ||
+            (this.$store.getters.account &&
+              this.$store.getters.account.user.tag === this.config.author)
+        ));
         if (
           !(
             this.$store.getters.account &&
@@ -663,7 +679,10 @@ export default {
     },
     storeLang: {
       handler: function(newVal) {
-        if (newVal && newVal.nav) this.lang = newVal;
+        if (newVal && newVal.nav) {
+          this.lang = newVal;
+          this.guilds = this.mapGuilds(this.guilds);
+        }
       },
       immediate: true
     },
@@ -674,58 +693,52 @@ export default {
       immediate: true
     }
   },
-  // fetchOnServer: false,
-  // async fetch() {
-  //   updateToken(this);
-  //   // if (
-  //   //   this.$store.getters.lastListingPage !== "manage-server" ||
-  //   //   (await this.$store.dispatch("isMobile"))
-  //   // ) {
-  //     this.$store.dispatch("emptyGuilds");
-  //     await this.$store.dispatch("fetchGuilds", {
-  //       page: "manage-server",
-  //       games: true,
-  //       app: this
-  //     });
-  //   // }
-  // },
-  // activated() {
-  //   this.$fetch();
-  // },
+  mounted() {
+    this.$store.commit("setLastListingPage", "manage-server");
+  },
   methods: {
+    isObject(value) {
+      return isObject(value);
+    },
     saveGuildConfiguration() {
       const index = this.guilds.findIndex(g => g.editing);
       const guild = this.guilds.find(g => g.editing);
       if (guild && guild.config) {
+        const config = cloneDeep(guild.config);
         const form = this.$refs[`config${guild.id}`][0];
         if (form && form.validate()) {
-          if (guild.config.pruneIntEvents < 2) guild.config.pruneIntEvents = 2;
-          if (guild.config.pruneIntEvents > 14)
-            guild.config.pruneIntEvents = 14;
-          if (guild.config.pruneIntDiscord < 2)
-            guild.config.pruneIntDiscord = 2;
-          if (guild.config.pruneIntDiscord > 14)
-            guild.config.pruneIntDiscord = 14;
-          if (guild.config.pruneIntEvents < guild.config.pruneIntDiscord) {
-            guild.config.pruneIntEvents = guild.config.pruneIntDiscord;
+          if (config.pruneIntEvents < 2) config.pruneIntEvents = 2;
+          if (config.pruneIntEvents > 14)
+            config.pruneIntEvents = 14;
+          if (config.pruneIntDiscord < 2)
+            config.pruneIntDiscord = 2;
+          if (config.pruneIntDiscord > 14)
+            config.pruneIntDiscord = 14;
+          if (config.pruneIntEvents < config.pruneIntDiscord) {
+            config.pruneIntEvents = config.pruneIntDiscord;
           }
-          guild.config.gameTemplates = guild.config.gameTemplates.map(gt => {
+          config.role = config.role && config.role.id ? guild.roles.filter(r => r.id === config.role.id).map(r => ({ id: r.id, name: r.name }))[0] : null;
+          config.managerRole = config.managerRole && config.managerRole.id ? guild.roles.filter(r => r.id === config.managerRole.id).map(r => ({ id: r.id, name: r.name }))[0] : null;
+          config.gameTemplates = config.gameTemplates.map(gt => {
             gt.gameDefaults.minPlayers = parseInt(gt.gameDefaults.minPlayers);
             gt.gameDefaults.maxPlayers = parseInt(gt.gameDefaults.maxPlayers);
+            gt.role = gt.role && gt.role.id ? guild.roles.filter(r => r.id === gt.role.id).map(r => ({ id: r.id, name: r.name }))[0] : null;
+            gt.playerRole = guild.roles.filter(r => gt.playerRoles.includes(r.id)).map(r => ({ id: r.id, name: r.name }));
             delete gt.unsaved;
+            delete gt.playerRoles;
             return gt;
           });
-          guild.config.channel = guild.config.channel
+          config.channel = config.channel
             .filter(c => guild.channels.find(ch => ch.id === c.channelId))
             .filter(
               (c, i) =>
-                guild.config.channel.findIndex(
+                config.channel.findIndex(
                   gc => gc.channelId === c.channelId
                 ) === i
             );
           this.$store
             .dispatch("saveGuildConfig", {
-              config: guild.config,
+              config: config,
               app: this,
               route: this.$route
             })
@@ -739,14 +752,16 @@ export default {
               );
               this.$store.dispatch("addSnackBar", {
                 message: "Configuration saved successfully" || err,
-                color: "success darken-2"
+                color: "success",
+                timeout: 10
               });
               guild.editing = false;
             })
             .catch(err => {
               this.$store.dispatch("addSnackBar", {
                 message: (err && err.message) || err || "An error occured!",
-                color: "error"
+                color: "error",
+                timeout: 10
               });
             });
         }
@@ -754,6 +769,75 @@ export default {
     },
     cloneDeep(val) {
       return cloneDeep(val);
+    },
+    mapGuilds(guilds) {
+      return guilds.map(g => {
+        const cGuild = this.guilds.find(cg => cg.id === g.id);
+        if (cGuild) g.editing = cGuild.editing;
+        g.roleValuesSelect = [
+          ...g.roles
+            .filter(r => !r.managed && r.name !== "@everyone")
+            .map(r => {
+              return { text: r.name, value: r.id };
+            })
+        ];
+        g.roleValues = [
+          {
+            text: (this.lang.config || {}).NO_ROLE,
+            value: null
+          },
+          ...g.roles
+            .filter(r => !r.managed && r.name !== "@everyone")
+            .map(r => {
+              return { text: r.name, value: r.id };
+            })
+        ];
+        g.channelRoleValues = [
+          {
+            text: (this.lang.config || {}).DEFAULT_SERVER,
+            value: null
+          },
+          ...g.roles
+            .filter(r => !r.managed && r.name !== "@everyone")
+            .map(r => {
+              return { text: r.name, value: r.id };
+            })
+        ];
+        if (!g.config.role) g.config.role = { id: null, name: "" };
+        else {
+          const role = g.roles.find(r => isObject(g.config.role) ? g.config.role.id === r.id : g.config.role === r.name);
+          if (role) g.config.role = { id: role.id, name: role.name };
+          else g.config.role = { id: null, name: "" };
+        }
+        if (!g.config.managerRole) g.config.managerRole = { id: null, name: "" };
+        else {
+          const role = g.roles.find(r => isObject(g.config.managerRole) ? g.config.managerRole.id === r.id : g.config.managerRole === r.name);
+          if (role) g.config.managerRole = { id: role.id, name: role.name };
+          else g.config.managerRole = { id: null, name: "" };
+        }
+        g.config.escape = g.config.escape || "!";
+        g.config.gameTemplates.forEach(gt => {
+          this.colorMenus[gt.id] = false;
+          if (!gt.role) gt.role = { id: null, name: "" };
+          else {
+            const role = g.roles.find(r => isObject(gt.role) ? gt.role.id === r.id : gt.role === r.name);
+            if (role) gt.role = { id: role.id, name: role.name };
+            else gt.role = { id: null, name: "" };
+          }
+          if (!gt.playerRole) gt.playerRole = [{ id: null, name: "" }];
+          else {
+            const roles = g.roles.filter(r => gt.playerRole.find(pr => pr.id === r.id || (!pr.id && pr.name === r.name)));
+            gt.playerRole = roles.map(r => ({ id: r.id, name: r.name }));
+          }
+          gt.playerRoles = gt.playerRole.map(r => r.id);
+        });
+        g.csv = gamesCSV(g);
+        return {
+          ...g,
+          collapsed: false,
+          filtered: false
+        };
+      });
     },
     search($event) {
       if (!$event || $event.key != "Enter") return;
@@ -767,93 +851,80 @@ export default {
       this.searchGuild();
     },
     searchGuild() {
-      if (
-        this.$store.getters.account &&
-        this.$store.getters.account.user.tag === this.config.author
-      ) {
-        this.guilds = [];
-        this.$store.dispatch("fetchGuilds", {
-          page: "server",
-          games: true,
-          app: this,
-          search: this.searchQuery.trim().length > 0 ? this.searchQuery : null
-        });
-      } else {
-        // Regex Example: https://regex101.com/r/LFEUgY/2
-        // Removed lookback for lack of Firefox support
-        const regex = /((\w+):)?"([^"]+)"|((\w+):)?([^ ]+)/gm,
-          matches = [];
-        let m;
-        if (this.searchQuery) {
-          while ((m = regex.exec(this.searchQuery)) !== null) {
-            if (m.index === regex.lastIndex) {
-              regex.lastIndex++;
-            }
-            if (m[3] && m[3].length > 0) {
-              matches.push({ type: m[2] || "any", query: m[3] });
-            }
-            if (m[6] && m[6].length > 0) {
-              matches.push({ type: m[5] || "any", query: m[6] });
-            }
+      // Regex Example: https://regex101.com/r/LFEUgY/2
+      // Removed lookback for lack of Firefox support
+      const regex = /((\w+):)?"([^"]+)"|((\w+):)?([^ ]+)/gm,
+        matches = [];
+      let m;
+      if (this.searchQuery) {
+        while ((m = regex.exec(this.searchQuery)) !== null) {
+          if (m.index === regex.lastIndex) {
+            regex.lastIndex++;
+          }
+          if (m[3] && m[3].length > 0) {
+            matches.push({ type: m[2] || "any", query: m[3] });
+          }
+          if (m[6] && m[6].length > 0) {
+            matches.push({ type: m[5] || "any", query: m[6] });
           }
         }
-        this.guilds = this.guilds.map(guild => {
-          guild.games = guild.games.map(game => {
-            if (matches.length > 0) {
-              if (
-                matches
-                  .map(match => ({
-                    type: match.type,
-                    query: match.query,
-                    regex: new RegExp(match.query, "gi")
-                  }))
-                  .filter(match => {
-                    return (
-                      (match.query === "new" &&
-                        new Date().getTime() - game.createdTimestamp <
-                          24 * 3600 * 1000) ||
-                      (match.query != "new" &&
-                        match.type === "any" &&
-                        (match.regex.test(game.adventure) ||
-                          match.regex.test(game.dm.tag || game.dm) ||
-                          match.regex.test(game.author.tag) ||
-                          match.regex.test(guild.name))) ||
-                      match.regex.test(
-                        (match.type === "gm" && (game.dm.tag || game.dm)) ||
-                          (match.type === "author" &&
-                            game.author &&
-                            game.author.tag) ||
-                          (match.type === "name" && game.adventure) ||
-                          (match.type === "server" && guild.name) ||
-                          (match.type === "reserved" &&
-                            game.reserved.reduce(
-                              (i, r) => `${i}\n${r.tag}`,
-                              ""
-                            )) ||
-                          game[match.type]
-                      )
-                    );
-                  }).length != matches.length
-              ) {
-                game.filtered = true;
-              } else {
-                game.filtered = false;
-              }
+      }
+      this.guilds = this.guilds.map(guild => {
+        guild.games = guild.games.map(game => {
+          if (matches.length > 0) {
+            if (
+              matches
+                .map(match => ({
+                  type: match.type,
+                  query: match.query,
+                  regex: new RegExp(match.query, "gi")
+                }))
+                .filter(match => {
+                  return (
+                    (match.query === "new" &&
+                      new Date().getTime() - game.createdTimestamp <
+                        24 * 3600 * 1000) ||
+                    (match.query != "new" &&
+                      match.type === "any" &&
+                      (match.regex.test(game.adventure) ||
+                        match.regex.test(game.dm.tag || game.dm) ||
+                        match.regex.test(game.author.tag) ||
+                        match.regex.test(guild.name))) ||
+                    match.regex.test(
+                      (match.type === "gm" && (game.dm.tag || game.dm)) ||
+                        (match.type === "author" &&
+                          game.author &&
+                          game.author.tag) ||
+                        (match.type === "name" && game.adventure) ||
+                        (match.type === "server" && guild.name) ||
+                        (match.type === "reserved" &&
+                          game.reserved.reduce(
+                            (i, r) => `${i}\n${r.tag}`,
+                            ""
+                          )) ||
+                        game[match.type]
+                    )
+                  );
+                }).length != matches.length
+            ) {
+              game.filtered = true;
             } else {
               game.filtered = false;
             }
-            return game;
-          });
-          if (
-            !this.searchQuery ||
-            this.searchQuery.trim().length === 0 ||
-            guild.games.find(game => !game.filtered)
-          )
-            guild.filtered = false;
-          return guild;
+          } else {
+            game.filtered = false;
+          }
+          return game;
         });
-        this.expandAll();
-      }
+        if (
+          !this.searchQuery ||
+          this.searchQuery.trim().length === 0 ||
+          guild.games.find(game => !game.filtered)
+        )
+          guild.filtered = false;
+        return guild;
+      });
+      this.expandAll();
     },
     collapseAll() {
       this.guilds = this.guilds.map(g => {

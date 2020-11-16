@@ -1,13 +1,33 @@
 <template>
   <v-container fluid>
-    <v-text-field
-      v-model="searchQuery"
-      @keyup="search"
-      flat
-      solo
-      prepend-inner-icon="mdi-magnify"
-      class="hidden-sm-and-up mb-n4"
-    ></v-text-field>
+    <v-app-bar dense class="mb-3 hidden-sm-and-up">
+      <v-text-field
+        v-model="searchQuery"
+        @keyup="search"
+        flat
+        solo
+        prepend-inner-icon="mdi-magnify"
+        style="height: 48px; margin-left: -16px;"
+      ></v-text-field>
+      <v-btn
+        text
+        small
+        v-if="guilds.filter(g => g.collapsed).length == guilds.length"
+        @click="expandAll"
+        class="ml-4"
+      >
+        <v-icon>mdi-chevron-double-up</v-icon>
+      </v-btn>
+      <v-btn
+        text
+        small
+        v-if="guilds.filter(g => !g.collapsed).length > 0"
+        @click="collapseAll"
+        class="ml-4"
+      >
+        <v-icon>mdi-chevron-double-down</v-icon>
+      </v-btn>
+    </v-app-bar>
     <v-app-bar dense class="mb-3 hidden-xs-only">
       <v-text-field
         v-model="searchQuery"
@@ -32,8 +52,9 @@
         class="ml-4"
       >Collapse All</v-btn>
     </v-app-bar>
+
     <v-card
-      v-for="(guild, g) in guilds.filter(g => !g.filtered).filter(g => g.games.length > 0)"
+      v-for="(guild, g) in guilds.filter(g => !g.filtered && !!g.games.find(game => !game.deleted)).filter(g => g.games.filter(gm => !gm.filtered).length > 0)"
       v-bind:key="g"
       max-width="100%"
       class="mb-3"
@@ -47,17 +68,45 @@
           style="border-radius: 50%;"
         ></v-img>
         <v-toolbar-title>{{guild.name}}</v-toolbar-title>
+
         <v-spacer></v-spacer>
+
         <v-btn icon @click="guild.collapsed = !guild.collapsed">
           <v-icon v-if="!guild.collapsed">mdi-chevron-down</v-icon>
           <v-icon v-if="guild.collapsed">mdi-chevron-up</v-icon>
         </v-btn>
+
+        <v-menu left offset-y>
+          <template v-slot:activator="{ on, attrs }">
+            <v-btn icon v-on="on" v-bind="attrs">
+              <v-icon>mdi-dots-vertical</v-icon>
+            </v-btn>
+          </template>
+          <v-list>
+            <v-list-item :href="`${env && env.apiUrl}/guild-rss/${guild.id}`" target="_blank">
+              <v-list-item-icon>
+                <v-icon dark>mdi-rss</v-icon>
+              </v-list-item-icon>
+              <v-list-item-content>
+                RSS
+              </v-list-item-content>
+            </v-list-item>
+            <v-list-item v-if="storeAccount.apiKey" :href="`${env && env.apiUrl}/patron-api/games?key=${storeAccount.apiKey}&guildId=${guild.id}`" target="_blank">
+              <v-list-item-icon>
+                <v-icon dark>mdi-key-variant</v-icon>
+              </v-list-item-icon>
+              <v-list-item-content>
+                API
+              </v-list-item-content>
+            </v-list-item>
+          </v-list>
+        </v-menu>
       </v-toolbar>
 
       <v-container fluid v-if="!guild.collapsed">
         <v-row dense>
           <v-col
-            v-for="(game, i) in guild.games.filter(game => !game.filtered)"
+            v-for="(game, i) in guild.games.filter(game => !game.deleted && !game.filtered)"
             v-bind:key="i"
             cols="12"
             sm="6"
@@ -89,7 +138,6 @@
 </template>
 
 <script>
-import { updateToken } from "../../../assets/auxjs/auth";
 import GameCard from "../../../components/game-card";
 import { cloneDeep } from "lodash";
 
@@ -107,10 +155,14 @@ export default {
       lang: {},
       rsvpGameId: 0,
       config: this.$store.getters.config,
+      env: this.$store.getters.env,
       searchQuery: this.$route.query.s
     };
   },
   computed: {
+    storeAccount() {
+      return this.$store.getters.account;
+    },
     storeGuilds() {
       return this.$store.getters.account
         ? this.$store.getters.account.guilds
@@ -126,7 +178,7 @@ export default {
         this.guilds = cloneDeep(newVal).map(g => ({
           ...g,
           games: g.games.filter(game => {
-            return game.timestamp >= new Date().getTime()
+            return game.timestamp >= new Date().getTime();
           }),
           collapsed: false
         }));
@@ -141,20 +193,9 @@ export default {
       immediate: true
     }
   },
-  // fetchOnServer: false,
-  // async fetch() {
-  //   updateToken(this);
-  //   // if (this.$store.getters.lastListingPage !== "upcoming" || await this.$store.dispatch("isMobile")) {
-  //     this.$store.dispatch("emptyGuilds");
-  //     await this.$store.dispatch("fetchGuilds", {
-  //       page: "upcoming",
-  //       games: true,
-  //       app: this
-  //     });
-  //   // }
-  // },
-  // activated() {
-  //   this.$f
+  mounted() {
+    this.$store.commit("setLastListingPage", 'upcoming');
+  },
   methods: {
     collapseAll() {
       this.guilds = this.guilds.map(g => {

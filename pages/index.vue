@@ -157,17 +157,10 @@ export default {
     window.addEventListener("resize", this.onResize);
     this.onResize();
 
-    const cookies = [];
-    const hCookies = this.$cookies.getAll();
-    for (const name in hCookies) {
-      cookies.push({ name: name, value: hCookies[name] });
-    }
-    let redirectToken = null;
-    const tokenCookies = [];
-    for (const cookie of cookies) {
-      if (cookie.name == "redirect") redirectToken = cookie.value;
-      if (cookie.name == "token") tokenCookies.push(cookie.value);
-    }
+    const tokenCookies = await this.$store.dispatch(
+      "getToken",
+      this.$cookies.getAll()
+    );
     if (tokenCookies.length > 0) {
       await this.$store
         .dispatch("fetchGuilds", {
@@ -177,7 +170,7 @@ export default {
           if (result.status === "success") {
             this.account = result.account;
             if (this.$route.path === "/")
-              this.$router.replace(redirectToken || "/games/upcoming");
+              this.$router.replace(localStorage.getItem("redirectToken") || "/games/upcoming");
           }
           return result;
         });

@@ -9,6 +9,7 @@
             Click the invite link in the sidebar menu to invite the 
             bot to your server. Ensure it has all the required 
             permissions it asks for, or the bot may not work properly.
+            It may take up to an hour for your server to appear on the website.
           </p>
           <img src="https://i.imgur.com/FBgP7Ni.png" alt="Invite" />
         </v-expansion-panel-content>

@@ -17,7 +17,7 @@
         x-small
         :href="config.urls.twitter.path"
         target="_blank"
-        class="hidden-sm-and-down discord--text"
+        class="hidden-sm-and-down"
       >
         <v-icon dark>mdi-twitter</v-icon>
       </v-btn>
@@ -29,7 +29,7 @@
         v-if="account"
         :href="`${env && env.apiUrl}/rss/${account.user.id}`"
         target="_blank"
-        class="hidden-sm-and-down discord--text"
+        class="hidden-sm-and-down"
       >
         <v-icon dark>mdi-rss</v-icon>
       </v-btn>
@@ -40,18 +40,18 @@
         small
         :href="config.urls.donate.path"
         target="_blank"
-        class="hidden-xs-only hidden-md-and-up discord--text"
+        class="hidden-xs-only hidden-md-and-up"
       >
         <v-icon dark>mdi-gift-outline</v-icon>
       </v-btn>
       <span class="hidden-xs-only hidden-md-and-up">&nbsp;&nbsp;</span>
-      <v-btn text href="/r/donate" target="_blank" class="hidden-sm-and-down discord--text">
+      <v-btn text href="/r/donate" target="_blank" outlined class="hidden-sm-and-down mr-2">
         <v-icon left dark>mdi-gift-outline</v-icon>
         <span>{{lang.nav.DONATE}}</span>
       </v-btn>
       <v-dialog v-model="settingsDialog" scrollable max-width="400px">
         <template v-slot:activator="{ on }">
-          <v-btn outlined fab small v-on="on" class="discord">
+          <v-btn text fab small v-on="on">
             <v-icon dark>mdi-cog</v-icon>
           </v-btn>
         </template>
@@ -97,6 +97,9 @@
                   min="0"
                 ></v-text-field>
               </v-col>
+              <v-col class="py-0" cols="12" v-if="account && account.apiKey">
+                <v-text-field label="API Key" disabled="disabled" v-model="account.apiKey"></v-text-field>
+              </v-col>
             </v-row>
           </v-card-text>
           <v-divider></v-divider>
@@ -116,13 +119,7 @@
       </v-btn>
     </v-app-bar>
 
-    <v-navigation-drawer
-      v-model="drawer"
-      v-if="!['/','/maintenace'].includes(this.$route.path) && !maintenanceMode && !(['/help', '/games/edit'].includes($route.path) && !account && !loadingAccount)"
-      fixed
-      clipped
-      app
-    >
+    <v-navigation-drawer v-model="drawer" v-if="showMenu()" fixed clipped app>
       <template v-slot:prepend v-if="account">
         <v-list-item two-line style="position: relative;">
           <v-list-item-avatar>
@@ -152,7 +149,7 @@
         </v-list-item>
       </template>
 
-      <v-list nav dense v-if="!account && routePath.startsWith(config.urls.game.create.path)">
+      <v-list nav dense v-if="!account">
         <v-list-item-group>
           <v-list-item
             :href="`${config.urls.login.path}?redirect=${encodeURIComponent($route.fullPath)}`"
@@ -164,7 +161,7 @@
 
       <v-divider></v-divider>
 
-      <v-list nav dense>
+      <v-list nav dense v-if="account">
         <v-list-item-group>
           <v-list-item :to="config.urls.game.games.path">
             <v-list-item-title>{{lang.nav.UPCOMING_GAMES}}</v-list-item-title>
@@ -283,6 +280,7 @@ export default {
       lang: lang,
       selectedUserSettings: cloneDeep(this.$store.getters.userSettings),
       userSettings: cloneDeep(this.$store.getters.userSettings),
+      lastGuildRefresh: {},
       langOptions: [],
       notification: null,
       notificationOptions: [
@@ -338,7 +336,7 @@ export default {
   },
   watch: {
     storeAccount: {
-      handler: function(newVal) {
+      handler: async function(newVal) {
         this.account = newVal;
         this.maintenance();
       },
@@ -430,10 +428,7 @@ export default {
               return guild;
             });
             if (updated) this.$store.commit("setGuilds", guilds);
-          } else if (
-            data.action == "deleted" &&
-            guilds.find(g => g.id == data.guildId)
-          ) {
+          } else if (data.action == "deleted") {
             // An existing game has been deleted, update the store if it belongs to one of current user's guilds
             guilds = guilds.map(guild => {
               if (guild.games.find(game => game._id == data.gameId)) {
@@ -471,30 +466,13 @@ export default {
     this.$store.commit("setSnackBars", []);
     this.setSettings();
 
-    await this.$store.dispatch("fetchGuilds", {
-      app: this,
-      page: "manage-server",
-      games: true
-    });
+    this.$store.dispatch("initAuth", this).then(result => {
+      this.socketConnect();
+    }).catch(err => {});
 
     this.loadingAccount = false;
 
     await this.$store.dispatch("fetchSiteSettings");
-    let isMobile = await this.$store.dispatch("isMobile");
-
-    if (!isMobile) {
-      this.socket = ws.socket(this.$store.getters.env.apiUrl);
-
-      this.socket.on("game", data => {
-        this.$store.commit("setSocketData", { type: "game", data: data });
-      });
-
-      this.socket.on("site", data => {
-        if (data.action == "settings") {
-          this.$store.commit("setSiteSettings", data);
-        }
-      });
-    }
 
     this.setup();
     window.addEventListener("focus", this.setup);
@@ -510,13 +488,77 @@ export default {
         localStorage.removeItem("invited");
       }
     },
+    async fetchGuilds(guildId) {
+      console.log('Fetching guild data...');
+      this.$store.commit("setLastAuthed", new Date().getTime());
+      await this.$store.dispatch("fetchGuilds", {
+        app: this,
+        page: "manage-server",
+        games: true,
+        ...(guildId && {
+          guildId: guildId
+        })
+      });
+    },
     signOut() {
-      this.$store.dispatch("signOut").then(() => {
-        this.$cookies.remove("token", { path: "/" });
-        this.$cookies.remove("token", { path: "/games" });
-        this.$router.push("/", () => {
-          // window.location.reload(true);
-        });
+      this.$store.dispatch("signOut", this).then(() => {
+        this.$router.push("/");
+      });
+    },
+    async socketConnect() {
+      if (this.socket) return;
+
+      this.socket = ws.socket(this.$store.getters.env.apiUrl, {
+        rooms: [`u-${this.account.user.id}`, ...this.account.guilds.map(g => `g-${g.id}`)]
+      });
+
+      this.socket.on("connected", data => {
+        console.log('[WS] Connected:', data);
+      });
+
+      this.socket.on("game", data => {
+        console.log('[WS] Game:', data);
+        this.$store.commit("setSocketData", { type: "game", data: data });
+      });
+
+      this.socket.on("site", data => {
+        console.log('[WS] Site:', data);
+        if (data.action == "settings") {
+          this.$store.commit("setSiteSettings", data);
+        }
+      });
+
+      this.socket.on("refresh-guilds", data => {
+        const t = new Date().getTime();
+        if (data === 'all' && this.lastGuildRefresh[data] && t - this.lastGuildRefresh[data] < 60 * 60 * 1000) return;
+        if (data !== 'all' && this.lastGuildRefresh[data] && t - this.lastGuildRefresh[data] < 5 * 60 * 1000) return;
+        this.lastGuildRefresh[data] = t;
+        console.log('[WS] Guilds: Refresh', data);
+        this.fetchGuilds(data === 'all' ? 'all' : data);
+      });
+
+      this.socket.on("update-user", data => {
+        console.log('[WS] Users: Update', data);
+        const account = cloneDeep(this.$store.getters.account);
+        account.user = { ...account.user, ...data };
+        this.$store.commit("setAccount", account);
+      });
+
+      this.socket.on("update-guild", data => {
+        console.log('[WS] Guilds: Update', data);
+        this.$store.commit("setGuilds", this.account.guilds.map(g => {
+          if (g.id === data.id) {
+            g = { ...g, ...data };
+          }
+          return g;
+        }));
+      });
+
+      this.socket.on("delete-guild", data => {
+        console.log('[WS] Guilds: Delete', data);
+        const guilds = cloneDeep(this.account.guilds);
+        guilds.splice(guilds.findIndex(g => g.id === data), 1);
+        this.$store.commit("setGuilds", guilds);
       });
     },
     socketAddGame(account, gameId, guildId, authorId) {
@@ -532,7 +574,8 @@ export default {
       this.$store
         .dispatch("fetchGame", {
           param: "g",
-          value: gameId
+          value: gameId,
+          app: this
         })
         .then(game => {
           const guild = account.guilds.find(g => g.id === guildId);
@@ -561,8 +604,8 @@ export default {
         })
         .catch(err => {
           this.$store.dispatch("addSnackBar", {
-            message: (err && err.message) || err || "An error occured!",
-            color: "error darken-1"
+            message: "An error occured when fetching a new game",
+            color: "error"
           });
         });
     },
@@ -603,6 +646,11 @@ export default {
               "setSelectedLang",
               this.selectedUserSettings.lang
             );
+            this.$store.dispatch("addSnackBar", {
+              message: "Settings saved successfully!",
+              color: "success",
+              timeout: 5
+            });
           } else {
             throw new Error(result.message);
           }
@@ -610,7 +658,7 @@ export default {
         .catch(err => {
           this.$store.dispatch("addSnackBar", {
             message: (err && err.message) || err || "An error occured!",
-            color: "error darken-1"
+            color: "error"
           });
         });
     },
@@ -633,7 +681,7 @@ export default {
         el.src = `/locale/${this.userSettings.lang}.js`;
         document.body.appendChild(el);
       }
-      if (this.userSettings.notification != "") {
+      if (this.userSettings.notification) {
         this.notification = new Audio(
           `/sounds/${this.userSettings.notification}`
         );
@@ -650,7 +698,8 @@ export default {
         this.settingMaintenanceDuration = 0;
         this.maintenanceBarColor = "discord";
         if (prevM && this.settings.maintenanceDuration === 0) {
-          return this.signOut();
+          this.signOut();
+          return window.location.reload();
         }
         if (this.settings && this.settings.maintenanceTime > 0) {
           if (
@@ -694,7 +743,7 @@ export default {
       }
     },
     playSelectedNotification() {
-      if (this.selectedUserSettings.notification != "") {
+      if (this.selectedUserSettings.notification) {
         const audio = new Audio(
           `/sounds/${this.selectedUserSettings.notification}`
         );
@@ -703,6 +752,21 @@ export default {
     },
     invited() {
       localStorage.setItem("invited", 1);
+    },
+    showMenu() {
+      if (
+        !this.loadingAccount &&
+        !["/", "/maintenace"].includes(this.$route.path) &&
+        !this.maintenanceMode &&
+        !(
+          ["/help", "/games/edit"].includes(this.$route.path) &&
+          !this.account &&
+          !this.loadingAccount
+        ) &&
+        this.$store.getters.lastGuildFetch
+      )
+        return true;
+      return false;
     }
   }
 };

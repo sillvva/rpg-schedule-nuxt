@@ -1,9 +1,4 @@
 <template>
-  <!-- <v-app v-if="$fetchState.pending">
-    <v-flex class="d-flex" justify-center align-center style="height: 100%;">
-      <v-progress-circular :size="100" :width="7" color="discord" indeterminate></v-progress-circular>
-    </v-flex>
-  </v-app>-->
   <v-container fluid style="height: 100%;" class="cal-cont">
     <v-card style="height: 100%;">
       <v-toolbar color="discord" v-if="lang.game && baseDate && moment">
@@ -93,7 +88,6 @@
 </template>
 
 <script>
-import { updateToken } from "../../../assets/auxjs/auth";
 import { checkRSVP, parseEventTimes } from "../../../assets/auxjs/appaux";
 import GameCard from "../../../components/game-card";
 import { cloneDeep } from "lodash";
@@ -159,6 +153,9 @@ export default {
       immediate: true
     }
   },
+  mounted() {
+    this.$store.commit("setLastListingPage", 'calendar');
+  },
   methods: {
     allGames() {
       if (!this.account.guilds) return;
@@ -216,11 +213,15 @@ export default {
             md: md,
             dx: dx,
             games: curmonth
-              ? this.games.filter(g => {
-                  const parsedDates = parseEventTimes(g);
-                  const date = moment(parsedDates.iso).format("YYYY-MM-DD");
-                  return date === dx;
-                })
+              ? this.games
+                  .filter(g => {
+                    const parsedDates = parseEventTimes(g);
+                    const date = moment(parsedDates.iso).format("YYYY-MM-DD");
+                    return date === dx;
+                  })
+                  .sort((a, b) =>
+                    a.timestamp > b.timestamp || a.name > b.name ? 1 : 0
+                  )
               : [],
             reserved: this.games
               .filter(g => {

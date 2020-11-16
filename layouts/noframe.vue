@@ -1,5 +1,5 @@
 <template>
   <v-app dark>
-    <nuxt />
+    <nuxt :key="$route.fullPath" />
   </v-app>
 </template>

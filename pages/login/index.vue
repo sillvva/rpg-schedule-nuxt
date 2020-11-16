@@ -26,29 +26,29 @@ export default {
   async mounted() {
     if (this.$route.query.error) {
       const message = this.$route.query.error_description;
-      this.$cookies.remove("redirect", { path: "/" });
+      localStorage.removeItem("redirect");
       this.$router.replace("/").then(() => {
         setTimeout(() => {
           this.$store.dispatch("addSnackBar", {
             message: message,
-            color: "error darken-1"
+            color: "error"
           });
         }, 1000);
       });
     }
     if (this.$route.query.redirect) {
-      this.$cookies.set("redirect", this.$route.query.redirect, { path: "/" });
+      localStorage.setItem("redirect", this.$route.query.redirect);
       window.location = this.$store.getters.env.authUrl;
     }
     if (this.$route.query.code) {
-      const redirect = this.$cookies.get("redirect");
+      const redirect = localStorage.getItem("redirect");
       this.$store
         .dispatch("authenticate", this.$route.query.code)
         .then(async result => {
           if (result.status === "success") {
             authAux.setToken(this, result.token);
             setTimeout(() => {
-              this.$cookies.remove("redirect", { path: "/" });
+              localStorage.removeItem("redirect");
               this.$router.replace(
                 redirect || this.$store.state.config.urls.game.games.path
               );

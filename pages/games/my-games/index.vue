@@ -5,14 +5,34 @@
     </v-flex>
   </v-app> -->
   <v-container fluid>
-    <v-text-field
-      v-model="searchQuery"
-      @keyup="search"
-      flat
-      solo
-      prepend-inner-icon="mdi-magnify"
-      class="hidden-sm-and-up mb-n4"
-    ></v-text-field>
+    <v-app-bar dense class="mb-3 hidden-sm-and-up">
+      <v-text-field
+        v-model="searchQuery"
+        @keyup="search"
+        flat
+        solo
+        prepend-inner-icon="mdi-magnify"
+        style="height: 48px; margin-left: -16px;"
+      ></v-text-field>
+      <v-btn
+        text
+        small
+        v-if="guilds.filter(g => g.collapsed).length == guilds.length"
+        @click="expandAll"
+        class="ml-4"
+      >
+        <v-icon>mdi-chevron-double-up</v-icon>
+      </v-btn>
+      <v-btn
+        text
+        small
+        v-if="guilds.filter(g => !g.collapsed).length > 0"
+        @click="collapseAll"
+        class="ml-4"
+      >
+        <v-icon>mdi-chevron-double-down</v-icon>
+      </v-btn>
+    </v-app-bar>
     <v-app-bar dense class="mb-3 hidden-xs-only">
       <v-text-field
         v-model="searchQuery"
@@ -38,7 +58,7 @@
       >Collapse All</v-btn>
     </v-app-bar>
     <v-card
-      v-for="(guild, g) in guilds.filter(g => !g.filtered && (g.permission || g.games.length > 0))"
+      v-for="(guild, g) in guilds.filter(g => !g.filtered && !!g.games.find(game => !game.deleted) && (((g.permission || g.isAdmin) && g.announcementChannels.length > 0) || g.games.length > 0))"
       v-bind:key="g"
       max-width="100%"
       class="mb-3"
@@ -52,7 +72,9 @@
           style="border-radius: 50%;"
         ></v-img>
         <v-toolbar-title>{{guild.name}}</v-toolbar-title>
+
         <v-spacer></v-spacer>
+
         <v-btn
           :to="`${config.urls.game.create.path}?s=${guild.id}`"
           :title="lang.buttons.NEW_GAME"
@@ -62,16 +84,51 @@
         >
           <v-icon>mdi-plus</v-icon>
         </v-btn>
+
         <v-btn icon @click="guild.collapsed = !guild.collapsed">
           <v-icon v-if="!guild.collapsed">mdi-chevron-down</v-icon>
           <v-icon v-if="guild.collapsed">mdi-chevron-up</v-icon>
         </v-btn>
+
+        <v-menu left offset-y>
+          <template v-slot:activator="{ on, attrs }">
+            <v-btn icon v-on="on" v-bind="attrs">
+              <v-icon>mdi-dots-vertical</v-icon>
+            </v-btn>
+          </template>
+          <v-list>
+            <v-list-item class="hidden-sm-and-up" :to="`${config.urls.game.create.path}?s=${guild.id}`" v-if="(guild.permission || guild.isAdmin) && guild.announcementChannels.length > 0">
+              <v-list-item-icon>
+                <v-icon dark>mdi-plus</v-icon>
+              </v-list-item-icon>
+              <v-list-item-content style="white-space: nowrap;">
+                {{lang.buttons.NEW_GAME}}
+              </v-list-item-content>
+            </v-list-item>
+            <v-list-item :href="`${env && env.apiUrl}/rss/${account.user.id}/${guild.id}`" target="_blank">
+              <v-list-item-icon>
+                <v-icon dark>mdi-rss</v-icon>
+              </v-list-item-icon>
+              <v-list-item-content>
+                RSS
+              </v-list-item-content>
+            </v-list-item>
+            <v-list-item v-if="account.apiKey" :href="`${env && env.apiUrl}/patron-api/games?key=${account.apiKey}&guildId=${guild.id}`" target="_blank">
+              <v-list-item-icon>
+                <v-icon dark>mdi-key-variant</v-icon>
+              </v-list-item-icon>
+              <v-list-item-content>
+                API
+              </v-list-item-content>
+            </v-list-item>
+          </v-list>
+        </v-menu>
       </v-toolbar>
 
       <v-container fluid v-if="!guild.collapsed">
         <v-row dense>
           <v-col
-            v-for="(game, i) in guild.games.filter(game => game && !game.filtered && (checkRSVP(game.dm, account.user) || (game.author && checkRSVP(game.author, account.user))))"
+            v-for="(game, i) in guild.games.filter(game => game && !game.deleted && !game.filtered && (checkRSVP(game.dm, account.user) || (game.author && checkRSVP(game.author, account.user))))"
             v-bind:key="i"
             cols="12"
             sm="6"
@@ -82,7 +139,7 @@
             <GameCard
               :gameData="game"
               :numColumns="1"
-              :exclude="['gm', 'server']"
+              :exclude="['server']"
               :edit="checkRSVP(game.dm, account.user)"
             ></GameCard>
           </v-col>
@@ -108,7 +165,6 @@
 </template>
 
 <script>
-import { updateToken } from "../../../assets/auxjs/auth";
 import { checkRSVP } from "../../../assets/auxjs/appaux";
 import GameCard from "../../../components/game-card";
 import { cloneDeep } from "lodash";
@@ -127,6 +183,7 @@ export default {
       lang: {},
       config: this.$store.getters.config,
       account: this.$store.getters.account || {},
+      env: this.$store.getters.env,
       searchQuery: this.$route.query.s
     };
   },
@@ -156,13 +213,13 @@ export default {
           ...g,
           games: g.games.filter(game => {
             let show = false;
-            if (game.dm.id === this.account.user.id) show = true;
-            if (game.dm.tag === this.account.user.tag) show = true;
-            if (game.author.id === this.account.user.id) show = true;
-            if (game.author.tag === this.account.user.tag) show = true;
+            if (game.dm.id == this.account.user.id) show = true;
+            if (game.dm.tag == this.account.user.tag) show = true;
+            if (game.author.id == this.account.user.id) show = true;
+            if (game.author.tag == this.account.user.tag) show = true;
             game.reserved.forEach(r => {
-              if (r.id === this.account.user.id) show = true;
-              if (r.tag === this.account.user.tag) show = true;
+              if (r.id == this.account.user.id) show = true;
+              if (r.tag == this.account.user.tag) show = true;
             });
             return show;
           }),
@@ -179,24 +236,9 @@ export default {
       immediate: true
     }
   },
-  // fetchOnServer: false,
-  // async fetch() {
-  //   updateToken(this);
-  //   // if (
-  //   //   this.$store.getters.lastListingPage !== "my-games" ||
-  //   //   (await this.$store.dispatch("isMobile"))
-  //   // ) {
-  //     this.$store.dispatch("emptyGuilds");
-  //     await this.$store.dispatch("fetchGuilds", {
-  //       page: "my-games",
-  //       games: true,
-  //       app: this
-  //     });
-  //   // }
-  // },
-  // activated() {
-  //   this.$fetch();
-  // },
+  mounted() {
+    this.$store.commit("setLastListingPage", 'my-games');
+  },
   methods: {
     collapseAll() {
       this.guilds = this.guilds.map(g => {

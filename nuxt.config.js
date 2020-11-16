@@ -27,7 +27,8 @@ module.exports = {
     script: [
       { src: '/scripts/socket.io.js' },
       { src: '/scripts/moment.js' },
-      { src: '/scripts/moment-recur.js' }
+      { src: '/scripts/moment-recur.js' },
+      { src: 'https://momentjs.com/downloads/moment-timezone-with-data-10-year-range.min.js' }
     ]
   },
   /*

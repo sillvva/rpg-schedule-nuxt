@@ -112,5 +112,10 @@ module.exports = {
     */
     extend (config, ctx) {
     }
+  },
+  server: {
+    port: 6969,
+    host: '0.0.0.0',
+    timing: false
   }
 }

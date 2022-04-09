@@ -21,7 +21,7 @@
     "express": "^4.16.4",
     "grapheme-splitter": "^1.0.4",
     "lodash": "^4.17.15",
-    "moment": "^2.24.0",
+    "moment": "^2.29.2",
     "moment-recur": "^1.0.7",
     "moment-timezone": "^0.5.31",
     "nuxt": "^2.12.0",
